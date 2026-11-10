@@ -92,11 +92,11 @@ class BridgeApi:
             h = f"http://{h}"
         self.base = f"{h}:{port}" if h.count(":") < 2 else h
 
-    def _req(self, path: str, body: dict | None = None) -> dict:
+    def _req(self, path: str, body: dict | None = None, timeout: float = 30) -> dict:
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(self.base + path, data=data, headers={"Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 - local add-on address
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - local add-on address
                 out = json.loads(resp.read().decode() or "{}")
         except urllib.error.HTTPError as err:
             body: dict = {}
@@ -124,7 +124,8 @@ class BridgeApi:
 
     def write(self, key: str, value: float) -> dict:
         """The add-on writes and reads back; returns the values the unit reports afterwards."""
-        return self._req("/write", {"key": key, "value": value}).get("values", {})
+        # the add-on may wait up to 90 s for the hot-water module to take over a value
+        return self._req("/write", {"key": key, "value": value}, timeout=150).get("values", {})
 
     def close(self) -> None:
         pass

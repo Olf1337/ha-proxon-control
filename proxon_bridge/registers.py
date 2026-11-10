@@ -237,10 +237,32 @@ def read_keys(client, keys: list[str]) -> dict[str, float | str]:
     return out
 
 
-def write_and_verify(client, key: str, value: float, *, attempts: int = 3, delay: float = 0.6, sleep: Callable[[float], None] | None = None) -> dict[str, float | str]:
+# The hot-water module (T300) takes over its values much more slowly than the ventilation part: it can take up to a minute
+# (its operating mode up to a minute and a half). For these the read-back waits longer, and the same value is sent again
+# twice in between (writing the same value again does no harm).
+SLOW_WRITE_SECONDS: dict[str, float] = {
+    "SollWassertemperatur": 60,
+    "E-Heizstab": 60,
+    "Soll-E-Heizstab-Temperatur": 60,
+    "T300Betriebsart": 90,
+}
+SLOW_READ_INTERVAL = 2.0
+
+
+def write_and_verify(
+    client, key: str, value: float, *, attempts: int | None = None, delay: float | None = None,
+    sleep: Callable[[float], None] | None = None,
+) -> dict[str, float | str]:
     """Write, then read the value back (a few times, the unit may need a moment). Returns the values read back;
     raises WriteMismatch if the unit still holds something else."""
     sleep = sleep or time.sleep
+    slow = SLOW_WRITE_SECONDS.get(key)
+    if delay is None:
+        delay = SLOW_READ_INTERVAL if slow else 0.6
+    if attempts is None:
+        attempts = int(slow / delay) + 1 if slow else 3
+    # slow values: send the same value again after a third and after two thirds of the waiting time
+    rewrite_at = {attempts // 3, 2 * attempts // 3} - {0} if slow else set()
     write_value(client, key, value)
     want = expected_value(key, value)
     got: dict[str, float | str] = {}
@@ -250,6 +272,8 @@ def write_and_verify(client, key: str, value: float, *, attempts: int = 3, delay
         if isinstance(have, (int, float)) and abs(have - want) < 0.006:
             return got
         if i < attempts - 1:
+            if i + 1 in rewrite_at:
+                write_value(client, key, value)
             sleep(delay)
     have = got.get(key)
     raise WriteMismatch(key, want, have if isinstance(have, (int, float)) else None, got)
