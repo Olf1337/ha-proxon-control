@@ -1,0 +1,183 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Proxon Control",
+        "description": "How should Home Assistant reach your Proxon unit?",
+        "menu_options": {
+          "direct": "Log in to the Proxon server (Device ID + password)",
+          "bridge": "Through the Proxon Bridge add-on"
+        }
+      },
+      "direct": {
+        "title": "Log in to the Proxon server",
+        "description": "The same login as in the Proxon Control app: your appliance's Device ID and password.",
+        "data": {
+          "device_id": "Device ID",
+          "password": "Password"
+        }
+      },
+      "bridge": {
+        "title": "Proxon Bridge add-on",
+        "description": "Address and port of the Proxon Bridge add-on (port 8765 by default).",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Log in again",
+        "description": "Enter the password for Device ID {device_id}.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Device ID or password is wrong.",
+      "cannot_connect": "Could not reach the unit. Check the Device ID and the internet connection.",
+      "unknown": "Unexpected error, see the log."
+    },
+    "abort": {
+      "already_configured": "This unit is already set up.",
+      "reauth_successful": "Logged in again.",
+      "unsupported_system": "The Nabto connection library only exists for Linux on Intel/AMD (x86-64) and for Macs with an Apple chip, so it can't be used on this system (for example a Raspberry Pi). The Proxon Bridge add-on can't help there either."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "room_temperature": {
+        "name": "{room} temperature"
+      },
+      "outdoor_air": {
+        "name": "Fresh air temperature (outside)"
+      },
+      "supply_air": {
+        "name": "Supply air temperature"
+      },
+      "extract_air": {
+        "name": "Extract air temperature"
+      },
+      "exhaust_air": {
+        "name": "Exhaust air temperature"
+      },
+      "water_temperature": {
+        "name": "Hot water temperature"
+      },
+      "t300_pre_evaporator": {
+        "name": "Heat pump water pre-evaporator"
+      },
+      "t300_evaporator": {
+        "name": "Heat pump water evaporator"
+      },
+      "t300_compressor": {
+        "name": "Heat pump water compressor"
+      },
+      "rpm_intake": {
+        "name": "Intake fan speed"
+      },
+      "rpm_exhaust": {
+        "name": "Exhaust fan speed"
+      },
+      "rpm_compressor": {
+        "name": "Compressor speed"
+      },
+      "actual_level": {
+        "name": "Ventilation level (actual)"
+      },
+      "co2": {
+        "name": "CO₂"
+      },
+      "humidity": {
+        "name": "Relative humidity"
+      },
+      "boost_remaining": {
+        "name": "Boost ventilation time remaining"
+      },
+      "filter_remaining": {
+        "name": "Remaining filter runtime"
+      },
+      "filter_runtime": {
+        "name": "Filter runtime"
+      },
+      "working_hours": {
+        "name": "Working hours"
+      },
+      "firmware": {
+        "name": "Firmware version"
+      },
+      "valve": {
+        "name": "4-way valve",
+        "state": {
+          "heating": "Heating",
+          "cooling": "Cooling"
+        }
+      }
+    },
+    "select": {
+      "mode": {
+        "name": "Operating mode",
+        "state": {
+          "eco_comfort": "ECO Comfort",
+          "winter": "Winter",
+          "summer": "Summer",
+          "off": "Off",
+          "holiday": "Holiday"
+        }
+      }
+    },
+    "number": {
+      "level": {
+        "name": "Ventilation level"
+      },
+      "co2_limit": {
+        "name": "CO₂ limit"
+      },
+      "humidity_limit": {
+        "name": "Humidity limit"
+      },
+      "water_target": {
+        "name": "Hot water target temperature"
+      },
+      "boost_temperature": {
+        "name": "Immersion / boost temperature"
+      },
+      "room_target": {
+        "name": "{room} target temperature"
+      }
+    },
+    "switch": {
+      "boost": {
+        "name": "Boost ventilation"
+      },
+      "cooling": {
+        "name": "Cooling"
+      },
+      "water_heat_pump": {
+        "name": "Hot water heat pump"
+      },
+      "immersion_heater": {
+        "name": "Immersion / boost"
+      },
+      "room_heater": {
+        "name": "{room} heating element"
+      }
+    },
+    "binary_sensor": {
+      "filter_change": {
+        "name": "Filter change soon"
+      },
+      "compressor": {
+        "name": "Compressor"
+      }
+    }
+  },
+  "exceptions": {
+    "level_locked": {
+      "message": "In ECO Comfort mode and during boost ventilation the unit sets the level itself."
+    },
+    "room_limit": {
+      "message": "This room can only be set between {low} and {high} °C (the room's own value ± 3 °C)."
+    }
+  }
+}

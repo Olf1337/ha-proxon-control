@@ -1,0 +1,19 @@
+name: Proxon Bridge
+version: "0.1.0"
+slug: proxon_bridge
+description: Verbindet die Proxon-Anlage über den Proxon-Server (Device ID + Passwort) mit der Integration „Proxon Control“.
+arch:
+  - amd64
+startup: application
+boot: auto
+init: false
+ports:
+  8765/tcp: 8765
+ports_description:
+  8765/tcp: Schnittstelle für die Integration Proxon Control
+options:
+  device_id: ""
+  password: ""
+schema:
+  device_id: str
+  password: password

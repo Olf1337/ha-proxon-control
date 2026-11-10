@@ -1,0 +1,183 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Proxon Control",
+        "description": "Wie soll Home Assistant Ihre Proxon-Anlage erreichen?",
+        "menu_options": {
+          "direct": "Am Proxon-Server anmelden (Device ID + Passwort)",
+          "bridge": "Über das Proxon-Bridge-Add-on"
+        }
+      },
+      "direct": {
+        "title": "Am Proxon-Server anmelden",
+        "description": "Dieselbe Anmeldung wie in der App Proxon Control: Device ID und Passwort Ihrer Anlage.",
+        "data": {
+          "device_id": "Device ID",
+          "password": "Passwort"
+        }
+      },
+      "bridge": {
+        "title": "Proxon-Bridge-Add-on",
+        "description": "Adresse und Port des Proxon-Bridge-Add-ons (Standard: Port 8765).",
+        "data": {
+          "host": "Adresse",
+          "port": "Port"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut anmelden",
+        "description": "Passwort für Device ID {device_id} eingeben.",
+        "data": {
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Device ID oder Passwort ist falsch.",
+      "cannot_connect": "Die Anlage ist nicht erreichbar. Bitte Device ID und Internetverbindung prüfen.",
+      "unknown": "Unerwarteter Fehler, siehe Protokoll."
+    },
+    "abort": {
+      "already_configured": "Diese Anlage ist bereits eingerichtet.",
+      "reauth_successful": "Erneut angemeldet.",
+      "unsupported_system": "Die Nabto-Verbindungsbibliothek gibt es nur für Linux auf Intel/AMD (x86-64) und für Macs mit Apple-Chip, sie lässt sich auf diesem System (z. B. Raspberry Pi) nicht verwenden. Auch das Proxon-Bridge-Add-on hilft dort nicht."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "room_temperature": {
+        "name": "{room} Temperatur"
+      },
+      "outdoor_air": {
+        "name": "Frischlufttemperatur (außen)"
+      },
+      "supply_air": {
+        "name": "Zulufttemperatur"
+      },
+      "extract_air": {
+        "name": "Ablufttemperatur"
+      },
+      "exhaust_air": {
+        "name": "Fortlufttemperatur"
+      },
+      "water_temperature": {
+        "name": "Warmwasser Ist-Temperatur"
+      },
+      "t300_pre_evaporator": {
+        "name": "T300 Temperatur vor Verdampfer"
+      },
+      "t300_evaporator": {
+        "name": "T300 Temperatur Verdampfer"
+      },
+      "t300_compressor": {
+        "name": "T300 Temperatur Kompressor"
+      },
+      "rpm_intake": {
+        "name": "Drehzahl Zuluftventilator"
+      },
+      "rpm_exhaust": {
+        "name": "Drehzahl Abluftventilator"
+      },
+      "rpm_compressor": {
+        "name": "Drehzahl Kompressor"
+      },
+      "actual_level": {
+        "name": "Lüftungsstufe (Ist)"
+      },
+      "co2": {
+        "name": "CO₂"
+      },
+      "humidity": {
+        "name": "Relative Luftfeuchte"
+      },
+      "boost_remaining": {
+        "name": "Intensivlüftung Restzeit"
+      },
+      "filter_remaining": {
+        "name": "Restlaufzeit Filter"
+      },
+      "filter_runtime": {
+        "name": "Laufzeit Filter"
+      },
+      "working_hours": {
+        "name": "Betriebsstunden"
+      },
+      "firmware": {
+        "name": "Firmware Version"
+      },
+      "valve": {
+        "name": "4-Wegeventil",
+        "state": {
+          "heating": "Heizen",
+          "cooling": "Kühlen"
+        }
+      }
+    },
+    "select": {
+      "mode": {
+        "name": "Betriebsart",
+        "state": {
+          "eco_comfort": "ECO Komfortbetrieb",
+          "winter": "Winterbetrieb",
+          "summer": "Sommerbetrieb",
+          "off": "Aus",
+          "holiday": "Urlaubsbetrieb"
+        }
+      }
+    },
+    "number": {
+      "level": {
+        "name": "Lüftungsstufe"
+      },
+      "co2_limit": {
+        "name": "Grenzwert CO₂"
+      },
+      "humidity_limit": {
+        "name": "Grenzwert Feuchte"
+      },
+      "water_target": {
+        "name": "Warmwasser Soll-Temperatur"
+      },
+      "boost_temperature": {
+        "name": "Temperatur E-Heizstab / Boost"
+      },
+      "room_target": {
+        "name": "{room} Soll-Temperatur"
+      }
+    },
+    "switch": {
+      "boost": {
+        "name": "Intensivlüftung"
+      },
+      "cooling": {
+        "name": "Kühlung"
+      },
+      "water_heat_pump": {
+        "name": "Warmwasser-Wärmepumpe"
+      },
+      "immersion_heater": {
+        "name": "E-Heizstab / Boost"
+      },
+      "room_heater": {
+        "name": "{room} Wärmeelement"
+      }
+    },
+    "binary_sensor": {
+      "filter_change": {
+        "name": "Filterwechsel bald nötig"
+      },
+      "compressor": {
+        "name": "Kompressor"
+      }
+    }
+  },
+  "exceptions": {
+    "level_locked": {
+      "message": "Im ECO Komfortbetrieb und während der Intensivlüftung regelt das Gerät die Stufe selbst."
+    },
+    "room_limit": {
+      "message": "Dieser Raum kann nur zwischen {low} und {high} °C eingestellt werden (Sollwert des Raums ± 3 °C)."
+    }
+  }
+}

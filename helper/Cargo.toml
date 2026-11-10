@@ -1,0 +1,15 @@
+[package]
+name = "proxon-nabto-helper"
+version = "0.1.0"
+edition = "2021"
+description = "Runs the Nabto client library for the Proxon Control Home Assistant integration (JSON lines on stdin/stdout)."
+
+[dependencies]
+libloading = "0.8"
+serde_json = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"

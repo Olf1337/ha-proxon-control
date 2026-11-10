@@ -1,0 +1,12 @@
+{
+  "domain": "proxon_control",
+  "name": "Proxon Control",
+  "codeowners": ["@Olf1337"],
+  "config_flow": true,
+  "documentation": "https://github.com/Olf1337/ha-proxon-control",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Olf1337/ha-proxon-control/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
