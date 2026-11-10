@@ -22,6 +22,10 @@ CONF_PORT = "port"
 CONF_SURPLUS_SENSOR = "surplus_sensor"
 CONF_FEED_IN_NEGATIVE = "feed_in_negative"
 CONF_PRICE_SENSOR = "price_sensor"
+# dashboard pictures: follow the device's light/dark mode, or always light / dark
+CONF_PICTURE_THEME = "picture_theme"
+PICTURE_THEMES = ["auto", "light", "dark"]
+DEFAULT_PICTURE_THEME = "auto"
 CONF_TOKEN = "token"  # access key of the bridge (optional)
 
 CONNECTION_DIRECT = "direct"

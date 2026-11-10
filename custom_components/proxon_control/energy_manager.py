@@ -15,6 +15,7 @@ from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -60,6 +61,8 @@ class EnergyManager:
     def async_start(self) -> None:
         self._listeners.append(self.coordinator.async_add_listener(self._schedule))
         self._listeners.append(async_track_time_interval(self.hass, self._tick, CHECK_EVERY, cancel_on_shutdown=True))
+        # check as soon as Home Assistant runs (right away when it already does), so the status is right from the start
+        self._listeners.append(async_at_started(self.hass, self._started))
 
     @callback
     def async_stop(self) -> None:
@@ -117,6 +120,10 @@ class EnergyManager:
         )
 
     # ---- evaluation ----
+    @callback
+    def _started(self, hass: HomeAssistant) -> None:
+        self._schedule()
+
     @callback
     def _tick(self, now: datetime) -> None:
         # a @callback runs in Home Assistant's event loop (a plain function would be run in a worker thread)

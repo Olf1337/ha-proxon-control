@@ -254,16 +254,73 @@
         "name": "Urlaubsmodus"
       },
       "solar_hot_water": {
-        "name": "Solar-Warmwasser"
+        "name": "Solar-Warmwasser",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "waiting": "Wartet",
+              "starting": "Startet gleich",
+              "heating_solar": "Heizt mit Solarstrom",
+              "heating_price": "Heizt mit günstigem Strom",
+              "paused": "Pause (Schutz)",
+              "blocked": "Gesperrt (Warmwasser aus / Urlaub)",
+              "no_source": "Kein Sensor gewählt"
+            }
+          }
+        }
       },
       "cheap_hot_water": {
-        "name": "Günstiger Strom – Warmwasser"
+        "name": "Günstiger Strom – Warmwasser",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "waiting": "Wartet",
+              "starting": "Startet gleich",
+              "heating_solar": "Heizt mit Solarstrom",
+              "heating_price": "Heizt mit günstigem Strom",
+              "paused": "Pause (Schutz)",
+              "blocked": "Gesperrt (Warmwasser aus / Urlaub)",
+              "no_source": "Kein Sensor gewählt"
+            }
+          }
+        }
       },
       "night_cooling": {
-        "name": "Sommer-Nachtkühlung"
+        "name": "Sommer-Nachtkühlung",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "idle": "Nichts zu tun",
+              "waiting": "Wartet (15 min)",
+              "cooling": "Kühlt mit Außenluft",
+              "heat_protection": "Hitzeschutz",
+              "not_summer": "Nur im Sommerbetrieb",
+              "blocked": "Pausiert"
+            }
+          }
+        }
       },
       "hot_water_boost": {
-        "name": "Warmwasser-Boost"
+        "name": "Warmwasser-Boost",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "idle": "Warm genug",
+              "heating": "Heizstab an",
+              "heater_on": "Heizstab schon an",
+              "paused": "Pause (Schutz)",
+              "blocked": "Pausiert (Urlaub)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -375,13 +432,15 @@
           "scan_interval": "Abfrageintervall (Sekunden)",
           "surplus_sensor": "Sensor für Solarüberschuss",
           "feed_in_negative": "Einspeisung wird negativ angezeigt",
-          "price_sensor": "Sensor für den Strompreis"
+          "price_sensor": "Sensor für den Strompreis",
+          "picture_theme": "Dashboard-Bilder"
         },
         "data_description": {
           "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10.",
           "surplus_sensor": "Ins Netz eingespeiste Leistung (W oder kW), z. B. die Netzleistung deines Wechselrichters oder Stromzählers.",
           "feed_in_negative": "Einschalten, wenn dein Sensor die Einspeisung als negative Zahl anzeigt.",
-          "price_sensor": "Aktueller Preis eines dynamischen Tarifs (ct/kWh, €/kWh oder €/MWh), z. B. EPEX Spot, Tibber oder Nord Pool."
+          "price_sensor": "Aktueller Preis eines dynamischen Tarifs (ct/kWh, €/kWh oder €/MWh), z. B. EPEX Spot, Tibber oder Nord Pool.",
+          "picture_theme": "Hell oder dunkel wie das anzeigende Gerät (automatisch), oder immer hell / immer dunkel."
         }
       }
     }
@@ -456,6 +515,13 @@
         "friday": "Freitag",
         "saturday": "Samstag",
         "sunday": "Sonntag"
+      }
+    },
+    "picture_theme": {
+      "options": {
+        "auto": "Automatisch",
+        "light": "Hell",
+        "dark": "Dunkel"
       }
     }
   },

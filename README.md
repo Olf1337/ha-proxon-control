@@ -30,7 +30,7 @@ Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Ap
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.6.0)
+# Proxon Control – Integration für Home Assistant (Version 0.7.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -57,7 +57,7 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
 
-## Neu in Version 0.6.0
+## Neu in Version 0.6.0 / 0.7.0
 
 ### Dashboard mit Bildern von Anlage, Warmwasser und Haus
 
@@ -67,18 +67,31 @@ Die Integration zeichnet drei Bilder aus den aktuellen Werten – als Bild-Entit
 
 * **Anlage:** Kreuzstrom-Wärmetauscher mit den vier Luftströmen (Außen-, Zu-, Ab-, Fortluft), Lüftern, Filter und Wärmepumpe. Die Lüfter drehen sich,
   solange die Lüftung läuft (schneller bei höherer Stufe), die Luft strömt durch die Kanäle, der Wärmepumpen-Lüfter dreht sich, wenn der Kompressor läuft.
-* **Warmwasser:** der Speicher im Schnitt, gefüllt nach Ist- und Solltemperatur, mit Heizstab (glüht, wenn an), Wärmepumpe und Boost-Schwelle.
+  Darunter: Filter-Restlaufzeit und – wenn eingeschaltet – Nachtkühlung, Intensivlüftung oder eine Störung.
+* **Warmwasser:** der Speicher im Schnitt, gefüllt nach Ist- und Solltemperatur, mit Heizstab (glüht, wenn an), Wärmepumpe und – wenn eingeschaltet –
+  Solar-/Strompreis-Warmwasser und Boost.
 * **Haus:** alle Räume, die die Anlage meldet, automatisch angeordnet – gefärbt nach Ist gegenüber Soll (blau zu kalt, grün passt, orange zu warm),
   mit flackernder Flamme, wenn der Zuheizer des Raums freigegeben ist.
 
-**Dashboard einrichten (einmalig, nur eingebaute Karten):**
+Die Bilder haben keinen eigenen Hintergrund und passen sich **hell/dunkel** an (wie das anzeigende Gerät; fest hell oder dunkel unter
+*Proxon Control → Konfigurieren → Dashboard-Bilder*). Neue Temperaturen werden höchstens einmal pro Minute gezeichnet (sonst würden die Animationen
+ständig neu starten), Umschalten (Betriebsart, Stufe, Heizstab, Funktionen) sofort.
+
+**Das fertige Dashboard** (nur eingebaute Karten) hat zwei Reiter:
+* **Übersicht** – links Anlage (mit Lüftungsstufe, Betriebsart, Störung, Filter) und Haus, rechts Warmwasser (mit Heizquelle) und die Funktionen.
+  **Die Bilder lassen sich antippen:** die Anlage öffnet die Lüftung, der Speicher das Warmwasser, **jeder Raum sein Thermostat** (Solltemperatur,
+  Wärmeelement). Die Funktionen (Solar-Warmwasser, Günstiger Strom, Nachtkühlung, Warmwasser-Boost, Urlaubsmodus, Intensivlüftung) zeigen neben An/Aus,
+  was sie gerade tun – z. B. „Ein · Heizt mit Solarstrom“. Der Urlaubsmodus fragt vor dem Umschalten nach.
+* **Einstellungen** – alle Schwellwerte mit +/–, Wochenprogramm der Lüftung (Montag–Sonntag), Diagnose.
+
+Auf breiten Bildschirmen zwei Spalten, auf dem Handy alles untereinander.
+
+**Einrichten (einmalig):**
 1. *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion ausführen* → die **ganze Antwort** kopieren (sie beginnt mit `views:`).
 2. *Einstellungen → Dashboards → Dashboard hinzufügen → Neues Dashboard von Grund auf*, öffnen → ✏️ → ⋮ → **Raw-Konfigurationseditor** → Inhalt ersetzen → Speichern.
 
-Das Dashboard enthält die tatsächlichen Entitäts-IDs deiner Anlage (auch mit Bereichs-Präfix wie `hwr_`) und nur das, was deine Anlage hat:
-Anlage mit Lüftung und Betriebsart, Warmwasser mit Heizquelle und Boost, Haus mit allen Raum-Thermostaten, Funktionen mit Schaltern, Einstellungen und Status.
-Auf breiten Bildschirmen stehen die Bereiche nebeneinander, auf dem Handy untereinander.
-
+Das Dashboard enthält die tatsächlichen Entitäts-IDs deiner Anlage (auch mit Bereichs-Präfix wie `hwr_`) und nur das, was deine Anlage hat.
+Nach einem Update mit neuem Dashboard-Aufbau einfach die Aktion noch einmal ausführen und den Inhalt erneut ersetzen.
 
 ### Warmwasser als Speicher für Solarstrom und günstigen Strom
 

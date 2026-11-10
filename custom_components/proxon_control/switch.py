@@ -98,6 +98,11 @@ class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
     def is_on(self) -> bool:
         return bool(getattr(self.manager.settings, self._setting))
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        # what the function is doing right now (shown on the dashboard tile next to on/off); nothing while it is off
+        return {"status": self.manager.status} if self.is_on else {}
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.manager.async_set(**{self._setting: True})
 

@@ -30,8 +30,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     async_add_entities(ProxonRoomThermostat(coordinator, i) for i in range(ROOM_COUNT) if room_connected(data, i) and room_target(data, i) is not None)
 
 
+# Home Assistant 2026.11 renamed the temperature properties of thermostats to native_* (the old names stop working in 2027.11).
+# Older versions (from 2026.3, the oldest this integration supports) only know the old names, so both are served.
+NATIVE_NAMES = hasattr(ClimateEntity, "native_current_temperature")
+
+
 class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    if NATIVE_NAMES:
+        _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    else:
+        _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
     _attr_precision = 0.1
@@ -52,13 +60,17 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
         return self.coordinator.last_update_success and room_target(self._data, self._room) is not None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         v = self._data.get(f"NBE{self._room}Temperatur")
         return float(v) if isinstance(v, (int, float)) else None
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         return room_target(self._data, self._room)
+
+    if not NATIVE_NAMES:
+        current_temperature = native_current_temperature
+        target_temperature = native_target_temperature
 
     @property
     def min_temp(self) -> float:

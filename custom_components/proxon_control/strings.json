@@ -254,16 +254,73 @@
         "name": "Holiday mode"
       },
       "solar_hot_water": {
-        "name": "Solar hot water"
+        "name": "Solar hot water",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "waiting": "Waiting",
+              "starting": "Starting soon",
+              "heating_solar": "Heating with solar power",
+              "heating_price": "Heating with cheap power",
+              "paused": "Pause (protection)",
+              "blocked": "Blocked (hot water off / holiday)",
+              "no_source": "No sensor chosen"
+            }
+          }
+        }
       },
       "cheap_hot_water": {
-        "name": "Cheap electricity hot water"
+        "name": "Cheap electricity hot water",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "waiting": "Waiting",
+              "starting": "Starting soon",
+              "heating_solar": "Heating with solar power",
+              "heating_price": "Heating with cheap power",
+              "paused": "Pause (protection)",
+              "blocked": "Blocked (hot water off / holiday)",
+              "no_source": "No sensor chosen"
+            }
+          }
+        }
       },
       "night_cooling": {
-        "name": "Summer night cooling"
+        "name": "Summer night cooling",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "idle": "Nothing to do",
+              "waiting": "Waiting (15 min)",
+              "cooling": "Cooling with outside air",
+              "heat_protection": "Heat protection",
+              "not_summer": "Only in summer mode",
+              "blocked": "Paused"
+            }
+          }
+        }
       },
       "hot_water_boost": {
-        "name": "Hot-water boost"
+        "name": "Hot-water boost",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "idle": "Warm enough",
+              "heating": "Heater on",
+              "heater_on": "Heater already on",
+              "paused": "Pause (protection)",
+              "blocked": "Paused (holiday)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -375,13 +432,15 @@
           "scan_interval": "Query interval (seconds)",
           "surplus_sensor": "Solar surplus sensor",
           "feed_in_negative": "Feed-in is shown as negative",
-          "price_sensor": "Electricity price sensor"
+          "price_sensor": "Electricity price sensor",
+          "picture_theme": "Dashboard pictures"
         },
         "data_description": {
           "scan_interval": "Between 5 and 3600 seconds. Default: 10.",
           "surplus_sensor": "Power fed into the grid (W or kW), e.g. the grid power of your inverter or smart meter.",
           "feed_in_negative": "Turn on if your sensor shows power fed into the grid as a negative number.",
-          "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool."
+          "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool.",
+          "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark."
         }
       }
     }
@@ -456,6 +515,13 @@
         "friday": "Friday",
         "saturday": "Saturday",
         "sunday": "Sunday"
+      }
+    },
+    "picture_theme": {
+      "options": {
+        "auto": "Automatic",
+        "light": "Light",
+        "dark": "Dark"
       }
     }
   },
