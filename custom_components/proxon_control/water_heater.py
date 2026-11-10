@@ -19,6 +19,10 @@ from . import ProxonConfigEntry
 from .const import DOMAIN
 from .entity import ProxonEntity
 
+# Home Assistant 2026.11 renamed the temperature properties of water heaters to native_* (the old names stop working in 2027.11).
+# Older versions (from 2026.2, the oldest this integration supports) only know the old names, so both are served.
+NATIVE_NAMES = hasattr(WaterHeaterEntity, "native_current_temperature")
+
 # range of the original app for the hot-water target
 WATER_RANGE = (20.0, 55.0)
 HEAT_PUMP_KEY = "T300Betriebsart"
@@ -44,7 +48,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
 
 
 class ProxonWaterHeater(ProxonEntity, WaterHeaterEntity):
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    if NATIVE_NAMES:
+        _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    else:
+        _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_precision = PRECISION_TENTHS
     _attr_min_temp = WATER_RANGE[0]
     _attr_max_temp = WATER_RANGE[1]
@@ -65,14 +72,18 @@ class ProxonWaterHeater(ProxonEntity, WaterHeaterEntity):
         return self.coordinator.last_update_success and self._data.get(HEAT_PUMP_KEY) is not None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         v = self._data.get(CURRENT_KEY)
         return float(v) if isinstance(v, (int, float)) else None
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         v = self._data.get(TARGET_KEY)
         return float(v) if isinstance(v, (int, float)) else None
+
+    if not NATIVE_NAMES:
+        current_temperature = native_current_temperature
+        target_temperature = native_target_temperature
 
     @property
     def current_operation(self) -> str | None:
