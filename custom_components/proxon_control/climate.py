@@ -1,4 +1,10 @@
-"""Every connected room as a thermostat: current and target temperature, heating element on/off, "is heating" state."""
+"""Every connected room as a thermostat: current and target temperature, and whether the room's electric heating element may help.
+
+Modes: "Auto" = the unit heats/cools the room itself with the heat pump (heating element off),
+"Heat" = additionally the room's electric heating element is released. There is no "Off": the unit always keeps the room's target.
+What the unit is doing right now comes from the compressor and the 4-way valve, like the status line of the original app
+(the room's own status value turned out not to mean "heating now" on a real unit).
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -10,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity, room_name
-from .registers import ROOM_COUNT, room_base, room_connected, room_target, room_write
+from .registers import MODE_OFF, ROOM_COUNT, room_base, room_connected, room_target, room_write
 
 # ranges of the original app: living room 10-30 °C; other rooms 14-26 °C and at most 3 °C around the room's own base value
 LIVING_ROOM_RANGE = (10.0, 30.0)
@@ -26,8 +32,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
 
 class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
+    _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
     _attr_precision = 0.1
 
     def __init__(self, coordinator, room: int) -> None:
@@ -70,13 +76,20 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
 
     @property
     def hvac_mode(self) -> HVACMode:
-        return HVACMode.HEAT if self._data.get(f"NBE{self._room}PTC") else HVACMode.OFF
+        return HVACMode.HEAT if self._data.get(f"NBE{self._room}PTC") else HVACMode.AUTO
 
     @property
-    def hvac_action(self) -> HVACAction:
-        if self.hvac_mode is HVACMode.OFF:
+    def hvac_action(self) -> HVACAction | None:
+        data = self._data
+        mode = data.get("Betriebsart")
+        if mode is not None and int(mode) == MODE_OFF:
             return HVACAction.OFF
-        return HVACAction.HEATING if self._data.get(f"NBE{self._room}Status") else HVACAction.IDLE
+        rpm = data.get("DrehzahlKompressor")
+        if rpm is None:
+            return None
+        if rpm > 0:
+            return HVACAction.COOLING if data.get("Kuehlbetrieb4Wegeventil") else HVACAction.HEATING
+        return HVACAction.FAN  # only ventilating
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         if (target := kwargs.get(ATTR_TEMPERATURE)) is None:
@@ -86,9 +99,3 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         await self.coordinator.async_write(f"NBE{self._room}PTC", 1 if hvac_mode is HVACMode.HEAT else 0)
-
-    async def async_turn_on(self) -> None:
-        await self.async_set_hvac_mode(HVACMode.HEAT)
-
-    async def async_turn_off(self) -> None:
-        await self.async_set_hvac_mode(HVACMode.OFF)

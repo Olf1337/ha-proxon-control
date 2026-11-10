@@ -12,7 +12,10 @@ QUERY_SET_READ = "setpointReadListValue"
 QUERY_DATA_READ = "datapointReadListValue"
 QUERY_WRITE = "setpointWriteValue"
 
-ROOM_COUNT = 5
+# room panels: NBE0 (living room, always there) and NBE1 .. NBE20, as far as the unit reports them connected
+ROOM_COUNT = 21
+# rooms assumed when a unit doesn't report its connected-rooms bit field (behaviour of earlier versions)
+FALLBACK_ROOMS = range(1, 5)
 
 # operating modes (Betriebsart)
 MODE_OFF, MODE_SUMMER, MODE_WINTER, MODE_COMFORT, MODE_HOLIDAY = 0, 1, 2, 3, 5
@@ -77,20 +80,29 @@ def _registers() -> list[Reg]:
         Reg("T300Kompressor", False, (3, 15), None, "t300"),
     ]
     # room names are stored in the unit: ten 16-bit words per room (set point object 6, addresses 10n .. 10n+9)
-    r += [Reg(f"NBE{n}name", True, (6, 10 * n), None, "text", 10) for n in range(ROOM_COUNT)]
+    r.append(Reg("NBE0name", True, (6, 0), None, "text", 10))
     for n in range(1, ROOM_COUNT):
-        r += [
-            Reg(f"NBE{n}OffsetTemperatur", True, (1, 2 + n), (0, 434 + 2 * n), "signed"),
-            Reg(f"NBE{n}MittelTemperatur", True, (1, 22 + n), (0, 474 + 2 * n)),
-            Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
-            Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
-            Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
-        ]
+        r += _room_registers(n)
     return r
+
+
+def _room_registers(n: int) -> list[Reg]:
+    """Values of room panel n (n >= 1). Room names are stored in the unit: ten 16-bit words per room (set point object 6, addresses 10n .. 10n+9)."""
+    return [
+        Reg(f"NBE{n}name", True, (6, 10 * n), None, "text", 10),
+        Reg(f"NBE{n}OffsetTemperatur", True, (1, 2 + n), (0, 434 + 2 * n), "signed"),
+        Reg(f"NBE{n}MittelTemperatur", True, (1, 22 + n), (0, 474 + 2 * n)),
+        Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
+        Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
+        Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
+    ]
 
 
 REGISTERS: list[Reg] = _registers()
 BY_KEY: dict[str, Reg] = {g.key: g for g in REGISTERS}
+ROOM_REGISTERS: dict[int, list[Reg]] = {n: _room_registers(n) for n in range(1, ROOM_COUNT)}
+_ROOM_KEYS = {g.key for regs in ROOM_REGISTERS.values() for g in regs}
+BASE_REGISTERS: list[Reg] = [g for g in REGISTERS if g.key not in _ROOM_KEYS]
 
 
 def decode(conv: str, raw: float) -> float | None:
@@ -128,11 +140,20 @@ def encode(conv: str, value: float) -> int:
     return v % 65536
 
 
-def read_requests() -> list[tuple[str, list[Reg]]]:
+def read_requests(regs: list[Reg] | None = None) -> list[tuple[str, list[Reg]]]:
+    regs = BASE_REGISTERS if regs is None else regs
     return [
-        (QUERY_SET_READ, [g for g in REGISTERS if g.set_point]),
-        (QUERY_DATA_READ, [g for g in REGISTERS if not g.set_point]),
+        (QUERY_SET_READ, [g for g in regs if g.set_point]),
+        (QUERY_DATA_READ, [g for g in regs if not g.set_point]),
     ]
+
+
+def connected_rooms(values: dict) -> list[int]:
+    """Room panels (n >= 1) the unit reports connected: two 16-bit words, bit order NBE2 .. NBE20, then NBE1."""
+    if "NBEverbunden0" not in values or "NBEverbunden1" not in values:
+        return list(FALLBACK_ROOMS)
+    bits = (int(values["NBEverbunden0"]) & 0xFFFF) | ((int(values["NBEverbunden1"]) & 0xFFFF) << 16)
+    return [n for n in range(1, ROOM_COUNT) if bits >> (19 if n == 1 else n - 2) & 1]
 
 
 def list_request(regs: list[Reg]) -> dict:
@@ -183,16 +204,20 @@ def parse_values(regs: list[Reg], reply: dict) -> dict[str, float | str]:
 
 
 def read_all(client) -> dict[str, float | str]:
-    """Read every value with two list queries (client: anything with invoke(query, request))."""
+    """Read every value: two list queries for the unit, then two for the connected rooms (client: anything with invoke(query, request))."""
     out: dict[str, float | str] = {}
     for query, regs in read_requests():
         out.update(parse_values(regs, client.invoke(query, list_request(regs))))
+    # then only the rooms the unit reports connected (up to 20), so the queries stay small
+    rooms = connected_rooms(out)
+    room_regs = [g for n in rooms for g in ROOM_REGISTERS[n]]
+    for query, regs in read_requests(room_regs):
+        if regs:
+            out.update(parse_values(regs, client.invoke(query, list_request(regs))))
     # derived values the original shows
     if "NBEverbunden0" in out and "NBEverbunden1" in out:
-        bits = (int(out["NBEverbunden0"]) & 0xFFFF) | ((int(out["NBEverbunden1"]) & 0xFFFF) << 16)
         for n in range(1, ROOM_COUNT):
-            idx = 19 if n == 1 else n - 2
-            out[f"NBE{n}Verbunden"] = 1.0 if bits >> idx & 1 else 0.0
+            out[f"NBE{n}Verbunden"] = 1.0 if n in rooms else 0.0
     if "LaufzeitFilter" in out:
         out["FilterRestStunden"] = max(0.0, FILTER_INTERVAL_MONTHS * HOURS_PER_MONTH - out["LaufzeitFilter"])
     return out

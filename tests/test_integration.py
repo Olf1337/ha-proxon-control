@@ -180,19 +180,20 @@ async def test_no_co2_sensor_means_no_co2_entities(hass: HomeAssistant, device) 
 async def test_rooms_are_thermostats(hass: HomeAssistant, device) -> None:
     await setup(hass)
     living = hass.states.get(eid(hass, "climate", "NBE0Thermostat"))
-    assert living.state == "off"  # heating element of the living room is off
+    assert living.state == "auto"  # heating element of the living room is off: the unit regulates the room itself
     assert living.attributes["current_temperature"] == 22.5
     assert living.attributes["temperature"] == 20.0
     assert living.attributes["target_temp_step"] == 0.5
     assert (living.attributes["min_temp"], living.attributes["max_temp"]) == (10.0, 30.0)
-    assert living.attributes["hvac_action"] == "off"
+    assert living.attributes["hvac_modes"] == ["auto", "heat"]
+    assert living.attributes["hvac_action"] == "cooling"  # compressor runs, 4-way valve on cooling
     bedroom = hass.states.get(eid(hass, "climate", "NBE1Thermostat"))
-    assert bedroom.state == "heat" and bedroom.attributes["hvac_action"] == "heating"  # heating element on and heating now
+    assert bedroom.state == "heat"  # heating element released
     assert bedroom.attributes["temperature"] == 22.0  # own base value 20 + offset 2
     assert bedroom.attributes["target_temp_step"] == 1.0
     assert (bedroom.attributes["min_temp"], bedroom.attributes["max_temp"]) == (17.0, 23.0)  # own base value +-3
     bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))
-    assert bath.state == "heat" and bath.attributes["hvac_action"] == "idle"
+    assert bath.state == "heat"
     assert bath.attributes["temperature"] == 19.0
 
 
@@ -226,10 +227,10 @@ async def test_thermostat_heating_element_on_and_off(hass: HomeAssistant, device
     assert device.writes[-1] == {"obj": 0, "address": 384, "value": 1}
     assert hass.states.get(living).state == "heat"
     bath = eid(hass, "climate", "NBE4Thermostat")
-    await call(hass, "climate", "turn_off", entity_id=bath)
+    await call(hass, "climate", "set_hvac_mode", entity_id=bath, hvac_mode="auto")
     assert device.writes[-1] == {"obj": 0, "address": 522, "value": 0}
-    assert hass.states.get(bath).state == "off"
-    await call(hass, "climate", "turn_on", entity_id=bath)
+    assert hass.states.get(bath).state == "auto"
+    await call(hass, "climate", "set_hvac_mode", entity_id=bath, hvac_mode="heat")
     assert hass.states.get(bath).state == "heat"
 
 

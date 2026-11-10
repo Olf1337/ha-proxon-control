@@ -167,7 +167,11 @@
     },
     "climate": {
       "room_thermostat": {
-        "name": "{room}"
+        "name": "{room}",
+        "state": {
+          "auto": "Automatik (Wärmepumpe)",
+          "heat": "Mit Wärmeelement"
+        }
       }
     },
     "fan": {
