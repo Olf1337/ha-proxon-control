@@ -9,12 +9,13 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION, PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfTemperature, UnitOfTime
+from homeassistant.const import PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
+from .const import PPM
 from .entity import ProxonEnergyEntity, ProxonEntity, room_name
 from .registers import ROOM_COUNT, room_connected
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
@@ -61,7 +62,7 @@ SENSORS: list[ProxonSensorDescription] = [
     _rpm("DrehzahlKompressor", "rpm_compressor"),
     ProxonSensorDescription(key="IstLuefterstufe", translation_key="actual_level", icon="mdi:fan", state_class=SensorStateClass.MEASUREMENT),
     ProxonSensorDescription(
-        key="CurrentCO2", translation_key="co2", native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
+        key="CurrentCO2", translation_key="co2", native_unit_of_measurement=PPM,
         device_class=SensorDeviceClass.CO2, state_class=SensorStateClass.MEASUREMENT,
     ),
     ProxonSensorDescription(
@@ -129,7 +130,7 @@ class ProxonSensor(ProxonEntity, SensorEntity):
 
     @property
     def native_value(self):
-        v = self.value
+        v = self.raw_value
         if v is None:
             return None
         if self._key == "Kuehlbetrieb4Wegeventil":
@@ -213,7 +214,7 @@ class ProxonResponseTime(ProxonEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return self.value
+        return self.raw_value
 
 
 class ProxonConnectionPath(ProxonEntity, SensorEntity):
@@ -231,11 +232,11 @@ class ProxonConnectionPath(ProxonEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        return None if self.value is None else connection_path(float(self.value))
+        return None if self.raw_value is None else connection_path(float(self.raw_value))
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {"response_time_ms": self.value, "estimated": True}
+        return {"response_time_ms": self.raw_value, "estimated": True}
 
 
 class ProxonEnergyStatus(ProxonEnergyEntity, SensorEntity):

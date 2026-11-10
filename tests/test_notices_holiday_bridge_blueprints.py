@@ -189,7 +189,7 @@ async def test_humidity_blueprint_switches_on_boost(hass: HomeAssistant, device,
     await hass.async_block_till_done()
     assert device.writes == []  # not yet: has to stay above the limit for 2 minutes
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=3))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)  # also the energy manager's check every minute
     assert writes(device)[-1] == (0, 380, 1)
 
 

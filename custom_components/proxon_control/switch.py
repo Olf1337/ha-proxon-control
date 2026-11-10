@@ -37,7 +37,7 @@ class ProxonSwitch(ProxonEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return bool(self.value) if self.value is not None else None
+        return bool(self.raw_value) if self.raw_value is not None else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.async_write(self._key, 1)

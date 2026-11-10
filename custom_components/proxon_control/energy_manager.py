@@ -41,6 +41,7 @@ class EnergyManager:
         self._lock = asyncio.Lock()
         self._listeners: list[CALLBACK_TYPE] = []
         self._entity_updates: list[CALLBACK_TYPE] = []
+        self._pending = False
 
     # ---- setup ----
     @property
@@ -58,7 +59,7 @@ class EnergyManager:
     @callback
     def async_start(self) -> None:
         self._listeners.append(self.coordinator.async_add_listener(self._schedule))
-        self._listeners.append(async_track_time_interval(self.hass, lambda now: self._schedule(), CHECK_EVERY))
+        self._listeners.append(async_track_time_interval(self.hass, self._tick, CHECK_EVERY, cancel_on_shutdown=True))
 
     @callback
     def async_stop(self) -> None:
@@ -117,9 +118,26 @@ class EnergyManager:
 
     # ---- evaluation ----
     @callback
+    def _tick(self, now: datetime) -> None:
+        # a @callback runs in Home Assistant's event loop (a plain function would be run in a worker thread)
+        self._schedule()
+
+    @callback
     def _schedule(self) -> None:
-        if not self._lock.locked():
-            self.entry.async_create_background_task(self.hass, self.async_evaluate(), "proxon hot water energy manager")
+        if not self.hass.is_running:  # starting up, shutting down or stopped
+            return
+        # one check at a time: while one runs (e.g. waiting for the slow hot-water module), further ones are left out
+        if self._lock.locked() or self._pending:
+            return
+        self._pending = True
+        self.entry.async_create_background_task(self.hass, self._background_evaluate(), "proxon hot water energy manager")
+
+    async def _background_evaluate(self) -> None:
+        try:
+            if not self._lock.locked():
+                await self.async_evaluate()
+        finally:
+            self._pending = False
 
     async def async_evaluate(self, now: datetime | None = None) -> None:
         if not self.supported:

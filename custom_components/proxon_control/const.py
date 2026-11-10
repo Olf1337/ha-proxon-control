@@ -2,6 +2,14 @@
 from __future__ import annotations
 
 DOMAIN = "proxon_control"
+
+# parts per million: UnitOfRatio from Home Assistant 2026.10 on, the old constant (deprecated, removed in 2027.8) before
+try:
+    from homeassistant.const import UnitOfRatio
+
+    PPM = UnitOfRatio.PARTS_PER_MILLION
+except (ImportError, AttributeError):  # older Home Assistant
+    from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION as PPM
 MANUFACTURER = "Proxon"
 MODEL = "Frischluft-Wärmetechnik"
 

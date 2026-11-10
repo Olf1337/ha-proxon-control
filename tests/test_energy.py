@@ -203,3 +203,17 @@ async def test_sensors_are_chosen_in_the_options(hass: HomeAssistant, device) ->
         result["flow_id"], {"scan_interval": 10, "surplus_sensor": "sensor.netz", "feed_in_negative": True, "price_sensor": "sensor.preis"}
     )
     assert entry.options == {"scan_interval": 10, "surplus_sensor": "sensor.netz", "price_sensor": "sensor.preis", "feed_in_negative": True}
+
+
+async def test_checks_every_minute_on_its_own(hass: HomeAssistant, device) -> None:
+    """A cheaper price arrives between two queries of the unit: the check every minute picks it up (in Home Assistant's event loop)."""
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+    from homeassistant.util import dt as dt_util
+
+    await setup_with_sensors(hass)
+    await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PreisWarmwasser"))
+    assert device.writes == []  # 30 ct: too expensive
+    hass.states.async_set("sensor.preis", "0.05", {"unit_of_measurement": "€/kWh"})
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert device.writes[-1] == {"obj": 1, "address": 0, "value": 550}

@@ -4,13 +4,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberEntityDescription, NumberMode
-from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION, PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .const import DOMAIN
+from .const import DOMAIN, PPM
 from .entity import ProxonEnergyEntity, ProxonEntity
 from .registers import MODE_COMFORT
 
@@ -32,7 +32,7 @@ NUMBERS: list[ProxonNumberDescription] = [
     ProxonNumberDescription(key="Luefterstufe", translation_key="level", native_min_value=1, native_max_value=4, native_step=1, mode=NumberMode.SLIDER, icon="mdi:fan"),
     ProxonNumberDescription(
         key="GrenzwertCO2", translation_key="co2_limit", native_min_value=400, native_max_value=1500, native_step=50,
-        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION, mode=NumberMode.SLIDER, icon="mdi:molecule-co2",
+        native_unit_of_measurement=PPM, mode=NumberMode.SLIDER, icon="mdi:molecule-co2",
     ),
     ProxonNumberDescription(
         key="GrenzwertFeuchte", translation_key="humidity_limit", native_min_value=0, native_max_value=100, native_step=5,
@@ -66,7 +66,7 @@ class ProxonNumber(ProxonEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        return self.value
+        return self.raw_value
 
     async def async_set_native_value(self, value: float) -> None:
         data = self.coordinator.data or {}
@@ -111,11 +111,6 @@ class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
     @property
     def native_value(self) -> float:
         return float(getattr(self.manager.settings, self.entity_description.setting))
-
-    @property
-    def value(self) -> float:
-        # NumberEntity shows `value`; the base class of the Proxon entities uses that name for the unit's raw value
-        return self.native_value
 
     async def async_set_native_value(self, value: float) -> None:
         await self.manager.async_set(**{self.entity_description.setting: float(value)})

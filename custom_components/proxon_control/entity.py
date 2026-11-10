@@ -40,12 +40,13 @@ class ProxonEntity(CoordinatorEntity[ProxonCoordinator]):
         )
 
     @property
-    def value(self) -> float | None:
+    def raw_value(self) -> float | None:
+        """The unit's value for this entity's key (not called `value`: some entity types use that name themselves)."""
         return (self.coordinator.data or {}).get(self._key)
 
     @property
     def available(self) -> bool:
-        return super().available and self.value is not None
+        return super().available and self.raw_value is not None
 
 
 class ProxonEnergyEntity(ProxonEntity):

@@ -38,7 +38,7 @@ class ProxonFilterWarning(ProxonEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return None if self.value is None else self.value <= FILTER_WARN_HOURS
+        return None if self.raw_value is None else self.raw_value <= FILTER_WARN_HOURS
 
 
 class ProxonCompressor(ProxonEntity, BinarySensorEntity):
@@ -50,7 +50,7 @@ class ProxonCompressor(ProxonEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return None if self.value is None else self.value > 0
+        return None if self.raw_value is None else self.raw_value > 0
 
 
 class ProxonScheduleActive(ProxonEntity, BinarySensorEntity):
@@ -63,7 +63,7 @@ class ProxonScheduleActive(ProxonEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return None if self.value is None else bool(self.value)
+        return None if self.raw_value is None else bool(self.raw_value)
 
 
 class ProxonFault(ProxonEntity, BinarySensorEntity):

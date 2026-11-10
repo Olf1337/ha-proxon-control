@@ -24,13 +24,13 @@ class ProxonModeSelect(ProxonEntity, SelectEntity):
     def options(self) -> list[str]:
         opts = [MODE_KEYS[m] for m in MODE_CHOICES]
         # holiday mode can't be chosen here (as in the original), but is shown while active
-        if self.value is not None and int(self.value) == MODE_HOLIDAY:
+        if self.raw_value is not None and int(self.raw_value) == MODE_HOLIDAY:
             opts.append(MODE_KEYS[MODE_HOLIDAY])
         return opts
 
     @property
     def current_option(self) -> str | None:
-        return MODE_KEYS.get(int(self.value)) if self.value is not None else None
+        return MODE_KEYS.get(int(self.raw_value)) if self.raw_value is not None else None
 
     async def async_select_option(self, option: str) -> None:
         mode = next(m for m, k in MODE_KEYS.items() if k == option)
