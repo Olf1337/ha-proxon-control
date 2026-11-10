@@ -152,6 +152,19 @@
           "internet": "Directly over the internet",
           "relay": "Through relay server"
         }
+      },
+      "energy_status": {
+        "name": "Hot-water energy manager",
+        "state": {
+          "off": "Off",
+          "waiting": "Waiting",
+          "starting": "Surplus – starting soon",
+          "heating_solar": "Heating with solar power",
+          "heating_price": "Heating with cheap electricity",
+          "paused": "Paused (protection)",
+          "blocked": "Blocked (hot water off / holiday)",
+          "no_source": "No sensor chosen"
+        }
       }
     },
     "select": {
@@ -181,6 +194,15 @@
       },
       "boost_temperature": {
         "name": "Immersion / boost temperature"
+      },
+      "solar_surplus": {
+        "name": "Solar surplus from"
+      },
+      "cheap_price": {
+        "name": "Electricity price up to"
+      },
+      "store_temperature": {
+        "name": "Hot-water store temperature"
       }
     },
     "switch": {
@@ -198,6 +220,12 @@
       },
       "holiday": {
         "name": "Holiday mode"
+      },
+      "solar_hot_water": {
+        "name": "Solar hot water"
+      },
+      "cheap_hot_water": {
+        "name": "Cheap electricity hot water"
       }
     },
     "binary_sensor": {
@@ -293,12 +321,18 @@
     "step": {
       "init": {
         "title": "Proxon Control",
-        "description": "How often should Home Assistant ask the unit for its values? Shorter times show changes sooner but put more load on the connection through Proxon's server.",
+        "description": "How often should Home Assistant ask the unit for its values? Shorter times show changes sooner but put more load on the connection through Proxon's server.\n\nHot water as a store: choose the sensors for solar surplus and electricity price. Switch the use on and off and set the limits on the Proxon device page.",
         "data": {
-          "scan_interval": "Query interval (seconds)"
+          "scan_interval": "Query interval (seconds)",
+          "surplus_sensor": "Solar surplus sensor",
+          "feed_in_negative": "Feed-in is shown as negative",
+          "price_sensor": "Electricity price sensor"
         },
         "data_description": {
-          "scan_interval": "Between 5 and 3600 seconds. Default: 10."
+          "scan_interval": "Between 5 and 3600 seconds. Default: 10.",
+          "surplus_sensor": "Power fed into the grid (W or kW), e.g. the grid power of your inverter or smart meter.",
+          "feed_in_negative": "Turn on if your sensor shows power fed into the grid as a negative number.",
+          "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool."
         }
       }
     }

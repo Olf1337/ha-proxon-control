@@ -152,6 +152,19 @@
           "internet": "Direkt über das Internet",
           "relay": "Über Vermittlungsserver"
         }
+      },
+      "energy_status": {
+        "name": "Warmwasser-Energiemanager",
+        "state": {
+          "off": "Aus",
+          "waiting": "Wartet",
+          "starting": "Überschuss – startet gleich",
+          "heating_solar": "Heizt mit Solarstrom",
+          "heating_price": "Heizt mit günstigem Strom",
+          "paused": "Pause (Schutz der Anlage)",
+          "blocked": "Gesperrt (Warmwasser aus / Urlaub)",
+          "no_source": "Kein Sensor gewählt"
+        }
       }
     },
     "select": {
@@ -181,6 +194,15 @@
       },
       "boost_temperature": {
         "name": "Temperatur E-Heizstab / Boost"
+      },
+      "solar_surplus": {
+        "name": "Solar-Überschuss ab"
+      },
+      "cheap_price": {
+        "name": "Strompreis bis"
+      },
+      "store_temperature": {
+        "name": "Warmwasser-Speichertemperatur"
       }
     },
     "switch": {
@@ -198,6 +220,12 @@
       },
       "holiday": {
         "name": "Urlaubsmodus"
+      },
+      "solar_hot_water": {
+        "name": "Solar-Warmwasser"
+      },
+      "cheap_hot_water": {
+        "name": "Günstiger Strom – Warmwasser"
       }
     },
     "binary_sensor": {
@@ -293,12 +321,18 @@
     "step": {
       "init": {
         "title": "Proxon Control",
-        "description": "Wie oft soll Home Assistant die Anlage nach ihren Werten fragen? Kürzere Zeiten zeigen Änderungen früher, belasten aber die Verbindung über den Proxon-Server stärker.",
+        "description": "Wie oft soll Home Assistant die Anlage abfragen? Kürzere Zeiten zeigen Änderungen schneller, belasten aber die Verbindung über den Proxon-Server stärker.\n\nWarmwasser als Speicher: Sensoren für Solarüberschuss und Strompreis auswählen. Ein-/Ausschalten und die Schwellwerte gibt es auf der Geräteseite der Proxon-Anlage.",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "surplus_sensor": "Sensor für Solarüberschuss",
+          "feed_in_negative": "Einspeisung wird negativ angezeigt",
+          "price_sensor": "Sensor für den Strompreis"
         },
         "data_description": {
-          "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10."
+          "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10.",
+          "surplus_sensor": "Ins Netz eingespeiste Leistung (W oder kW), z. B. die Netzleistung deines Wechselrichters oder Stromzählers.",
+          "feed_in_negative": "Einschalten, wenn dein Sensor die Einspeisung als negative Zahl anzeigt.",
+          "price_sensor": "Aktueller Preis eines dynamischen Tarifs (ct/kWh, €/kWh oder €/MWh), z. B. EPEX Spot, Tibber oder Nord Pool."
         }
       }
     }

@@ -15,8 +15,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity, room_name
+from .entity import ProxonEnergyEntity, ProxonEntity, room_name
 from .registers import ROOM_COUNT, room_connected
+from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
 
 
@@ -111,6 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonScheduleDay(coordinator, day) for day in range(7)]
     if unit_clock(data) is not None:
         entities.append(ProxonClock(coordinator))
+    if coordinator.energy.supported:
+        entities.append(ProxonEnergyStatus(coordinator))
     if "Antwortzeit" in data:
         entities += [ProxonResponseTime(coordinator), ProxonConnectionPath(coordinator)]
     async_add_entities(entities)
@@ -233,3 +236,30 @@ class ProxonConnectionPath(ProxonEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {"response_time_ms": self.value, "estimated": True}
+
+
+class ProxonEnergyStatus(ProxonEnergyEntity, SensorEntity):
+    """What the hot-water energy manager is doing, and why (surplus, price, starts today as attributes)."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [OFF, WAITING, STARTING, HEATING_SOLAR, HEATING_PRICE, PAUSED, BLOCKED, NO_SOURCE]
+    _attr_icon = "mdi:water-boiler-auto"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "Energiemanager", "energy_status")
+
+    @property
+    def native_value(self) -> str:
+        return self.manager.status
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.manager.details
+        st = self.manager.state
+        return {
+            "surplus_w": d.get("surplus_w"),
+            "price_ct_kwh": None if d.get("price_ct") is None else round(d["price_ct"], 2),
+            "starts_today": st.starts,
+            "heating_since": st.since.isoformat() if st.since else None,
+            "previous_target": st.saved_target,
+        }

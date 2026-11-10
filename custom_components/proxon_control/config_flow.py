@@ -9,16 +9,26 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.core import callback
-from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig, NumberSelectorMode
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
 from .api import AuthError, BridgeApi, DirectApi, ProxonError, TokenError
 from .const import (
     CONF_CONNECTION,
     CONF_DEVICE_ID,
+    CONF_FEED_IN_NEGATIVE,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
+    CONF_PRICE_SENSOR,
     CONF_SCAN_INTERVAL,
+    CONF_SURPLUS_SENSOR,
     CONF_TOKEN,
     CONNECTION_BRIDGE,
     CONNECTION_DIRECT,
@@ -38,12 +48,22 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            return self.async_create_entry(data={CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])})
+            data: dict[str, Any] = {CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])}
+            for key in (CONF_SURPLUS_SENSOR, CONF_PRICE_SENSOR):
+                if user_input.get(key):
+                    data[key] = user_input[key]
+            if user_input.get(CONF_FEED_IN_NEGATIVE):
+                data[CONF_FEED_IN_NEGATIVE] = True
+            return self.async_create_entry(data=data)
         schema = vol.Schema(
             {
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): NumberSelector(
                     NumberSelectorConfig(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL, step=1, unit_of_measurement="s", mode=NumberSelectorMode.BOX)
-                )
+                ),
+                # hot water as a store for solar surplus / cheap electricity
+                vol.Optional(CONF_SURPLUS_SENSOR): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="power")),
+                vol.Optional(CONF_FEED_IN_NEGATIVE, default=False): BooleanSelector(),
+                vol.Optional(CONF_PRICE_SENSOR): EntitySelector(EntitySelectorConfig(domain="sensor")),
             }
         )
         return self.async_show_form(step_id="init", data_schema=self.add_suggested_values_to_schema(schema, self.config_entry.options))

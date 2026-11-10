@@ -20,7 +20,7 @@ from .const import DOMAIN
 from .entity import ProxonEntity
 
 # Home Assistant 2026.11 renamed the temperature properties of water heaters to native_* (the old names stop working in 2027.11).
-# Older versions (from 2026.2, the oldest this integration supports) only know the old names, so both are served.
+# Older versions (from 2026.3, the oldest this integration supports) only know the old names, so both are served.
 NATIVE_NAMES = hasattr(WaterHeaterEntity, "native_current_temperature")
 
 # range of the original app for the hot-water target

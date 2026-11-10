@@ -22,6 +22,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import ProxonCoordinator
+from .energy_manager import EnergyManager
 from .holiday import HolidayMode
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
@@ -69,6 +70,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     coordinator = ProxonCoordinator(hass, entry, make_api(hass, dict(entry.data)))
     coordinator.holiday = HolidayMode(hass, coordinator, entry.entry_id)
     await coordinator.holiday.async_load()
+    coordinator.energy = EnergyManager(hass, coordinator, entry)
+    await coordinator.energy.async_load()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     # notices under Settings -> Repairs (filter change soon, fault of the unit)
@@ -76,6 +79,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     entry.async_on_unload(coordinator.async_add_listener(lambda: update_issues(hass, entry, coordinator.data)))
     _remove_legacy_room_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # hot water as a store for solar surplus / cheap electricity
+    coordinator.energy.async_start()
+    entry.async_on_unload(coordinator.energy.async_stop)
     return True
 
 

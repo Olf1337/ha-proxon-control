@@ -4,11 +4,12 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity
+from .entity import ProxonEnergyEntity, ProxonEntity
 
 SWITCHES: list[tuple[str, str, str, int | None]] = [
     ("Intensivlueftung", "boost", "mdi:fan-plus", None),
@@ -23,6 +24,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     data = coordinator.data or {}
     entities: list[SwitchEntity] = [ProxonSwitch(coordinator, key, tk, icon, room) for key, tk, icon, room in SWITCHES if key in data]
     entities.append(ProxonHolidaySwitch(coordinator))
+    if coordinator.energy.supported:
+        entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water", "mdi:solar-power-variant"),
+                     ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water", "mdi:cash-clock")]
     async_add_entities(entities)
 
 
@@ -73,3 +77,24 @@ class ProxonHolidaySwitch(ProxonEntity, SwitchEntity):
             await self.coordinator.holiday.async_turn_off()
         finally:
             self.async_write_ha_state()
+
+
+class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
+    """Switches the use of solar surplus / cheap electricity for the hot-water store on and off."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator, setting: str, key: str, tk: str, icon: str) -> None:
+        super().__init__(coordinator, key, tk)
+        self._setting = setting
+        self._attr_icon = icon
+
+    @property
+    def is_on(self) -> bool:
+        return bool(getattr(self.manager.settings, self._setting))
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self.manager.async_set(**{self._setting: True})
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self.manager.async_set(**{self._setting: False})

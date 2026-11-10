@@ -5,7 +5,7 @@
 [![Buy me a coffee / Spendier mir einen Kaffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/olf1337)
 
 Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: every connected room as its own thermostat, the ventilation as a fan (level 1–4, boost as preset),
-hot water as a water heater, the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
+hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
 Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
 **Works from outside your home network.** It uses the same remote access as the phone app, so no VPN or port forwarding is needed – Home Assistant and the
@@ -30,7 +30,7 @@ Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Ap
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.5.0)
+# Proxon Control – Integration für Home Assistant (Version 0.6.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -56,6 +56,34 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute); Filterwechsel und Störung erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
+
+## Neu in Version 0.6.0: Warmwasser als Speicher für Solarstrom und günstigen Strom
+
+Der Warmwasserspeicher wird zur „Batterie“: Bei Solarüberschuss oder günstigem Strom hebt die Integration den Warmwasser-Sollwert an
+(z. B. 46 → 55 °C), die Warmwasser-Wärmepumpe heizt den Speicher mit diesem Strom auf. Danach wird der vorherige Sollwert wiederhergestellt.
+
+**Einrichten:** *Geräte & Dienste → Proxon Control → Konfigurieren* – dort den Sensor für den **Solarüberschuss** (eingespeiste Leistung in W/kW,
+z. B. Netzleistung des Wechselrichters oder Smart Meters; Haken setzen, wenn Einspeisung negativ angezeigt wird) und/oder den Sensor für den
+**Strompreis** (dynamischer Tarif, ct/kWh, €/kWh oder €/MWh, z. B. EPEX Spot, Tibber, Nord Pool) auswählen.
+
+**Bedienen** auf der Geräteseite „Proxon“ (unter *Konfiguration*):
+
+| Entität | |
+|---|---|
+| **Solar-Warmwasser** (Schalter) | Solarüberschuss nutzen an/aus |
+| **Solar-Überschuss ab** (W) | ab wie viel eingespeister Leistung geheizt wird (Standard 1500 W) |
+| **Günstiger Strom – Warmwasser** (Schalter) | günstigen Strom nutzen an/aus |
+| **Strompreis bis** (ct/kWh) | bis zu welchem Preis geheizt wird (Standard 10 ct/kWh) |
+| **Warmwasser-Speichertemperatur** (°C) | auf welche Temperatur der Speicher dann geheizt wird (40–55 °C, Standard 55 °C) |
+| **Warmwasser-Energiemanager** (Sensor) | was gerade passiert: Aus, Wartet, Startet gleich, Heizt mit Solarstrom, Heizt mit günstigem Strom, Pause, Gesperrt – mit Überschuss, Preis und Starts heute als Attribute |
+
+**Schutz der Anlage** (das Warmwasser-Modul braucht für jede Änderung eine Weile, häufiges Umschalten ist nicht gut):
+* Solarüberschuss muss **10 Minuten** über der Schwelle liegen, bevor geheizt wird (Wolken lösen nichts aus). Günstiger Strom startet sofort.
+* Während des Heizens verbraucht die Wärmepumpe selbst einen Teil des Überschusses – deshalb wird weitergeheizt, solange noch eingespeist wird,
+  und erst nach **10 Minuten Netzbezug** bzw. 10 Minuten zu teurem Strom beendet, frühestens nach **30 Minuten** Laufzeit.
+* Nach einem Ende **30 Minuten Pause**, höchstens **6 Starts pro Tag**.
+* Nichts passiert, wenn die Warmwasser-Wärmepumpe aus ist oder der Urlaubsmodus läuft. Hat jemand den Sollwert zwischendurch selbst geändert,
+  wird er am Ende nicht überschrieben. Schalter aus = sofort zurück zum vorherigen Sollwert.
 
 ## Neu in Version 0.5.0
 
@@ -138,8 +166,8 @@ Home-Assistant-Protokoll („Proxon rooms: …“).
 Raumtemperaturen: Das Wohnzimmer wird in hundertstel Grad gespeichert und lässt sich deshalb in 0,5-°C-Schritten einstellen. Die anderen Räume zeigen – wie in der
 Proxon-App – ihren eigenen Grundwert plus ihren Versatz; die Anlage speichert den Versatz nur in ganzen Grad, deshalb gehen dort nur ganze Grad.
 
-**Getestet mit Home Assistant 2026.2.3 und 2026.11.1** (jeweils gegen eine nachgebildete Anlage, nicht gegen eine echte; die Testhilfen für 2026.11 sind noch nicht
-offiziell erschienen, deshalb lief der Test dort mit einer kleinen Anpassung der Testumgebung, nicht des Programms). Ältere Versionen sind nicht geprüft.
+**Voraussetzung: Home Assistant 2026.3 oder neuer.** Die automatischen Tests laufen bei jeder Änderung mit dem aktuellen Home Assistant gegen eine
+nachgebildete Anlage; im Alltag läuft die Integration mit Home Assistant 2026.11 an einer echten Anlage.
 
 ## Welche Systeme funktionieren?
 

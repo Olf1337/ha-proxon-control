@@ -46,3 +46,19 @@ class ProxonEntity(CoordinatorEntity[ProxonCoordinator]):
     @property
     def available(self) -> bool:
         return super().available and self.value is not None
+
+
+class ProxonEnergyEntity(ProxonEntity):
+    """Entities of the hot-water energy manager (solar surplus / cheap electricity). Their values live in the manager."""
+
+    def __init__(self, coordinator, key: str, translation_key: str) -> None:
+        super().__init__(coordinator, key, translation_key)
+        self.manager = coordinator.energy
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.manager.add_entity_listener(self.async_write_ha_state))
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and self.manager.supported

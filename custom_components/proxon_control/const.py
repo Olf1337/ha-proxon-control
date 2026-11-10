@@ -10,6 +10,10 @@ CONF_DEVICE_ID = "device_id"
 CONF_PASSWORD = "password"
 CONF_HOST = "host"
 CONF_PORT = "port"
+# hot water as a store for solar surplus / cheap electricity: which sensors to use (options of the integration)
+CONF_SURPLUS_SENSOR = "surplus_sensor"
+CONF_FEED_IN_NEGATIVE = "feed_in_negative"
+CONF_PRICE_SENSOR = "price_sensor"
 CONF_TOKEN = "token"  # access key of the bridge (optional)
 
 CONNECTION_DIRECT = "direct"
