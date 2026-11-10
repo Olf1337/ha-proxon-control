@@ -4,7 +4,7 @@ from __future__ import annotations
 import xml.dom.minidom
 
 from homeassistant.core import HomeAssistant
-from homeassistant.util.yaml import parse_yaml
+from homeassistant.util.yaml import dump, parse_yaml
 
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.pictures import Room, house_svg, tank_svg, unit_svg
@@ -87,8 +87,9 @@ async def test_picture_is_only_announced_when_it_changes(hass: HomeAssistant, de
 
 async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    result = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
-    dashboard = parse_yaml(result["yaml"])
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    assert list(dashboard) == ["views"]  # the answer is the dashboard itself: paste it as it is
+    assert parse_yaml(dump(dashboard)) == dashboard
     view = dashboard["views"][0]
     assert view["type"] == "sections"
     cards = [c for s in view["sections"] for c in s["cards"]]

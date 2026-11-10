@@ -437,7 +437,7 @@
     },
     "create_dashboard": {
       "name": "Dashboard erstellen",
-      "description": "Liefert ein fertiges Dashboard als YAML: Bilder von Anlage, Warmwasser und Haus, die Raum-Thermostate und alle Funktionen, mit den tatsächlichen Entitäts-IDs dieser Anlage. Einfügen unter Dashboard → ⋮ → Bearbeiten → ⋮ → Raw-Konfigurationseditor.",
+      "description": "Liefert ein fertiges Dashboard (die ganze Antwort, beginnt mit views:): Bilder von Anlage, Warmwasser und Haus, die Raum-Thermostate und alle Funktionen, mit den tatsächlichen Entitäts-IDs dieser Anlage. Einfügen unter Dashboard → ⋮ → Bearbeiten → ⋮ → Raw-Konfigurationseditor.",
       "fields": {
         "config_entry_id": {
           "name": "Anlage",

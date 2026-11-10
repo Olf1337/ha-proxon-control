@@ -1,4 +1,4 @@
-"""Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), as YAML to paste.
+"""Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), to paste as it is.
 
 Sections view (columns side by side on wide screens, one below the other on a phone), built-in cards only:
 unit picture with ventilation, hot-water picture with hot water and boost, house picture with the room thermostats,
@@ -9,7 +9,6 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.util.yaml import dump
 
 from .const import DOMAIN
 
@@ -62,7 +61,3 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         functions.append({"type": "entities", "title": t["status"], "entities": status})
     sections = [{"type": "grid", "cards": cards} for cards in (unit, tank, house, functions) if len(cards) > 1]
     return {"views": [{"title": t["view"], "path": "proxon", "icon": "mdi:hvac", "type": "sections", "max_columns": 4, "sections": sections}]}
-
-
-def build_yaml(hass: HomeAssistant, entry: ConfigEntry) -> str:
-    return dump(build(hass, entry))

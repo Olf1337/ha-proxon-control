@@ -72,7 +72,7 @@ Die Integration zeichnet drei Bilder aus den aktuellen Werten – als Bild-Entit
   mit flackernder Flamme, wenn der Zuheizer des Raums freigegeben ist.
 
 **Dashboard einrichten (einmalig, nur eingebaute Karten):**
-1. *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion ausführen* → die Antwort (alles unter `yaml:`) kopieren.
+1. *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion ausführen* → die **ganze Antwort** kopieren (sie beginnt mit `views:`).
 2. *Einstellungen → Dashboards → Dashboard hinzufügen → Neues Dashboard von Grund auf*, öffnen → ✏️ → ⋮ → **Raw-Konfigurationseditor** → Inhalt ersetzen → Speichern.
 
 Das Dashboard enthält die tatsächlichen Entitäts-IDs deiner Anlage (auch mit Bereichs-Präfix wie `hwr_`) und nur das, was deine Anlage hat:

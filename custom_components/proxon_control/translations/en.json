@@ -437,7 +437,7 @@
     },
     "create_dashboard": {
       "name": "Create dashboard",
-      "description": "Returns a ready-made dashboard as YAML: pictures of the unit, the hot water and the house, the room thermostats and all functions, with this unit's real entity IDs. Paste it under Dashboard → ⋮ → Edit → ⋮ → Raw configuration editor.",
+      "description": "Returns a ready-made dashboard (the whole answer, starting with views:): pictures of the unit, the hot water and the house, the room thermostats and all functions, with this unit's real entity IDs. Paste it under Dashboard → ⋮ → Edit → ⋮ → Raw configuration editor.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",

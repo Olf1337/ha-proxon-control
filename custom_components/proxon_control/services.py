@@ -12,7 +12,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .coordinator import ProxonCoordinator
-from .dashboard import build_yaml
+from .dashboard import build
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
@@ -116,8 +116,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
             await _write(coordinator, writes)
 
     async def create_dashboard(call: ServiceCall) -> ServiceResponse:
-        """The ready-made dashboard as YAML, with this unit's real entity IDs."""
-        return {"yaml": build_yaml(hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY)))}
+        """The ready-made dashboard, with this unit's real entity IDs. Returned as the dashboard itself (starting with
+        `views:`), so the whole answer shown under Developer tools can be pasted into the raw configuration editor."""
+        return build(hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY)))
 
     hass.services.async_register(
         DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.ONLY
