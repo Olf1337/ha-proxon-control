@@ -1,5 +1,10 @@
 {
   "name": "Proxon Control",
   "render_readme": true,
-  "homeassistant": "2026.3.0"
+  "homeassistant": "2026.3.0",
+  "country": [
+    "DE",
+    "AT",
+    "CH"
+  ]
 }
