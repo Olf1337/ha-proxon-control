@@ -2,6 +2,7 @@
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Olf1337&repository=ha-proxon-control&category=integration)
 [![Add the add-on repository to your Home Assistant.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FOlf1337%2Fha-proxon-control)
+[![Buy me a coffee / Spendier mir einen Kaffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/olf1337)
 
 Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: operating mode, ventilation level, boost ventilation, room
 temperatures (living room in 0.5 °C steps), hot water, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
@@ -99,3 +100,9 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
   nach `/config/proxon_control/helper.log`.
 * Nach dem Aktualisieren der Dateien Home Assistant neu starten. Heruntergeladene Dateien bleiben erhalten (`/config/proxon_control/`).
   Soll alles neu geladen werden, den Unterordner `runtime` darin über den File-Editor entfernen.
+
+## Support / Unterstützen
+
+If this integration is useful to you, you can buy me a coffee. / Wenn dir die Integration gefällt, kannst du mir gerne einen Kaffee spendieren.
+
+[![Buy me a coffee via PayPal](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white&style=for-the-badge)](https://www.paypal.com/paypalme/olf1337)
