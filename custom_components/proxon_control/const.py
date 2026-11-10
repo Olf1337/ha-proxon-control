@@ -10,6 +10,7 @@ CONF_DEVICE_ID = "device_id"
 CONF_PASSWORD = "password"
 CONF_HOST = "host"
 CONF_PORT = "port"
+CONF_TOKEN = "token"  # access key of the bridge (optional)
 
 CONNECTION_DIRECT = "direct"
 CONNECTION_BRIDGE = "bridge"

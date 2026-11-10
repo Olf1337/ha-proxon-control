@@ -19,10 +19,14 @@
       },
       "bridge": {
         "title": "Proxon-Bridge-Add-on",
-        "description": "Adresse und Port des Proxon-Bridge-Add-ons (Standard: Port 8765).",
+        "description": "Adresse und Port der Proxon-Bridge (Standard-Port 8765) – das Add-on auf diesem Home Assistant oder der Bridge-Container auf einem anderen Rechner (z. B. NAS, für Home Assistant auf einem Raspberry Pi).",
         "data": {
           "host": "Adresse",
-          "port": "Port"
+          "port": "Port",
+          "token": "Zugriffsschlüssel"
+        },
+        "data_description": {
+          "token": "Nur nötig, wenn in der Bridge ein Zugriffsschlüssel gesetzt ist (Add-on-Option „token“ bzw. PROXON_TOKEN). Sonst leer lassen."
         }
       },
       "reauth_confirm": {
@@ -36,12 +40,13 @@
     "error": {
       "invalid_auth": "Device ID oder Passwort ist falsch.",
       "cannot_connect": "Die Anlage ist nicht erreichbar. Bitte Device ID und Internetverbindung prüfen.",
-      "unknown": "Unerwarteter Fehler, siehe Protokoll."
+      "unknown": "Unerwarteter Fehler, siehe Protokoll.",
+      "invalid_token": "Die Bridge hat den Zugriffsschlüssel abgelehnt. Bitte denselben Schlüssel wie in der Bridge eintragen."
     },
     "abort": {
       "already_configured": "Diese Anlage ist bereits eingerichtet.",
       "reauth_successful": "Erneut angemeldet.",
-      "unsupported_system": "Die Nabto-Verbindungsbibliothek gibt es nur für Linux auf Intel/AMD (x86-64) und für Macs mit Apple-Chip, sie lässt sich auf diesem System (z. B. Raspberry Pi) nicht verwenden. Auch das Proxon-Bridge-Add-on hilft dort nicht."
+      "unsupported_system": "Die Verbindungsbibliothek von Nabto gibt es nur für Linux auf Intel/AMD (x86-64) und für Macs mit Apple-Chip, auf diesem System (z. B. Raspberry Pi) läuft sie nicht. Lösung: die Proxon-Bridge als Docker-Container auf einem anderen x86-64-Rechner (z. B. NAS) laufen lassen und „Über das Proxon-Bridge-Add-on“ wählen – siehe README."
     }
   },
   "entity": {
@@ -136,6 +141,17 @@
       },
       "unit_clock": {
         "name": "Uhr der Anlage"
+      },
+      "response_time": {
+        "name": "Antwortzeit"
+      },
+      "connection_path": {
+        "name": "Verbindungsweg (geschätzt)",
+        "state": {
+          "local": "Heimnetz",
+          "internet": "Direkt über das Internet",
+          "relay": "Über Vermittlungsserver"
+        }
       }
     },
     "select": {
@@ -179,6 +195,9 @@
       },
       "immersion_heater": {
         "name": "E-Heizstab / Boost"
+      },
+      "holiday": {
+        "name": "Urlaubsmodus"
       }
     },
     "binary_sensor": {
@@ -190,6 +209,9 @@
       },
       "schedule_active": {
         "name": "Zeitprogramm aktiv"
+      },
+      "fault": {
+        "name": "Störung"
       }
     },
     "climate": {
@@ -262,6 +284,9 @@
     },
     "schedule_clock_unknown": {
       "message": "{day}: Die Uhr der Anlage konnte nicht gelesen werden, deshalb lassen sich Zeiten gerade nicht sicher ändern."
+    },
+    "holiday_not_ready": {
+      "message": "Urlaubsmodus: Es sind noch nicht alle aktuellen Werte von der Anlage gelesen. Bitte gleich noch einmal versuchen."
     }
   },
   "options": {
@@ -339,6 +364,16 @@
         "saturday": "Samstag",
         "sunday": "Sonntag"
       }
+    }
+  },
+  "issues": {
+    "filter_change": {
+      "title": "Proxon: Filter bald wechseln",
+      "description": "Die Filter der Anlage sind in etwa {days} Tagen fällig. Nach dem Wechsel die Filterlaufzeit an der Anlage oder in der Proxon-App zurücksetzen; dieser Hinweis verschwindet dann von selbst."
+    },
+    "unit_fault": {
+      "title": "Proxon: Die Anlage meldet eine Störung",
+      "description": "Die Anlage meldet eine Störung ({words}). Bitte das Display der Anlage oder die Proxon-App prüfen. Der Hinweis verschwindet von selbst, sobald die Störung behoben ist."
     }
   }
 }

@@ -22,6 +22,10 @@ class AuthError(ProxonError):
     """Device ID or password rejected."""
 
 
+class TokenError(ProxonError):
+    """The bridge wants another access key."""
+
+
 class WriteNotAccepted(ProxonError):
     """The unit was written to, but reports another value when read back. `values` holds what it reports."""
 
@@ -89,7 +93,8 @@ class DirectApi:
 
 
 class BridgeApi:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, token: str | None = None) -> None:
+        self._token = (token or "").strip()
         h = host.strip().rstrip("/")
         if not h.startswith(("http://", "https://")):
             h = f"http://{h}"
@@ -97,7 +102,10 @@ class BridgeApi:
 
     def _req(self, path: str, body: dict | None = None, timeout: float = 30) -> dict:
         data = json.dumps(body).encode() if body is not None else None
-        req = urllib.request.Request(self.base + path, data=data, headers={"Content-Type": "application/json"})
+        headers = {"Content-Type": "application/json"}
+        if self._token:
+            headers["Authorization"] = f"Bearer {self._token}"
+        req = urllib.request.Request(self.base + path, data=data, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - local add-on address
                 out = json.loads(resp.read().decode() or "{}")
@@ -110,6 +118,8 @@ class BridgeApi:
                 msg = str(err)
             if err.code == 401:
                 raise AuthError(msg) from err
+            if err.code == 403:  # access key of the bridge missing or wrong
+                raise TokenError(msg) from err
             if err.code == 409:  # the unit did not take over the written value
                 raise WriteNotAccepted(
                     str(body.get("key", "")), float(body.get("wanted", 0)), body.get("got"), body.get("values", {})

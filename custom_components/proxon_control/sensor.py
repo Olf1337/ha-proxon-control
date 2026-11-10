@@ -111,6 +111,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonScheduleDay(coordinator, day) for day in range(7)]
     if unit_clock(data) is not None:
         entities.append(ProxonClock(coordinator))
+    if "Antwortzeit" in data:
+        entities += [ProxonResponseTime(coordinator), ProxonConnectionPath(coordinator)]
     async_add_entities(entities)
 
 
@@ -178,3 +180,56 @@ class ProxonClock(ProxonEntity, SensorEntity):
     def native_value(self):
         clock = unit_clock(self.coordinator.data or {})
         return None if clock is None else clock.replace(tzinfo=dt_util.get_default_time_zone())
+
+
+# rough limits for guessing the connection path from the response time (Nabto doesn't report the path for these queries)
+LOCAL_MS = 15
+DIRECT_MS = 60
+
+
+def connection_path(ms: float) -> str:
+    if ms < LOCAL_MS:
+        return "local"
+    if ms < DIRECT_MS:
+        return "internet"
+    return "relay"
+
+
+class ProxonResponseTime(ProxonEntity, SensorEntity):
+    """How quickly the unit answers (the quickest query of the last read)."""
+
+    _attr_native_unit_of_measurement = UnitOfTime.MILLISECONDS
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_suggested_display_precision = 0
+    _attr_icon = "mdi:timer-sand"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "Antwortzeit", "response_time")
+
+    @property
+    def native_value(self):
+        return self.value
+
+
+class ProxonConnectionPath(ProxonEntity, SensorEntity):
+    """Estimated way the data takes: home network, directly over the internet, or through Nabto's relay server.
+    Estimated from the response time, because the Nabto library doesn't tell it for these queries."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["local", "internet", "relay"]
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:lan-connect"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "Antwortzeit", "connection_path")
+        self._attr_unique_id = f"{self._attr_unique_id}_path"
+
+    @property
+    def native_value(self) -> str | None:
+        return None if self.value is None else connection_path(float(self.value))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"response_time_ms": self.value, "estimated": True}

@@ -1,6 +1,7 @@
 # Dashboard card: the weekly ventilation schedule at a glance.
 # Dashboard -> Edit -> Add card -> Manual, paste this. The entity IDs below are the ones Home Assistant creates
 # with German as its language; with English they end in _schedule_monday etc. (see Settings -> Entities, search "Proxon").
+# If the device is assigned to an area, the area comes first, e.g. sensor.hwr_proxon_zeitprogramm_montag for the area "HWR".
 type: entities
 title: Lüftung – Wochenprogramm
 state_color: true

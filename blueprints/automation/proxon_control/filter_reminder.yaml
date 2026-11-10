@@ -1,0 +1,45 @@
+blueprint:
+  name: Proxon – Erinnerung an den Filterwechsel
+  description: >-
+    Erinnert dich, wenn die Filter der Proxon-Anlage bald gewechselt werden müssen – sobald es so weit ist und danach jeden Tag
+    zur gewählten Uhrzeit, bis der Filterwechsel erledigt ist. (Filter change reminder.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/filter_reminder.yaml
+  homeassistant:
+    min_version: "2026.2.0"
+  input:
+    filter_sensor:
+      name: Filterwechsel bald nötig
+      description: Sensor „Filterwechsel bald nötig“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              integration: proxon_control
+    reminder_time:
+      name: Tägliche Erinnerung um
+      default: "18:00:00"
+      selector:
+        time:
+    reminder:
+      name: Was soll passieren?
+      description: z. B. eine Benachrichtigung aufs Handy.
+      selector:
+        action:
+
+triggers:
+  - trigger: state
+    entity_id: !input filter_sensor
+    to: "on"
+  - trigger: time
+    at: !input reminder_time
+
+conditions:
+  - condition: state
+    entity_id: !input filter_sensor
+    state: "on"
+
+actions: !input reminder
+
+mode: single

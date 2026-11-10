@@ -1,0 +1,20 @@
+# Proxon Bridge as a plain Docker container - for Home Assistant on a Raspberry Pi (ARM), where Nabto's library doesn't exist.
+# Run it on any other always-on x86-64 machine (NAS with Intel/AMD CPU, mini PC, server):
+#   1. put this file in an empty folder, enter Device ID, password and an access key below
+#   2. docker compose up -d
+#   3. Home Assistant: Add integration -> Proxon Control -> "Through the Proxon Bridge add-on":
+#      host = address of that machine, port 8765, access key = the same key as below
+services:
+  proxon-bridge:
+    build: https://github.com/Olf1337/ha-proxon-control.git#main:proxon_bridge
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      PROXON_DEVICE_ID: "your Device ID"
+      PROXON_PASSWORD: "your password"
+      PROXON_TOKEN: "choose a long random access key"
+      PROXON_POLL_SECONDS: "10"
+    volumes:
+      - ./data:/data

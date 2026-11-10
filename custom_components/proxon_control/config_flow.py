@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.core import callback
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig, NumberSelectorMode
 
-from .api import AuthError, BridgeApi, DirectApi, ProxonError
+from .api import AuthError, BridgeApi, DirectApi, ProxonError, TokenError
 from .const import (
     CONF_CONNECTION,
     CONF_DEVICE_ID,
@@ -19,6 +19,7 @@ from .const import (
     CONF_PASSWORD,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
+    CONF_TOKEN,
     CONNECTION_BRIDGE,
     CONNECTION_DIRECT,
     DEFAULT_PORT,
@@ -64,6 +65,8 @@ class ProxonConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.hass.async_add_executor_job(api.test)
         except AuthError:
             return "invalid_auth"
+        except TokenError:
+            return "invalid_token"
         except ProxonError as err:
             _LOGGER.warning("Proxon connection test failed: %s", err)
             return "cannot_connect"
@@ -97,16 +100,23 @@ class ProxonConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             host, port = user_input[CONF_HOST].strip(), user_input[CONF_PORT]
+            token = (user_input.get(CONF_TOKEN) or "").strip()
             await self.async_set_unique_id(f"bridge-{host}-{port}".lower())
             self._abort_if_unique_id_configured()
-            err = await self._test(BridgeApi(host, port))
+            err = await self._test(BridgeApi(host, port, token))
             if err is None:
-                return self.async_create_entry(
-                    title="Proxon (Bridge)",
-                    data={CONF_CONNECTION: CONNECTION_BRIDGE, CONF_HOST: host, CONF_PORT: port},
-                )
+                data = {CONF_CONNECTION: CONNECTION_BRIDGE, CONF_HOST: host, CONF_PORT: port}
+                if token:
+                    data[CONF_TOKEN] = token
+                return self.async_create_entry(title="Proxon (Bridge)", data=data)
             errors["base"] = err
-        schema = vol.Schema({vol.Required(CONF_HOST, default="homeassistant.local"): str, vol.Required(CONF_PORT, default=DEFAULT_PORT): int})
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST, default="homeassistant.local"): str,
+                vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+                vol.Optional(CONF_TOKEN, default=""): str,
+            }
+        )
         return self.async_show_form(step_id="bridge", data_schema=self.add_suggested_values_to_schema(schema, user_input), errors=errors)
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:

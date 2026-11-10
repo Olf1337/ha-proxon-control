@@ -28,6 +28,7 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
         self.api = api
         self._rooms_logged = False
         self._schedule: dict[str, float] = {}
+        self.holiday = None  # HolidayMode, set up by __init__
         self._schedule_read_at: float | None = None
 
     async def _async_update_data(self) -> dict[str, float]:

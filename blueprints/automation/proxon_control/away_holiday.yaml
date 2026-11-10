@@ -1,0 +1,72 @@
+blueprint:
+  name: Proxon – Urlaubsmodus, wenn niemand zu Hause ist
+  description: >-
+    Schaltet den Urlaubsmodus der Proxon-Anlage ein, wenn längere Zeit niemand zu Hause ist (Lüftung Stufe 1, Räume abgesenkt,
+    Warmwasser aus), und beim ersten Heimkommen wieder aus – dabei werden die vorherigen Werte wiederhergestellt.
+    (Holiday mode while nobody is home.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/away_holiday.yaml
+  homeassistant:
+    min_version: "2026.2.0"
+  input:
+    home_zone:
+      name: Zuhause-Zone
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    away_hours:
+      name: Abwesend seit mindestens (Stunden)
+      default: 24
+      selector:
+        number:
+          min: 1
+          max: 168
+          unit_of_measurement: h
+    holiday_switch:
+      name: Urlaubsmodus
+      description: Schalter „Urlaubsmodus“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: proxon_control
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input home_zone
+    below: 1
+    for:
+      hours: !input away_hours
+    id: away
+  - trigger: numeric_state
+    entity_id: !input home_zone
+    above: 0
+    id: home
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: away
+          - condition: state
+            entity_id: !input holiday_switch
+            state: "off"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input holiday_switch
+      - conditions:
+          - condition: trigger
+            id: home
+          - condition: state
+            entity_id: !input holiday_switch
+            state: "on"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input holiday_switch
+
+mode: queued

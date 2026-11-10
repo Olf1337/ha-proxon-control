@@ -22,7 +22,7 @@ source is included.
 **Install:** HACS → three-dot menu → *Custom repositories* → `https://github.com/Olf1337/ha-proxon-control` (type *Integration*) → install → restart Home Assistant →
 *Settings → Devices & services → Add integration → Proxon Control*.
 
-Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. **Not on Raspberry Pi / ARM** (no Nabto library exists for it).
+Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. **Raspberry Pi / ARM:** Nabto's library doesn't exist there – run the Proxon Bridge as a Docker container on another x86-64 machine (e.g. a NAS) and connect through it (see below).
 
 **Upgrading to 0.3.2:** room thermostats now use the modes `auto` (unit regulates the room) and `heat` (electric heating element released) instead of `off`/`heat`; up to 20 rooms are supported.
 
@@ -30,7 +30,7 @@ Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Ap
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.4.0)
+# Proxon Control – Integration für Home Assistant (Version 0.5.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -53,7 +53,32 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Zahlen (Schieberegler) | Lüftungsstufe 1–4, Grenzwert CO₂ 400–1500 ppm (nur mit CO₂-Sensor), Grenzwert Feuchte 0–100 %, Warmwasser 20–55 °C, E-Heizstab 20–70 °C |
 | Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab |
 | Sensoren | Raumtemperaturen, Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter, Betriebsstunden, 4-Wegeventil, Firmware |
-| Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“ |
+| Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute); Filterwechsel und Störung erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
+| Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
+| Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
+
+## Neu in Version 0.5.0
+
+* **Störung und Filterwechsel als Hinweis.** Ein neuer Sensor „Störung“ wertet die Fehlerwörter der Anlage aus (bekannte harmlose Hinweis-Bits ausgenommen).
+  Störung und bald fälliger Filterwechsel erscheinen außerdem unter *Einstellungen → Reparaturen* und verschwinden von selbst wieder.
+* **Urlaubsmodus** (Schalter): wie in der Proxon-App – Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume auf ihren niedrigsten Wert (−3 °C), Wärmeelemente aus,
+  Warmwasser-Wärmepumpe aus. Die vorherigen Werte werden gespeichert (auch über einen Neustart hinweg) und beim Ausschalten wiederhergestellt: zuerst die
+  Warmwasser-Wärmepumpe, dann der E-Heizstab, dann der Rest. Die Betriebsart „Urlaub“ (5) der Anlage selbst wird bewusst nicht gesetzt – Proxon hat sie in der App
+  abgeschaltet, ihre Wirkung ist unbekannt. Das Ein- und Ausschalten kann wegen des Warmwasser-Moduls bis zu zwei Minuten dauern.
+* **Antwortzeit und Verbindungsweg** (Diagnose): wie schnell die Anlage antwortet, und daraus geschätzt, ob die Daten im Heimnetz, direkt über das Internet oder über
+  den Vermittlungsserver von Nabto laufen. Nabto verrät den Weg für diese Abfragen nicht, deshalb ist es eine Schätzung (unter 15 ms Heimnetz, unter 60 ms direkt).
+* **Raspberry Pi:** Die Proxon-Bridge läuft jetzt auch als normaler Docker-Container auf einem anderen x86-64-Rechner (z. B. NAS) – mit Zugriffsschlüssel.
+  Siehe „Raspberry Pi“ unten.
+* **Automationsvorlagen** (Blueprints) zum Importieren mit einem Klick:
+
+  | Vorlage | | |
+  |---|---|---|
+  | Intensivlüftung bei hoher Luftfeuchte (Bad, Küche) | [![Vorlage importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlf1337%2Fha-proxon-control%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fproxon_control%2Fhumidity_boost.yaml) | Schaltet die Intensivlüftung ein, wenn ein Feuchtesensor eine Weile über der Grenze liegt |
+  | Erinnerung an den Filterwechsel | [![Vorlage importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlf1337%2Fha-proxon-control%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fproxon_control%2Ffilter_reminder.yaml) | Benachrichtigung o. ä., sobald der Filterwechsel fällig ist, danach täglich |
+  | Urlaubsmodus, wenn niemand zu Hause ist | [![Vorlage importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FOlf1337%2Fha-proxon-control%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fproxon_control%2Faway_holiday.yaml) | Urlaubsmodus nach X Stunden Abwesenheit an, beim Heimkommen wieder aus |
+
+Die Adressen der Fehlerwörter und der Ablauf des Urlaubsmodus stammen – wie die Regeln des Wochenprogramms – aus dem Projekt
+[ha-lan-proxon](https://github.com/Fummy1990/ha-lan-proxon) (MIT-Lizenz), dort an einer echten Anlage ermittelt.
 
 ## Neu in Version 0.4.0: Wochenprogramm
 
@@ -146,6 +171,18 @@ Ab Home Assistant 2026.11 ist HACS fest eingebaut und heißt *Einstellungen → 
 
 **Von Hand:** Den Ordner `custom_components/proxon_control` in den Home-Assistant-Konfigurationsordner kopieren
 (z. B. über das Samba- oder File-Editor-Add-on), sodass er unter `/config/custom_components/proxon_control` liegt. Home Assistant neu starten.
+
+## Raspberry Pi: Bridge auf einem anderen Rechner
+
+Auf einem Raspberry Pi (ARM) gibt es die Nabto-Bibliothek nicht. Dann läuft die Verbindung über die Proxon-Bridge auf einem anderen, ständig laufenden
+x86-64-Rechner im Heimnetz (NAS mit Intel/AMD-Prozessor, Mini-PC, Server) mit Docker:
+
+1. [`proxon_bridge/docker-compose.yml`](proxon_bridge/docker-compose.yml) in einen leeren Ordner auf diesem Rechner legen, Device ID, Passwort und einen
+   langen, zufälligen **Zugriffsschlüssel** eintragen.
+2. `docker compose up -d` – im Log sollte „logged in to …“ erscheinen.
+3. In Home Assistant: *Integration hinzufügen → Proxon Control → „Über das Proxon-Bridge-Add-on“* – Adresse des Rechners, Port `8765` und derselbe Zugriffsschlüssel.
+
+Ohne Zugriffsschlüssel kann jeder im Heimnetz die Anlage über die Bridge steuern – deshalb bitte immer einen setzen. Das gilt auch für das Add-on (Option „token“).
 
 ## 2. Optional: Proxon-Bridge-Add-on (Alternative, nur amd64)
 

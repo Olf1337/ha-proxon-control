@@ -19,10 +19,14 @@
       },
       "bridge": {
         "title": "Proxon Bridge add-on",
-        "description": "Address and port of the Proxon Bridge add-on (port 8765 by default).",
+        "description": "Address and port of the Proxon Bridge (port 8765 by default) – the add-on on this Home Assistant, or the bridge container on another computer (e.g. a NAS, for Home Assistant on a Raspberry Pi).",
         "data": {
           "host": "Host",
-          "port": "Port"
+          "port": "Port",
+          "token": "Access key"
+        },
+        "data_description": {
+          "token": "Only if the bridge has an access key set (add-on option \"token\" or PROXON_TOKEN). Leave empty otherwise."
         }
       },
       "reauth_confirm": {
@@ -36,12 +40,13 @@
     "error": {
       "invalid_auth": "Device ID or password is wrong.",
       "cannot_connect": "Could not reach the unit. Check the Device ID and the internet connection.",
-      "unknown": "Unexpected error, see the log."
+      "unknown": "Unexpected error, see the log.",
+      "invalid_token": "The bridge rejected the access key. Enter the same key as in the bridge."
     },
     "abort": {
       "already_configured": "This unit is already set up.",
       "reauth_successful": "Logged in again.",
-      "unsupported_system": "The Nabto connection library only exists for Linux on Intel/AMD (x86-64) and for Macs with an Apple chip, so it can't be used on this system (for example a Raspberry Pi). The Proxon Bridge add-on can't help there either."
+      "unsupported_system": "Nabto's connection library only exists for Linux on Intel/AMD (x86-64) and for Macs with an Apple chip, so it can't run on this system (for example a Raspberry Pi). Run the Proxon Bridge as a Docker container on another x86-64 computer (e.g. a NAS) and choose \"Through the Proxon Bridge add-on\" – see the README."
     }
   },
   "entity": {
@@ -136,6 +141,17 @@
       },
       "unit_clock": {
         "name": "Unit clock"
+      },
+      "response_time": {
+        "name": "Response time"
+      },
+      "connection_path": {
+        "name": "Connection path (estimated)",
+        "state": {
+          "local": "Home network",
+          "internet": "Directly over the internet",
+          "relay": "Through relay server"
+        }
       }
     },
     "select": {
@@ -179,6 +195,9 @@
       },
       "immersion_heater": {
         "name": "Immersion / boost"
+      },
+      "holiday": {
+        "name": "Holiday mode"
       }
     },
     "binary_sensor": {
@@ -190,6 +209,9 @@
       },
       "schedule_active": {
         "name": "Weekly schedule active"
+      },
+      "fault": {
+        "name": "Fault"
       }
     },
     "climate": {
@@ -262,6 +284,9 @@
     },
     "schedule_clock_unknown": {
       "message": "{day}: the unit's clock couldn't be read, so times can't be changed safely right now."
+    },
+    "holiday_not_ready": {
+      "message": "Holiday mode: not all current values have been read from the unit yet. Try again in a moment."
     }
   },
   "options": {
@@ -339,6 +364,16 @@
         "saturday": "Saturday",
         "sunday": "Sunday"
       }
+    }
+  },
+  "issues": {
+    "filter_change": {
+      "title": "Proxon: change the filter soon",
+      "description": "The unit's filters are due for a change in about {days} days. After changing them, reset the filter time on the unit or in the Proxon app; this notice then disappears by itself."
+    },
+    "unit_fault": {
+      "title": "Proxon: the unit reports a fault",
+      "description": "The unit reports a fault ({words}). Check the display of the unit or the Proxon app. This notice disappears by itself once the fault is gone."
     }
   }
 }

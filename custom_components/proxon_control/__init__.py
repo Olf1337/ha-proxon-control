@@ -16,11 +16,14 @@ from .const import (
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
+    CONF_TOKEN,
     CONNECTION_BRIDGE,
     DEFAULT_PORT,
     DOMAIN,
 )
 from .coordinator import ProxonCoordinator
+from .holiday import HolidayMode
+from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
 
 PLATFORMS = [
@@ -47,7 +50,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 def make_api(hass: HomeAssistant, data: dict) -> DirectApi | BridgeApi:
     if data.get(CONF_CONNECTION) == CONNECTION_BRIDGE:
-        return BridgeApi(data[CONF_HOST], data.get(CONF_PORT, DEFAULT_PORT))
+        return BridgeApi(data[CONF_HOST], data.get(CONF_PORT, DEFAULT_PORT), data.get(CONF_TOKEN))
     return DirectApi(data[CONF_DEVICE_ID], data[CONF_PASSWORD], hass.config.path(DOMAIN))
 
 
@@ -64,8 +67,13 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bool:
     coordinator = ProxonCoordinator(hass, entry, make_api(hass, dict(entry.data)))
+    coordinator.holiday = HolidayMode(hass, coordinator, entry.entry_id)
+    await coordinator.holiday.async_load()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
+    # notices under Settings -> Repairs (filter change soon, fault of the unit)
+    update_issues(hass, entry, coordinator.data)
+    entry.async_on_unload(coordinator.async_add_listener(lambda: update_issues(hass, entry, coordinator.data)))
     _remove_legacy_room_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -74,5 +82,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
 async def async_unload_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bool:
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if ok:
+        remove_issues(hass, entry)
         await hass.async_add_executor_job(entry.runtime_data.api.close)
     return ok

@@ -39,6 +39,26 @@ def schedule_key(day: int, phase: int, field: int) -> str:
     return f"ZP{day}_{phase}_{SCHEDULE_FIELDS[field]}"
 
 
+# fault words of the unit (data points; any bit set = fault). Addresses as documented by the ha-lan-proxon project (MIT),
+# found on a real unit. Some bits are known, harmless notices and are not counted as a fault.
+FAULT_POINTS = ((0, 2), (0, 48), (0, 49), (0, 50), (0, 51), (1, 7), (2, 78), (2, 79), (2, 80), (3, 61))
+TOLERATED_FAULT_BITS = {(0, 50): 64, (2, 79): 16}
+
+
+def fault_key(point: tuple[int, int]) -> str:
+    return f"Fehlerwort{point[0]}_{point[1]}"
+
+
+def active_faults(values: dict) -> dict[str, int]:
+    """Fault words with bits set that count as a fault (key -> 16-bit word)."""
+    out = {}
+    for point in FAULT_POINTS:
+        v = values.get(fault_key(point))
+        if isinstance(v, (int, float)) and int(v) & 0xFFFF & ~TOLERATED_FAULT_BITS.get(point, 0):
+            out[fault_key(point)] = int(v) & 0xFFFF
+    return out
+
+
 FILTER_INTERVAL_MONTHS = 6
 HOURS_PER_MONTH = 24 * 30
 
@@ -98,6 +118,7 @@ def _registers() -> list[Reg]:
         *[Reg(k, True, (3, 56 + i)) for i, k in enumerate(CLOCK_KEYS)],
         # weekly ventilation schedule switched on at the unit (read only)
         Reg("ZeitprogrammAktiv", True, (5, 106), None, "bool"),
+        *[Reg(fault_key(p), False, p) for p in FAULT_POINTS],
     ]
     # room names are stored in the unit: ten 16-bit words per room (set point object 6, addresses 10n .. 10n+9)
     r.append(Reg("NBE0name", True, (6, 0), None, "text", 10))
@@ -237,14 +258,24 @@ def parse_values(regs: list[Reg], reply: dict) -> dict[str, float | str]:
 def read_all(client) -> dict[str, float | str]:
     """Read every value: two list queries for the unit, then two for the connected rooms (client: anything with invoke(query, request))."""
     out: dict[str, float | str] = {}
+    times: list[float] = []
+
+    def ask(query: str, regs: list[Reg]) -> dict:
+        t = time.monotonic()
+        reply = client.invoke(query, list_request(regs))
+        times.append(time.monotonic() - t)
+        return reply
+
     for query, regs in read_requests():
-        out.update(parse_values(regs, client.invoke(query, list_request(regs))))
+        out.update(parse_values(regs, ask(query, regs)))
     # then only the rooms the unit reports connected (up to 20), so the queries stay small
     rooms = connected_rooms(out)
     room_regs = [g for n in rooms for g in ROOM_REGISTERS[n]]
     for query, regs in read_requests(room_regs):
         if regs:
-            out.update(parse_values(regs, client.invoke(query, list_request(regs))))
+            out.update(parse_values(regs, ask(query, regs)))
+    # response time of the unit: the quickest of these queries, in milliseconds
+    out["Antwortzeit"] = round(min(times) * 1000, 1)
     # derived values the original shows
     if "NBEverbunden0" in out and "NBEverbunden1" in out:
         for n in range(1, ROOM_COUNT):

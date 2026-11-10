@@ -1,0 +1,60 @@
+blueprint:
+  name: Proxon – Intensivlüftung bei hoher Luftfeuchte
+  description: >-
+    Schaltet die Intensivlüftung der Proxon-Anlage ein, wenn die Luftfeuchte (z. B. im Bad nach dem Duschen oder in der Küche)
+    eine Weile über der Grenze liegt. Die Anlage beendet die Intensivlüftung nach ihrer eingestellten Dauer selbst.
+    (Boost ventilation on high humidity.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/humidity_boost.yaml
+  homeassistant:
+    min_version: "2026.2.0"
+  input:
+    humidity_sensor:
+      name: Luftfeuchte-Sensor
+      description: Sensor im Raum, der gelüftet werden soll.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: humidity
+    threshold:
+      name: Grenze
+      default: 70
+      selector:
+        number:
+          min: 40
+          max: 100
+          unit_of_measurement: "%"
+    delay:
+      name: Wie lange über der Grenze
+      default:
+        minutes: 2
+      selector:
+        duration:
+    boost_switch:
+      name: Intensivlüftung
+      description: Schalter „Intensivlüftung“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: proxon_control
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input humidity_sensor
+    above: !input threshold
+    for: !input delay
+
+conditions:
+  - condition: state
+    entity_id: !input boost_switch
+    state: "off"
+
+actions:
+  - action: switch.turn_on
+    target:
+      entity_id: !input boost_switch
+
+mode: single

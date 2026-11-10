@@ -1,11 +1,13 @@
 """Proxon Bridge add-on: logs in to the Proxon server (Nabto) and offers the values on port 8765.
 
 GET  /values  -> {"device_id": "...", "values": {...}, "error": null}
+With an access key set (add-on option "token" or PROXON_TOKEN), every request needs "Authorization: Bearer <key>", otherwise 403.
 POST /write   <- {"key": "Luefterstufe", "value": 3}  -> {"ok": true, "values": {…read back…}}, or 409 if the unit did not take over the value
 The Proxon Control integration reads and writes through this when it can't load the Nabto library itself.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import logging
 import os
@@ -85,8 +87,17 @@ class Bridge:
         return got
 
 
-def make_handler(bridge: Bridge):
+def make_handler(bridge: Bridge, token: str = ""):
     class Handler(BaseHTTPRequestHandler):
+        def _allowed(self) -> bool:
+            if not token:
+                return True
+            sent = self.headers.get("Authorization", "")
+            if hmac.compare_digest(sent.encode(), f"Bearer {token}".encode()):
+                return True
+            self._send(403, {"error": "Zugriffsschlüssel fehlt oder ist falsch"})
+            return False
+
         def log_message(self, fmt, *args):  # quieter log
             log.debug(fmt, *args)
 
@@ -99,6 +110,8 @@ def make_handler(bridge: Bridge):
             self.wfile.write(data)
 
         def do_GET(self):
+            if not self._allowed():
+                return
             if self.path.rstrip("/") != "/values":
                 return self._send(404, {"error": "not found"})
             if bridge.error and not bridge.values:
@@ -106,6 +119,8 @@ def make_handler(bridge: Bridge):
             self._send(200, {"device_id": bridge.device_id, "values": bridge.values, "error": bridge.error})
 
         def do_POST(self):
+            if not self._allowed():
+                return
             if self.path.rstrip("/") != "/write":
                 return self._send(404, {"error": "not found"})
             try:
@@ -126,9 +141,23 @@ def make_handler(bridge: Bridge):
     return Handler
 
 
+def load_options() -> dict:
+    """Options of the Home Assistant add-on, or - when run as a plain Docker container, e.g. on a NAS for a Raspberry Pi -
+    the environment variables PROXON_DEVICE_ID, PROXON_PASSWORD, PROXON_POLL_SECONDS and PROXON_TOKEN."""
+    if os.path.exists(OPTIONS):
+        with open(OPTIONS, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "device_id": os.environ.get("PROXON_DEVICE_ID", ""),
+        "password": os.environ.get("PROXON_PASSWORD", ""),
+        "poll_seconds": os.environ.get("PROXON_POLL_SECONDS", POLL_SECONDS),
+        "token": os.environ.get("PROXON_TOKEN", ""),
+    }
+
+
 def main() -> None:
-    with open(OPTIONS, encoding="utf-8") as f:
-        opts = json.load(f)
+    opts = load_options()
+    os.makedirs(DATA, exist_ok=True)
     if not opts.get("device_id") or not opts.get("password"):
         log.error("Bitte Device ID und Passwort in der Add-on-Konfiguration eintragen.")
     bridge = Bridge(opts.get("device_id", ""), opts.get("password", ""))
@@ -141,8 +170,9 @@ def main() -> None:
             time.sleep(poll_seconds)
 
     threading.Thread(target=loop, daemon=True).start()
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), make_handler(bridge))  # noqa: S104 - add-on port
-    log.info("Proxon Bridge listening on port %s", PORT)
+    token = str(opts.get("token") or "").strip()
+    server = ThreadingHTTPServer(("0.0.0.0", PORT), make_handler(bridge, token))  # noqa: S104 - add-on port
+    log.info("Proxon Bridge listening on port %s (%s)", PORT, "with access key" if token else "without access key")
     server.serve_forever()
 
 

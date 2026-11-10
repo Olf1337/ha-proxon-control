@@ -1,6 +1,7 @@
 """Test helpers: a simulated Proxon unit that answers like the real device (signed 16-bit values)."""
 from __future__ import annotations
 
+import time
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -80,7 +81,7 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 @pytest.fixture(autouse=True)
 def no_waiting():
     """The read-back after a write waits a moment between attempts; not in tests."""
-    with patch.object(R, "time", SimpleNamespace(sleep=lambda s: None)):
+    with patch.object(R, "time", SimpleNamespace(sleep=lambda s: None, monotonic=time.monotonic)):
         yield
 
 
