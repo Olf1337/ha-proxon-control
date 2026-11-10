@@ -6,17 +6,20 @@ from datetime import time
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .coordinator import ProxonCoordinator
+from .dashboard import build_yaml
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
 SERVICE_SET_PHASE = "set_schedule_phase"
 SERVICE_COPY_DAY = "copy_schedule_day"
+SERVICE_DASHBOARD = "create_dashboard"
+DASHBOARD_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY): cv.string})
 
 DAY_NAMES = {
     "de": ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"),
@@ -51,13 +54,17 @@ def _day_name(hass: HomeAssistant, day: int) -> str:
     return DAY_NAMES[lang][day]
 
 
-def _coordinator(hass: HomeAssistant, entry_id: str | None) -> ProxonCoordinator:
+def _entry(hass: HomeAssistant, entry_id: str | None):
     loaded = [e for e in hass.config_entries.async_entries(DOMAIN) if e.state is ConfigEntryState.LOADED]
     if entry_id:
         loaded = [e for e in loaded if e.entry_id == entry_id]
     if len(loaded) != 1:
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key="schedule_no_entry")
-    return loaded[0].runtime_data
+    return loaded[0]
+
+
+def _coordinator(hass: HomeAssistant, entry_id: str | None) -> ProxonCoordinator:
+    return _entry(hass, entry_id).runtime_data
 
 
 def _fail(hass: HomeAssistant, day: int, err: ScheduleError) -> ServiceValidationError:
@@ -108,5 +115,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         for writes in plans:
             await _write(coordinator, writes)
 
+    async def create_dashboard(call: ServiceCall) -> ServiceResponse:
+        """The ready-made dashboard as YAML, with this unit's real entity IDs."""
+        return {"yaml": build_yaml(hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY)))}
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.ONLY
+    )
     hass.services.async_register(DOMAIN, SERVICE_SET_PHASE, set_schedule_phase, schema=SET_PHASE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_COPY_DAY, copy_schedule_day, schema=COPY_DAY_SCHEMA)

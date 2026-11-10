@@ -306,6 +306,17 @@
       "hot_water": {
         "name": "Warmwasser"
       }
+    },
+    "image": {
+      "picture_unit": {
+        "name": "Bild Anlage"
+      },
+      "picture_hot_water": {
+        "name": "Bild Warmwasser"
+      },
+      "picture_house": {
+        "name": "Bild Haus"
+      }
     }
   },
   "exceptions": {
@@ -421,6 +432,16 @@
         "target_days": {
           "name": "Kopieren nach",
           "description": "Tage, die dieselben Phasen bekommen."
+        }
+      }
+    },
+    "create_dashboard": {
+      "name": "Dashboard erstellen",
+      "description": "Liefert ein fertiges Dashboard als YAML: Bilder von Anlage, Warmwasser und Haus, die Raum-Thermostate und alle Funktionen, mit den tatsächlichen Entitäts-IDs dieser Anlage. Einfügen unter Dashboard → ⋮ → Bearbeiten → ⋮ → Raw-Konfigurationseditor.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Nur nötig, wenn mehr als eine Proxon-Anlage eingerichtet ist."
         }
       }
     }

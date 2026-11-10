@@ -56,3 +56,10 @@ copy_schedule_day:
           multiple: true
           options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
           translation_key: day
+create_dashboard:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: proxon_control

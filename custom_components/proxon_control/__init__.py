@@ -37,6 +37,7 @@ PLATFORMS = [
     Platform.CLIMATE,
     Platform.FAN,
     Platform.WATER_HEATER,
+    Platform.IMAGE,
 ]
 
 type ProxonConfigEntry = ConfigEntry[ProxonCoordinator]

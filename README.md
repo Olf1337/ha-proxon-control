@@ -5,7 +5,7 @@
 [![Buy me a coffee / Spendier mir einen Kaffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/olf1337)
 
 Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: every connected room as its own thermostat, the ventilation as a fan (level 1–4, boost as preset),
-hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, **summer night cooling**, a **hot-water boost** with the immersion heater, the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
+hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, **summer night cooling**, a **hot-water boost** with the immersion heater, an **animated dashboard** (unit, hot water, house), the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
 Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
 **Works from outside your home network.** It uses the same remote access as the phone app, so no VPN or port forwarding is needed – Home Assistant and the
@@ -58,6 +58,27 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
 
 ## Neu in Version 0.6.0
+
+### Dashboard mit Bildern von Anlage, Warmwasser und Haus
+
+![Vorschau](docs/dashboard-preview.png)
+
+Die Integration zeichnet drei Bilder aus den aktuellen Werten – als Bild-Entitäten, die sich mit den Werten aktualisieren:
+
+* **Anlage:** Kreuzstrom-Wärmetauscher mit den vier Luftströmen (Außen-, Zu-, Ab-, Fortluft), Lüftern, Filter und Wärmepumpe. Die Lüfter drehen sich,
+  solange die Lüftung läuft (schneller bei höherer Stufe), die Luft strömt durch die Kanäle, der Wärmepumpen-Lüfter dreht sich, wenn der Kompressor läuft.
+* **Warmwasser:** der Speicher im Schnitt, gefüllt nach Ist- und Solltemperatur, mit Heizstab (glüht, wenn an), Wärmepumpe und Boost-Schwelle.
+* **Haus:** alle Räume, die die Anlage meldet, automatisch angeordnet – gefärbt nach Ist gegenüber Soll (blau zu kalt, grün passt, orange zu warm),
+  mit flackernder Flamme, wenn der Zuheizer des Raums freigegeben ist.
+
+**Dashboard einrichten (einmalig, nur eingebaute Karten):**
+1. *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion ausführen* → die Antwort (alles unter `yaml:`) kopieren.
+2. *Einstellungen → Dashboards → Dashboard hinzufügen → Neues Dashboard von Grund auf*, öffnen → ✏️ → ⋮ → **Raw-Konfigurationseditor** → Inhalt ersetzen → Speichern.
+
+Das Dashboard enthält die tatsächlichen Entitäts-IDs deiner Anlage (auch mit Bereichs-Präfix wie `hwr_`) und nur das, was deine Anlage hat:
+Anlage mit Lüftung und Betriebsart, Warmwasser mit Heizquelle und Boost, Haus mit allen Raum-Thermostaten, Funktionen mit Schaltern, Einstellungen und Status.
+Auf breiten Bildschirmen stehen die Bereiche nebeneinander, auf dem Handy untereinander.
+
 
 ### Warmwasser als Speicher für Solarstrom und günstigen Strom
 
