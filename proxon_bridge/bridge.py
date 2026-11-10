@@ -23,6 +23,7 @@ OPTIONS = os.environ.get("PROXON_OPTIONS", "/data/options.json")
 DATA = os.environ.get("PROXON_DATA", "/data")
 PORT = int(os.environ.get("PROXON_PORT", "8765"))
 POLL_SECONDS = 10  # default; adjustable with the add-on option "poll_seconds"
+SCHEDULE_SECONDS = 300  # the weekly schedule changes rarely: read it every 5 minutes
 
 
 class Bridge:
@@ -34,6 +35,8 @@ class Bridge:
         self.auth_failed = False
         self.client: NabtoClient | None = None
         self.lock = threading.Lock()
+        self.schedule: dict[str, float] = {}
+        self.schedule_read_at: float | None = None
 
     def _client(self) -> NabtoClient:
         if self.client is None:
@@ -56,7 +59,14 @@ class Bridge:
 
     def poll(self) -> None:
         try:
-            self.values = self._run(registers.read_all)
+            values = self._run(registers.read_all)
+            if self.schedule_read_at is None or time.monotonic() - self.schedule_read_at >= SCHEDULE_SECONDS:
+                try:
+                    self.schedule = self._run(registers.read_schedule)
+                    self.schedule_read_at = time.monotonic()
+                except NabtoError as err:
+                    log.warning("reading the weekly schedule failed: %s", err)
+            self.values = {**values, **self.schedule}
             self.error = None
             self.auth_failed = False
         except NabtoError as err:
@@ -71,6 +81,7 @@ class Bridge:
             self.values.update(err.values)
             raise
         self.values.update(got)
+        self.schedule.update({k: v for k, v in got.items() if k in registers.SCHEDULE_KEYS})
         return got
 
 

@@ -1,0 +1,58 @@
+set_schedule_phase:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: proxon_control
+    day:
+      required: true
+      selector:
+        select:
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: day
+    phase:
+      required: true
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    start:
+      required: false
+      selector:
+        time:
+    end:
+      required: false
+      selector:
+        time:
+    level:
+      required: true
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: slider
+copy_schedule_day:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: proxon_control
+    source_day:
+      required: true
+      default: monday
+      selector:
+        select:
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: day
+    target_days:
+      required: true
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: day

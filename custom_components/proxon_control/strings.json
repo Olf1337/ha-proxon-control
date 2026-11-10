@@ -112,6 +112,30 @@
           "heating": "Heating",
           "cooling": "Cooling"
         }
+      },
+      "schedule_monday": {
+        "name": "Schedule Monday"
+      },
+      "schedule_tuesday": {
+        "name": "Schedule Tuesday"
+      },
+      "schedule_wednesday": {
+        "name": "Schedule Wednesday"
+      },
+      "schedule_thursday": {
+        "name": "Schedule Thursday"
+      },
+      "schedule_friday": {
+        "name": "Schedule Friday"
+      },
+      "schedule_saturday": {
+        "name": "Schedule Saturday"
+      },
+      "schedule_sunday": {
+        "name": "Schedule Sunday"
+      },
+      "unit_clock": {
+        "name": "Unit clock"
       }
     },
     "select": {
@@ -163,6 +187,9 @@
       },
       "compressor": {
         "name": "Compressor"
+      },
+      "schedule_active": {
+        "name": "Weekly schedule active"
       }
     },
     "climate": {
@@ -208,6 +235,33 @@
     },
     "water_limit": {
       "message": "The hot water can only be set between {low} and {high} °C."
+    },
+    "schedule_no_entry": {
+      "message": "Choose which Proxon unit to use (Proxon Control must be set up and loaded)."
+    },
+    "schedule_not_loaded": {
+      "message": "The weekly schedule hasn't been read from the unit yet. Try again in a moment."
+    },
+    "schedule_invalid_time": {
+      "message": "{day}: phase {phase} has an invalid time."
+    },
+    "schedule_end_before_start": {
+      "message": "{day}: phase {phase} must end after it starts ({start}–{end}). Phases across midnight aren't possible."
+    },
+    "schedule_overlap": {
+      "message": "{day}: the phases {first} and {second} overlap or touch. Leave at least one minute between them."
+    },
+    "schedule_running": {
+      "message": "{day}: phase {phase} ({start}–{end}) is running right now. Only its level (1–4) can be changed until it ends."
+    },
+    "schedule_running_margin": {
+      "message": "{day}: phase {phase} is running and starts or ends within 10 minutes. Change it later."
+    },
+    "schedule_too_soon": {
+      "message": "{day}: times can only be changed for phases that start at least 2 hours from now (by the unit's clock). Phase {phase} starts sooner."
+    },
+    "schedule_clock_unknown": {
+      "message": "{day}: the unit's clock couldn't be read, so times can't be changed safely right now."
     }
   },
   "options": {
@@ -221,6 +275,69 @@
         "data_description": {
           "scan_interval": "Between 5 and 3600 seconds. Default: 10."
         }
+      }
+    }
+  },
+  "services": {
+    "set_schedule_phase": {
+      "name": "Set schedule phase",
+      "description": "Changes one phase of the unit's weekly ventilation schedule. The unit's rules are checked first: no overlaps, running phases only change their level, times only for phases starting at least 2 hours from now.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Unit",
+          "description": "Only needed if more than one Proxon unit is set up."
+        },
+        "day": {
+          "name": "Day",
+          "description": "Day of the week."
+        },
+        "phase": {
+          "name": "Phase",
+          "description": "Phase 1, 2 or 3 of the day."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Start time (leave empty to keep it)."
+        },
+        "end": {
+          "name": "End",
+          "description": "End time (leave empty to keep it). Must be after the start."
+        },
+        "level": {
+          "name": "Ventilation level",
+          "description": "1–4, or 0 to switch the phase off."
+        }
+      }
+    },
+    "copy_schedule_day": {
+      "name": "Copy schedule day",
+      "description": "Copies the phases of one day to other days (e.g. Monday to Tuesday–Friday). All days are checked first; nothing is written if one of them can't take the copy.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Unit",
+          "description": "Only needed if more than one Proxon unit is set up."
+        },
+        "source_day": {
+          "name": "Copy from",
+          "description": "Day whose phases are copied."
+        },
+        "target_days": {
+          "name": "Copy to",
+          "description": "Days that get the same phases."
+        }
+      }
+    }
+  },
+  "selector": {
+    "day": {
+      "options": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
       }
     }
   }

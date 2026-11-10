@@ -1,0 +1,36 @@
+# Dashboard card: the weekly ventilation schedule at a glance.
+# Dashboard -> Edit -> Add card -> Manual, paste this. The entity IDs below are the ones Home Assistant creates
+# with German as its language; with English they end in _schedule_monday etc. (see Settings -> Entities, search "Proxon").
+type: entities
+title: Lüftung – Wochenprogramm
+state_color: true
+entities:
+  - entity: binary_sensor.proxon_zeitprogramm_aktiv
+    name: Programm aktiv
+  - entity: sensor.proxon_zeitprogramm_montag
+    name: Montag
+  - entity: sensor.proxon_zeitprogramm_dienstag
+    name: Dienstag
+  - entity: sensor.proxon_zeitprogramm_mittwoch
+    name: Mittwoch
+  - entity: sensor.proxon_zeitprogramm_donnerstag
+    name: Donnerstag
+  - entity: sensor.proxon_zeitprogramm_freitag
+    name: Freitag
+  - entity: sensor.proxon_zeitprogramm_samstag
+    name: Samstag
+  - entity: sensor.proxon_zeitprogramm_sonntag
+    name: Sonntag
+  - type: divider
+  - type: button
+    name: Montag auf Di–Fr kopieren
+    icon: mdi:content-copy
+    action_name: Kopieren
+    tap_action:
+      action: perform-action
+      perform_action: proxon_control.copy_schedule_day
+      data:
+        source_day: monday
+        target_days: [tuesday, wednesday, thursday, friday]
+      confirmation:
+        text: Montag auf Dienstag bis Freitag kopieren?

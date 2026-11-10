@@ -77,3 +77,11 @@ def test_bridge_reports_a_value_the_unit_does_not_take(bridge_api, device) -> No
         bridge_api.write("Luefterstufe", 4)
     assert (err.value.key, err.value.wanted, err.value.got) == ("Luefterstufe", 4.0, 2.0)
     assert err.value.values == {"Luefterstufe": 2.0}
+
+
+def test_bridge_includes_the_weekly_schedule(bridge_api, device) -> None:
+    values = bridge_api.read()
+    assert values["ZP1_0_start_h"] == 6.0 and values["ZP1_1_level"] == 3.0
+    assert bridge_api.read_schedule() == {}  # the add-on reads the schedule itself and includes it in /values
+    bridge_api.write("ZP1_0_level", 4)
+    assert bridge_api.read()["ZP1_0_level"] == 4.0  # written schedule values stay in the add-on's copy

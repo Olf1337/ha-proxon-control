@@ -112,6 +112,30 @@
           "heating": "Heizen",
           "cooling": "Kühlen"
         }
+      },
+      "schedule_monday": {
+        "name": "Zeitprogramm Montag"
+      },
+      "schedule_tuesday": {
+        "name": "Zeitprogramm Dienstag"
+      },
+      "schedule_wednesday": {
+        "name": "Zeitprogramm Mittwoch"
+      },
+      "schedule_thursday": {
+        "name": "Zeitprogramm Donnerstag"
+      },
+      "schedule_friday": {
+        "name": "Zeitprogramm Freitag"
+      },
+      "schedule_saturday": {
+        "name": "Zeitprogramm Samstag"
+      },
+      "schedule_sunday": {
+        "name": "Zeitprogramm Sonntag"
+      },
+      "unit_clock": {
+        "name": "Uhr der Anlage"
       }
     },
     "select": {
@@ -163,6 +187,9 @@
       },
       "compressor": {
         "name": "Kompressor"
+      },
+      "schedule_active": {
+        "name": "Zeitprogramm aktiv"
       }
     },
     "climate": {
@@ -208,6 +235,33 @@
     },
     "water_limit": {
       "message": "Warmwasser lässt sich nur zwischen {low} und {high} °C einstellen."
+    },
+    "schedule_no_entry": {
+      "message": "Bitte die Proxon-Anlage auswählen (Proxon Control muss eingerichtet und geladen sein)."
+    },
+    "schedule_not_loaded": {
+      "message": "Das Zeitprogramm wurde noch nicht von der Anlage gelesen. Bitte gleich noch einmal versuchen."
+    },
+    "schedule_invalid_time": {
+      "message": "{day}: Phase {phase} hat eine ungültige Uhrzeit."
+    },
+    "schedule_end_before_start": {
+      "message": "{day}: Phase {phase} muss nach ihrem Beginn enden ({start}–{end}). Phasen über Mitternacht gehen nicht."
+    },
+    "schedule_overlap": {
+      "message": "{day}: Die Phasen {first} und {second} überschneiden sich oder stoßen aneinander. Dazwischen muss mindestens eine Minute liegen."
+    },
+    "schedule_running": {
+      "message": "{day}: Phase {phase} ({start}–{end}) läuft gerade. Bis sie endet, lässt sich nur ihre Stufe (1–4) ändern."
+    },
+    "schedule_running_margin": {
+      "message": "{day}: Phase {phase} läuft und beginnt oder endet in weniger als 10 Minuten. Bitte später ändern."
+    },
+    "schedule_too_soon": {
+      "message": "{day}: Zeiten lassen sich nur für Phasen ändern, die frühestens in 2 Stunden beginnen (nach der Uhr der Anlage). Phase {phase} beginnt früher."
+    },
+    "schedule_clock_unknown": {
+      "message": "{day}: Die Uhr der Anlage konnte nicht gelesen werden, deshalb lassen sich Zeiten gerade nicht sicher ändern."
     }
   },
   "options": {
@@ -221,6 +275,69 @@
         "data_description": {
           "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10."
         }
+      }
+    }
+  },
+  "services": {
+    "set_schedule_phase": {
+      "name": "Zeitprogramm-Phase setzen",
+      "description": "Ändert eine Phase des Lüftungs-Wochenprogramms der Anlage. Vorher werden die Regeln der Anlage geprüft: keine Überschneidungen, laufende Phasen nur in der Stufe, Zeiten nur für Phasen, die frühestens in 2 Stunden beginnen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Nur nötig, wenn mehr als eine Proxon-Anlage eingerichtet ist."
+        },
+        "day": {
+          "name": "Tag",
+          "description": "Wochentag."
+        },
+        "phase": {
+          "name": "Phase",
+          "description": "Phase 1, 2 oder 3 des Tages."
+        },
+        "start": {
+          "name": "Beginn",
+          "description": "Startzeit (leer lassen = unverändert)."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Endzeit (leer lassen = unverändert). Muss nach dem Beginn liegen."
+        },
+        "level": {
+          "name": "Lüftungsstufe",
+          "description": "1–4, oder 0 = Phase aus."
+        }
+      }
+    },
+    "copy_schedule_day": {
+      "name": "Zeitprogramm-Tag kopieren",
+      "description": "Kopiert die Phasen eines Tages auf andere Tage (z. B. Montag auf Dienstag–Freitag). Alle Tage werden vorher geprüft; geht es bei einem nicht, wird nichts geschrieben.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Nur nötig, wenn mehr als eine Proxon-Anlage eingerichtet ist."
+        },
+        "source_day": {
+          "name": "Kopieren von",
+          "description": "Tag, dessen Phasen kopiert werden."
+        },
+        "target_days": {
+          "name": "Kopieren nach",
+          "description": "Tage, die dieselben Phasen bekommen."
+        }
+      }
+    }
+  },
+  "selector": {
+    "day": {
+      "options": {
+        "monday": "Montag",
+        "tuesday": "Dienstag",
+        "wednesday": "Mittwoch",
+        "thursday": "Donnerstag",
+        "friday": "Freitag",
+        "saturday": "Samstag",
+        "sunday": "Sonntag"
       }
     }
   }

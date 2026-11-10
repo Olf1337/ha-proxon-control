@@ -20,6 +20,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonFilterWarning(coordinator))
     if "DrehzahlKompressor" in data:
         entities.append(ProxonCompressor(coordinator))
+    if "ZeitprogrammAktiv" in data:
+        entities.append(ProxonScheduleActive(coordinator))
     async_add_entities(entities)
 
 
@@ -46,3 +48,16 @@ class ProxonCompressor(ProxonEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         return None if self.value is None else self.value > 0
+
+
+class ProxonScheduleActive(ProxonEntity, BinarySensorEntity):
+    """Whether the weekly ventilation schedule is switched on at the unit (can only be changed at the unit or in the app)."""
+
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "ZeitprogrammAktiv", "schedule_active")
+
+    @property
+    def is_on(self) -> bool | None:
+        return None if self.value is None else bool(self.value)

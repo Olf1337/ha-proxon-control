@@ -6,7 +6,8 @@ import re
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.helpers.typing import ConfigType
 
 from .api import BridgeApi, DirectApi
 from .const import (
@@ -20,6 +21,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import ProxonCoordinator
+from .services import async_setup_services
 
 PLATFORMS = [
     Platform.SENSOR,
@@ -33,6 +35,14 @@ PLATFORMS = [
 ]
 
 type ProxonConfigEntry = ConfigEntry[ProxonCoordinator]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Actions for the weekly ventilation schedule (registered once, for all units)."""
+    async_setup_services(hass)
+    return True
 
 
 def make_api(hass: HomeAssistant, data: dict) -> DirectApi | BridgeApi:

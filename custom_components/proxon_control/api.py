@@ -71,6 +71,9 @@ class DirectApi:
     def read(self) -> dict[str, float]:
         return self._call(registers.read_all)
 
+    def read_schedule(self) -> dict[str, float]:
+        return self._call(registers.read_schedule)
+
     def write(self, key: str, value: float) -> dict:
         """Write and read back; returns the values the unit reports afterwards."""
         try:
@@ -121,6 +124,10 @@ class BridgeApi:
 
     def read(self) -> dict[str, float]:
         return {k: (v if isinstance(v, str) else float(v)) for k, v in self._req("/values").get("values", {}).items()}
+
+    def read_schedule(self) -> dict[str, float]:
+        """The add-on reads the weekly schedule itself (every few minutes) and includes it in /values."""
+        return {}
 
     def write(self, key: str, value: float) -> dict:
         """The add-on writes and reads back; returns the values the unit reports afterwards."""

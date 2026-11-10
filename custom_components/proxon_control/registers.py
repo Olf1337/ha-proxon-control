@@ -23,6 +23,22 @@ MODE_KEYS = {MODE_OFF: "off", MODE_SUMMER: "summer", MODE_WINTER: "winter", MODE
 # the original's mode menu offers these (holiday is only shown)
 MODE_CHOICES = [MODE_COMFORT, MODE_WINTER, MODE_SUMMER, MODE_OFF]
 
+# clock of the unit: summer time flag, minute, hour, ISO weekday (1 = Monday), day, month, year (two digits)
+CLOCK_KEYS = ("UhrSommerzeit", "UhrMinute", "UhrStunde", "UhrWochentag", "UhrTag", "UhrMonat", "UhrJahr")
+
+# weekly ventilation schedule
+SCHEDULE_PHASES = 3
+SCHEDULE_FIELDS = ("start_h", "start_m", "end_h", "end_m", "level")  # level 0 = phase not active, 1..4
+
+
+def schedule_index(day: int, phase: int, field: int) -> int:
+    return 15 * day + 5 * phase + field
+
+
+def schedule_key(day: int, phase: int, field: int) -> str:
+    return f"ZP{day}_{phase}_{SCHEDULE_FIELDS[field]}"
+
+
 FILTER_INTERVAL_MONTHS = 6
 HOURS_PER_MONTH = 24 * 30
 
@@ -78,6 +94,10 @@ def _registers() -> list[Reg]:
         Reg("T300VorVerdampfer", False, (3, 11), None, "t300"),
         Reg("T300Verdampfer", False, (3, 12), None, "t300"),
         Reg("T300Kompressor", False, (3, 15), None, "t300"),
+        # clock of the unit (set point object 3): needed for the rules of the weekly schedule
+        *[Reg(k, True, (3, 56 + i)) for i, k in enumerate(CLOCK_KEYS)],
+        # weekly ventilation schedule switched on at the unit (read only)
+        Reg("ZeitprogrammAktiv", True, (5, 106), None, "bool"),
     ]
     # room names are stored in the unit: ten 16-bit words per room (set point object 6, addresses 10n .. 10n+9)
     r.append(Reg("NBE0name", True, (6, 0), None, "text", 10))
@@ -98,11 +118,22 @@ def _room_registers(n: int) -> list[Reg]:
     ]
 
 
-REGISTERS: list[Reg] = _registers()
+def _schedule_registers() -> list[Reg]:
+    """Weekly ventilation schedule: 7 days x 3 phases x 5 fields, field k = 15*day + 5*phase + f.
+    Read from set point object 5 address 1+k, written to object 0 address 1026+2k (same as the original app)."""
+    return [
+        Reg(schedule_key(d, p, f), True, (5, 1 + schedule_index(d, p, f)), (0, 1026 + 2 * schedule_index(d, p, f)))
+        for d in range(7) for p in range(SCHEDULE_PHASES) for f in range(len(SCHEDULE_FIELDS))
+    ]
+
+
+REGISTERS: list[Reg] = _registers() + _schedule_registers()
 BY_KEY: dict[str, Reg] = {g.key: g for g in REGISTERS}
 ROOM_REGISTERS: dict[int, list[Reg]] = {n: _room_registers(n) for n in range(1, ROOM_COUNT)}
 _ROOM_KEYS = {g.key for regs in ROOM_REGISTERS.values() for g in regs}
-BASE_REGISTERS: list[Reg] = [g for g in REGISTERS if g.key not in _ROOM_KEYS]
+SCHEDULE_REGISTERS: list[Reg] = _schedule_registers()
+SCHEDULE_KEYS = frozenset(g.key for g in SCHEDULE_REGISTERS)
+BASE_REGISTERS: list[Reg] = [g for g in REGISTERS if g.key not in _ROOM_KEYS and g.key not in SCHEDULE_KEYS]
 
 
 def decode(conv: str, raw: float) -> float | None:
@@ -271,6 +302,11 @@ SLOW_WRITE_SECONDS: dict[str, float] = {
     "Soll-E-Heizstab-Temperatur": 60,
     "T300Betriebsart": 90,
 }
+# the unit takes a few seconds to take over schedule fields
+SLOW_WRITE_SECONDS.update({
+    f"ZP{d}_{p}_{name}": 10
+    for d in range(7) for p in range(SCHEDULE_PHASES) for name in SCHEDULE_FIELDS
+})
 SLOW_READ_INTERVAL = 2.0
 
 
@@ -302,6 +338,15 @@ def write_and_verify(
             sleep(delay)
     have = got.get(key)
     raise WriteMismatch(key, want, have if isinstance(have, (int, float)) else None, got)
+
+
+def read_schedule(client) -> dict[str, float | str]:
+    """Read the weekly schedule (105 values, in two queries). It changes rarely, so it is not part of every query."""
+    out: dict[str, float | str] = {}
+    for start in range(0, len(SCHEDULE_REGISTERS), 60):
+        regs = SCHEDULE_REGISTERS[start:start + 60]
+        out.update(parse_values(regs, client.invoke(QUERY_SET_READ, list_request(regs))))
+    return out
 
 
 def room_name_from_unit(values: dict, i: int) -> str | None:

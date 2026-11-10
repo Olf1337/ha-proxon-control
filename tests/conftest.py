@@ -22,6 +22,15 @@ RAW_DEFAULT = {
     "NBE1OffsetTemperatur": 2, "NBE1MittelTemperatur": 20, "NBE1PTC": 1, "NBE1Temperatur": 210, "NBE1Status": 1,
     "NBE4OffsetTemperatur": -1, "NBE4MittelTemperatur": 20, "NBE4PTC": 1, "NBE4Temperatur": 190, "NBE4Status": 0,
 }
+# unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on
+RAW_DEFAULT.update({"UhrSommerzeit": 0, "UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26,
+                    "ZeitprogrammAktiv": 1})
+# weekly schedule, every day: 06:00-08:00 level 2, 17:00-22:00 level 3, third phase off
+for _d in range(7):
+    for _p, _fields in enumerate(((6, 0, 8, 0, 2), (17, 0, 22, 0, 3), (0, 0, 0, 0, 0))):
+        for _f, _v in enumerate(_fields):
+            RAW_DEFAULT[R.schedule_key(_d, _p, _f)] = _v
+
 
 
 class FakeDevice:
