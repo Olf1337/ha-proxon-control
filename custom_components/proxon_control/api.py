@@ -22,6 +22,14 @@ class AuthError(ProxonError):
     """Device ID or password rejected."""
 
 
+class WriteNotAccepted(ProxonError):
+    """The unit was written to, but reports another value when read back. `values` holds what it reports."""
+
+    def __init__(self, key: str, wanted: float, got: float | None, values: dict) -> None:
+        super().__init__(f"{key}: wanted {wanted}, the unit reports {got}")
+        self.key, self.wanted, self.got, self.values = key, wanted, got, values
+
+
 class DirectApi:
     def __init__(self, device_id: str, password: str, storage_dir: str) -> None:
         self.device_id = device_id.strip()
@@ -63,8 +71,12 @@ class DirectApi:
     def read(self) -> dict[str, float]:
         return self._call(registers.read_all)
 
-    def write(self, key: str, value: float) -> None:
-        self._call(lambda c: registers.write_value(c, key, value))
+    def write(self, key: str, value: float) -> dict:
+        """Write and read back; returns the values the unit reports afterwards."""
+        try:
+            return self._call(lambda c: registers.write_and_verify(c, key, value))
+        except registers.WriteMismatch as err:
+            raise WriteNotAccepted(key, err.wanted, err.got, err.values) from err
 
     def close(self) -> None:
         with self._lock:
@@ -87,12 +99,18 @@ class BridgeApi:
             with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 - local add-on address
                 out = json.loads(resp.read().decode() or "{}")
         except urllib.error.HTTPError as err:
+            body: dict = {}
             try:
-                msg = json.loads(err.read().decode()).get("error", str(err))
+                body = json.loads(err.read().decode())
+                msg = body.get("error", str(err))
             except ValueError:
                 msg = str(err)
             if err.code == 401:
                 raise AuthError(msg) from err
+            if err.code == 409:  # the unit did not take over the written value
+                raise WriteNotAccepted(
+                    str(body.get("key", "")), float(body.get("wanted", 0)), body.get("got"), body.get("values", {})
+                ) from err
             raise ProxonError(msg) from err
         except (urllib.error.URLError, OSError, ValueError) as err:
             raise ProxonError(f"Bridge nicht erreichbar: {err}") from err
@@ -104,8 +122,9 @@ class BridgeApi:
     def read(self) -> dict[str, float]:
         return {k: (v if isinstance(v, str) else float(v)) for k, v in self._req("/values").get("values", {}).items()}
 
-    def write(self, key: str, value: float) -> None:
-        self._req("/write", {"key": key, "value": value})
+    def write(self, key: str, value: float) -> dict:
+        """The add-on writes and reads back; returns the values the unit reports afterwards."""
+        return self._req("/write", {"key": key, "value": value}).get("values", {})
 
     def close(self) -> None:
         pass

@@ -4,6 +4,8 @@ No Home Assistant imports: the bridge add-on uses this file too.
 """
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 
 QUERY_SET_READ = "setpointReadListValue"
@@ -55,6 +57,7 @@ def _registers() -> list[Reg]:
         Reg("NBEverbunden0", True, (1, 0)),
         Reg("NBEverbunden1", True, (1, 1)),
         Reg("NBE0Temperatur", False, (1, 113), None, "div100"),
+        Reg("NBE0Status", False, (2, 4), None, "bool"),  # room is heating right now
         Reg("T1Zuluft", False, (1, 45), None, "div100"),
         Reg("T3Frischluft", False, (1, 48), None, "div100"),
         Reg("T4Fortluft", False, (1, 47), None, "div100"),
@@ -81,6 +84,7 @@ def _registers() -> list[Reg]:
             Reg(f"NBE{n}MittelTemperatur", True, (1, 22 + n), (0, 474 + 2 * n)),
             Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
             Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
+            Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
         ]
     return r
 
@@ -196,6 +200,59 @@ def read_all(client) -> dict[str, float | str]:
 
 def write_value(client, key: str, value: float) -> None:
     client.invoke(QUERY_WRITE, write_request(key, value))
+
+
+# ---- writing with read-back ----
+# A write is only reported as done when the unit really holds the new value afterwards.
+
+# values that change together with the written one and are read back as well
+RELATED_KEYS: dict[str, list[str]] = {"Intensivlueftung": ["IntensivlueftungsRestDauer", "IntensivlueftungsDauer"]}
+
+
+class WriteMismatch(Exception):
+    """The unit did not take over the written value. `values` holds what it reports instead."""
+
+    def __init__(self, key: str, wanted: float, got: float | None, values: dict) -> None:
+        super().__init__(f"{key}: wanted {wanted}, the unit reports {got}")
+        self.key, self.wanted, self.got, self.values = key, wanted, got, values
+
+
+def expected_value(key: str, value: float) -> float:
+    """What the unit will report after `value` was written (the value is rounded to the unit's resolution)."""
+    g = BY_KEY[key]
+    raw = encode(g.conv, value)
+    if raw >= 32768:  # the unit answers with signed 16-bit numbers
+        raw -= 65536
+    out = decode(g.conv, raw)
+    return float(out if out is not None else value)
+
+
+def read_keys(client, keys: list[str]) -> dict[str, float | str]:
+    """Read just these values."""
+    regs = [BY_KEY[k] for k in dict.fromkeys(keys)]
+    out: dict[str, float | str] = {}
+    for query, group in ((QUERY_SET_READ, [g for g in regs if g.set_point]), (QUERY_DATA_READ, [g for g in regs if not g.set_point])):
+        if group:
+            out.update(parse_values(group, client.invoke(query, list_request(group))))
+    return out
+
+
+def write_and_verify(client, key: str, value: float, *, attempts: int = 3, delay: float = 0.6, sleep: Callable[[float], None] | None = None) -> dict[str, float | str]:
+    """Write, then read the value back (a few times, the unit may need a moment). Returns the values read back;
+    raises WriteMismatch if the unit still holds something else."""
+    sleep = sleep or time.sleep
+    write_value(client, key, value)
+    want = expected_value(key, value)
+    got: dict[str, float | str] = {}
+    for i in range(attempts):
+        got = read_keys(client, [key, *RELATED_KEYS.get(key, [])])
+        have = got.get(key)
+        if isinstance(have, (int, float)) and abs(have - want) < 0.006:
+            return got
+        if i < attempts - 1:
+            sleep(delay)
+    have = got.get(key)
+    raise WriteMismatch(key, want, have if isinstance(have, (int, float)) else None, got)
 
 
 def room_name_from_unit(values: dict, i: int) -> str | None:

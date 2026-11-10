@@ -1,4 +1,4 @@
-"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater, room heating elements."""
+"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater. (Room heating elements are part of the room thermostats.)"""
 from __future__ import annotations
 
 from typing import Any
@@ -8,15 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity, room_name
-from .registers import ROOM_COUNT, room_connected
+from .entity import ProxonEntity
 
 SWITCHES: list[tuple[str, str, str, int | None]] = [
     ("Intensivlueftung", "boost", "mdi:fan-plus", None),
     ("GlobalKuehlungFreigabe", "cooling", "mdi:snowflake", None),
     ("T300Betriebsart", "water_heat_pump", "mdi:water-boiler", None),
     ("E-Heizstab", "immersion_heater", "mdi:heating-coil", None),
-    *[(f"NBE{i}PTC", "room_heater", "mdi:radiator", i) for i in range(ROOM_COUNT)],
 ]
 
 
@@ -26,13 +24,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     async_add_entities(
         ProxonSwitch(coordinator, key, tk, icon, room)
         for key, tk, icon, room in SWITCHES
-        if key in data and (room is None or room_connected(data, room))
+        if key in data
     )
 
 
 class ProxonSwitch(ProxonEntity, SwitchEntity):
     def __init__(self, coordinator, key: str, tk: str, icon: str, room: int | None) -> None:
-        super().__init__(coordinator, key, tk, {"room": room_name(room, coordinator.data)} if room is not None else None)
+        super().__init__(coordinator, key, tk)
         self._attr_icon = icon
 
     @property

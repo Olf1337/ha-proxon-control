@@ -461,6 +461,12 @@ class HelperClient:
             return False
         finally:
             proc.kill()
+            for pipe in (proc.stdin, proc.stdout):
+                try:
+                    if pipe:
+                        pipe.close()
+                except OSError:
+                    pass
             proc.wait()
 
     # -- process handling --

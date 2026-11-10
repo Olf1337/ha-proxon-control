@@ -1,8 +1,6 @@
 """Constants for the Proxon Control integration."""
 from __future__ import annotations
 
-from datetime import timedelta
-
 DOMAIN = "proxon_control"
 MANUFACTURER = "Proxon"
 MODEL = "Frischluft-Wärmetechnik"
@@ -17,6 +15,10 @@ CONNECTION_DIRECT = "direct"
 CONNECTION_BRIDGE = "bridge"
 
 DEFAULT_PORT = 8765
-SCAN_INTERVAL = timedelta(seconds=10)
+# how often the unit is asked for its values (seconds); adjustable under "Configure" of the integration
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 10
+MIN_SCAN_INTERVAL = 5
+MAX_SCAN_INTERVAL = 3600
 
 DEFAULT_ROOM_NAMES = ["Wohnzimmer", "Schlafzimmer", "Kinderzimmer", "Küche", "Bad"]

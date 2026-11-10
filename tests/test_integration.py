@@ -1,16 +1,18 @@
 """Setup dialog, entities and controls of the Proxon Control integration inside Home Assistant."""
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.proxon_control.api import AuthError
@@ -19,8 +21,12 @@ from custom_components.proxon_control.const import DOMAIN
 DATA = {"connection": "direct", "device_id": "abc123", "password": "secret"}
 
 
-async def setup(hass: HomeAssistant) -> MockConfigEntry:
-    entry = MockConfigEntry(domain=DOMAIN, data=DATA, unique_id="abc123", title="Proxon abc123")
+def make_entry() -> MockConfigEntry:
+    return MockConfigEntry(domain=DOMAIN, data=DATA, unique_id="abc123", title="Proxon abc123")
+
+
+async def setup(hass: HomeAssistant, entry: MockConfigEntry | None = None) -> MockConfigEntry:
+    entry = entry or make_entry()
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -33,6 +39,15 @@ def eid(hass: HomeAssistant, platform: str, key: str) -> str:
     return ent
 
 
+def no_entity(hass: HomeAssistant, platform: str, key: str) -> bool:
+    return er.async_get(hass).async_get_entity_id(platform, DOMAIN, f"abc123_{key}") is None
+
+
+async def call(hass: HomeAssistant, domain: str, service: str, **data) -> None:
+    await hass.services.async_call(domain, service, data, blocking=True)
+
+
+# ---------------- setup dialog ----------------
 async def test_login_dialog(hass: HomeAssistant, device) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert result["type"] is FlowResultType.MENU
@@ -59,6 +74,70 @@ async def test_unsupported_system_points_to_addon(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "unsupported_system"
 
 
+async def test_bridge_dialog(hass: HomeAssistant, device) -> None:
+    with patch("custom_components.proxon_control.api.BridgeApi.test", return_value={}):
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"next_step_id": "bridge"})
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"host": "homeassistant.local", "port": 8765})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {"connection": "bridge", "host": "homeassistant.local", "port": 8765}
+
+
+async def test_reauth_updates_the_password(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    result = await entry.start_reauth_flow(hass)
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "reauth_confirm"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"password": "new-secret"})
+    assert result["type"] is FlowResultType.ABORT and result["reason"] == "reauth_successful"
+    assert entry.data["password"] == "new-secret"
+
+
+async def test_wrong_login_starts_reauth(hass: HomeAssistant, device) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    with patch("custom_components.proxon_control.api.DirectApi.read", side_effect=AuthError("bad")):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert any(f["context"]["source"] == "reauth" for f in hass.config_entries.flow.async_progress())
+
+
+async def test_integration_can_be_switched_off(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+# ---------------- adjustable query interval ----------------
+async def test_query_interval_is_adjustable(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    assert entry.runtime_data.update_interval == timedelta(seconds=10)  # default
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "init"
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 30})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options == {"scan_interval": 30}
+    assert entry.runtime_data.update_interval == timedelta(seconds=30)  # the integration was reloaded with the new interval
+
+
+async def test_query_interval_limits(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    for bad in (2, 4000):
+        with pytest.raises(InvalidData):
+            await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": bad})
+
+
+async def test_stored_interval_is_kept_within_limits(hass: HomeAssistant, device) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"scan_interval": 1})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert entry.runtime_data.update_interval == timedelta(seconds=5)
+
+
+# ---------------- what the unit shows ----------------
 async def test_entities_show_the_unit(hass: HomeAssistant, device) -> None:
     await setup(hass)
     st = lambda p, k: hass.states.get(eid(hass, p, k))  # noqa: E731
@@ -69,106 +148,165 @@ async def test_entities_show_the_unit(hass: HomeAssistant, device) -> None:
     assert float(st("sensor", "WarmwasserIstTemperatur").state) == 36.0
     assert st("sensor", "Kuehlbetrieb4Wegeventil").state == "cooling"
     assert float(st("number", "Luefterstufe").state) == 2
-    assert float(st("number", "NBE4Ziel").state) == 19.0  # master 20 + offset -1
     assert float(st("number", "SollWassertemperatur").state) == 34.0
-    assert st("switch", "NBE4PTC").state == "on"
     assert st("switch", "Intensivlueftung").state == "off"
     assert st("binary_sensor", "FilterRestStunden_warning").state == "on"  # 120 h left
     assert st("binary_sensor", "DrehzahlKompressor_running").state == "on"
-    # rooms the unit doesn't report are left out
-    assert er.async_get(hass).async_get_entity_id("sensor", DOMAIN, "abc123_NBE2Temperatur") is None
-    # entity names come from the translations
-    assert "Wohnzimmer" in (st("sensor", "NBE0Temperatur").attributes.get("friendly_name") or "")
-
-
-async def test_controls_write_to_the_unit(hass: HomeAssistant, device) -> None:
-    await setup(hass)
-    await hass.services.async_call("select", "select_option", {ATTR_ENTITY_ID: eid(hass, "select", "Betriebsart"), "option": "winter"}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 42, "value": 2}
-    # now not in ECO Comfort: level can be set
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "Luefterstufe"), "value": 3}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 54, "value": 3}
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "NBE4Ziel"), "value": 22}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 442, "value": 2}  # offset +2 to the living room
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "SollWassertemperatur"), "value": 45}, blocking=True)
-    assert device.writes[-1] == {"obj": 1, "address": 0, "value": 450}
-    await hass.services.async_call("switch", "turn_on", {ATTR_ENTITY_ID: eid(hass, "switch", "Intensivlueftung")}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 380, "value": 1}
-    await hass.async_block_till_done()
-    assert hass.states.get(eid(hass, "switch", "Intensivlueftung")).state == "on"
+    # rooms the unit doesn't report are left out; the room names come from the unit
+    assert no_entity(hass, "sensor", "NBE2Temperatur") and no_entity(hass, "climate", "NBE2Thermostat")
+    assert "Wohnzimmer" in st("sensor", "NBE0Temperatur").attributes["friendly_name"]
 
 
 async def test_rooms_and_names_come_from_the_unit(hass: HomeAssistant, device) -> None:
     device.set_name(4, "Dusche")
     await setup(hass)
-    reg = er.async_get(hass)
-    # only the rooms the unit reports as connected (living room, bedroom, bathroom); no kids room / kitchen
     for n, present in {0: True, 1: True, 2: False, 3: False, 4: True}.items():
-        assert (reg.async_get_entity_id("sensor", DOMAIN, f"abc123_NBE{n}Temperatur") is not None) is present, n
+        assert (not no_entity(hass, "sensor", f"NBE{n}Temperatur")) is present, n
+        assert (not no_entity(hass, "climate", f"NBE{n}Thermostat")) is present, n
     assert "Dusche" in hass.states.get(eid(hass, "sensor", "NBE4Temperatur")).attributes["friendly_name"]
-    assert "Schlafzimmer" in hass.states.get(eid(hass, "sensor", "NBE1Temperatur")).attributes["friendly_name"]
-
-
-async def test_room_target_is_own_base_plus_offset(hass: HomeAssistant, device) -> None:
-    """Like the original's room screen: base value of the room itself + its offset (not the living room's value)."""
-    device.raw[(True, 1, 23)] = 18  # NBE1MittelTemperatur
-    await setup(hass)
-    assert float(hass.states.get(eid(hass, "number", "NBE1Ziel")).state) == 20.0  # 18 + offset 2, living room is 20
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "NBE1Ziel"), "value": 19}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 436, "value": 1}  # offset 1 relative to its own 18
-    with pytest.raises(ServiceValidationError):  # limit is +-3 around the room's own value (15..21)
-        await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "NBE1Ziel"), "value": 22}, blocking=True)
-
-
-async def test_living_room_target_in_half_degrees(hass: HomeAssistant, device) -> None:
-    await setup(hass)
-    entity = eid(hass, "number", "NBE0MittelTemperatur")
-    assert hass.states.get(entity).attributes["step"] == 0.5
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: entity, "value": 20.5}, blocking=True)
-    assert device.writes[-1] == {"obj": 0, "address": 150, "value": 2050}
-    await hass.async_block_till_done()
-    assert float(hass.states.get(entity).state) == 20.5
-
-
-def test_room_list_rule_and_names() -> None:
-    from custom_components.proxon_control import registers as R
-
-    assert R.decode_text([ord("K") * 256 + ord("ü"), ord("c") * 256 + ord("h"), ord("e") * 256, 0]) == "Küche"
-    assert R.decode_text([-1 & 0xFFFF]) == "ÿÿ"  # signed words are treated as 16-bit patterns
-    assert R.room_connected({}, 0)
-    assert R.room_connected({"NBE3Verbunden": 1.0}, 3) and not R.room_connected({"NBE3Verbunden": 0.0, "NBE3name": "Küche"}, 3)
-    # without the unit's bit field: connected only when the unit holds a name for the room
-    assert R.room_connected({"NBE3name": "Küche"}, 3) and not R.room_connected({"NBE3name": ""}, 3) and not R.room_connected({}, 3)
-    assert R.room_target({"NBE2MittelTemperatur": 19.0, "NBE2OffsetTemperatur": 1.0, "NBE0MittelTemperatur": 22.0}, 2) == 20.0
-    assert R.room_write({"NBE2MittelTemperatur": 19.0}, 2, 21.4) == ("NBE2OffsetTemperatur", 2.0)
+    assert "Dusche" in hass.states.get(eid(hass, "climate", "NBE4Thermostat")).attributes["friendly_name"]
+    assert "Schlafzimmer" in hass.states.get(eid(hass, "climate", "NBE1Thermostat")).attributes["friendly_name"]
 
 
 async def test_no_co2_sensor_means_no_co2_entities(hass: HomeAssistant, device) -> None:
     # the original treats a CO2 reading of 0 ppm as "no CO2 sensor" and leaves out the CO2 limit
     device.raw[(False, 0, 21)] = 0
     await setup(hass)
-    reg = er.async_get(hass)
-    assert reg.async_get_entity_id("sensor", DOMAIN, "abc123_CurrentCO2") is None
-    assert reg.async_get_entity_id("number", DOMAIN, "abc123_GrenzwertCO2") is None
-    assert reg.async_get_entity_id("number", DOMAIN, "abc123_GrenzwertFeuchte") is not None
+    assert no_entity(hass, "sensor", "CurrentCO2") and no_entity(hass, "number", "GrenzwertCO2")
+    assert not no_entity(hass, "number", "GrenzwertFeuchte")
 
 
-async def test_writes_are_answered_without_data(hass: HomeAssistant, device) -> None:
-    """The unit answers a write with a status only; that must not count as an error."""
+# ---------------- room thermostats ----------------
+async def test_rooms_are_thermostats(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    await hass.services.async_call("switch", "turn_on", {ATTR_ENTITY_ID: eid(hass, "switch", "E-Heizstab")}, blocking=True)
-    await hass.services.async_call("switch", "turn_on", {ATTR_ENTITY_ID: eid(hass, "switch", "NBE0PTC")}, blocking=True)
-    await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "NBE0MittelTemperatur"), "value": 22}, blocking=True)
-    assert [w["address"] for w in device.writes] == [1, 384, 150]
-    assert device.writes[-1]["value"] == 2200
+    living = hass.states.get(eid(hass, "climate", "NBE0Thermostat"))
+    assert living.state == "off"  # heating element of the living room is off
+    assert living.attributes["current_temperature"] == 22.5
+    assert living.attributes["temperature"] == 20.0
+    assert living.attributes["target_temp_step"] == 0.5
+    assert (living.attributes["min_temp"], living.attributes["max_temp"]) == (10.0, 30.0)
+    assert living.attributes["hvac_action"] == "off"
+    bedroom = hass.states.get(eid(hass, "climate", "NBE1Thermostat"))
+    assert bedroom.state == "heat" and bedroom.attributes["hvac_action"] == "heating"  # heating element on and heating now
+    assert bedroom.attributes["temperature"] == 22.0  # own base value 20 + offset 2
+    assert bedroom.attributes["target_temp_step"] == 1.0
+    assert (bedroom.attributes["min_temp"], bedroom.attributes["max_temp"]) == (17.0, 23.0)  # own base value +-3
+    bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))
+    assert bath.state == "heat" and bath.attributes["hvac_action"] == "idle"
+    assert bath.attributes["temperature"] == 19.0
+
+
+async def test_thermostat_follows_the_rooms_own_base_value(hass: HomeAssistant, device) -> None:
+    """Like the original's room screen: base value of the room itself + its offset (not the living room's value)."""
+    device.raw[(True, 1, 23)] = 18  # NBE1MittelTemperatur
+    await setup(hass)
+    bedroom = eid(hass, "climate", "NBE1Thermostat")
+    state = hass.states.get(bedroom)
+    assert state.attributes["temperature"] == 20.0  # 18 + offset 2
+    assert (state.attributes["min_temp"], state.attributes["max_temp"]) == (15.0, 21.0)
+    await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=19)
+    assert device.writes[-1] == {"obj": 0, "address": 436, "value": 1}  # offset 1 relative to its own 18
+    with pytest.raises(ServiceValidationError):  # outside the +-3 around the room's own value
+        await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=22)
+
+
+async def test_living_room_thermostat_in_half_degrees(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    living = eid(hass, "climate", "NBE0Thermostat")
+    await call(hass, "climate", "set_temperature", entity_id=living, temperature=20.5)
+    assert device.writes[-1] == {"obj": 0, "address": 150, "value": 2050}
+    await hass.async_block_till_done()
+    assert hass.states.get(living).attributes["temperature"] == 20.5
+
+
+async def test_thermostat_heating_element_on_and_off(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    living = eid(hass, "climate", "NBE0Thermostat")
+    await call(hass, "climate", "set_hvac_mode", entity_id=living, hvac_mode="heat")
+    assert device.writes[-1] == {"obj": 0, "address": 384, "value": 1}
+    assert hass.states.get(living).state == "heat"
+    bath = eid(hass, "climate", "NBE4Thermostat")
+    await call(hass, "climate", "turn_off", entity_id=bath)
+    assert device.writes[-1] == {"obj": 0, "address": 522, "value": 0}
+    assert hass.states.get(bath).state == "off"
+    await call(hass, "climate", "turn_on", entity_id=bath)
+    assert hass.states.get(bath).state == "heat"
+
+
+async def test_old_room_entities_are_removed(hass: HomeAssistant, device) -> None:
+    """Version 0.1 had room target numbers and room heating element switches; the thermostats replace them."""
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    reg = er.async_get(hass)
+    old = [
+        reg.async_get_or_create("number", DOMAIN, "abc123_NBE1Ziel", config_entry=entry),
+        reg.async_get_or_create("number", DOMAIN, "abc123_NBE0MittelTemperatur", config_entry=entry),
+        reg.async_get_or_create("switch", DOMAIN, "abc123_NBE4PTC", config_entry=entry),
+    ]
+    keep = reg.async_get_or_create("number", DOMAIN, "abc123_Luefterstufe", config_entry=entry)
+    await setup(hass, entry)
+    assert all(reg.async_get(e.entity_id) is None for e in old)
+    assert reg.async_get(keep.entity_id) is not None
+
+
+# ---------------- other controls ----------------
+async def test_controls_write_to_the_unit(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    await call(hass, "select", "select_option", entity_id=eid(hass, "select", "Betriebsart"), option="winter")
+    assert device.writes[-1] == {"obj": 0, "address": 42, "value": 2}
+    await call(hass, "number", "set_value", entity_id=eid(hass, "number", "Luefterstufe"), value=3)  # not in ECO Comfort any more
+    assert device.writes[-1] == {"obj": 0, "address": 54, "value": 3}
+    await call(hass, "number", "set_value", entity_id=eid(hass, "number", "SollWassertemperatur"), value=45)
+    assert device.writes[-1] == {"obj": 1, "address": 0, "value": 450}
+    await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "Intensivlueftung"))
+    assert device.writes[-1] == {"obj": 0, "address": 380, "value": 1}
+    await hass.async_block_till_done()
+    assert hass.states.get(eid(hass, "switch", "Intensivlueftung")).state == "on"
 
 
 async def test_rules_from_the_original(hass: HomeAssistant, device) -> None:
     await setup(hass)
     # ECO Comfort: the unit sets the level itself
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "Luefterstufe"), "value": 3}, blocking=True)
-    # other rooms: living room target ± 3 °C
-    with pytest.raises(ServiceValidationError):
-        await hass.services.async_call("number", "set_value", {ATTR_ENTITY_ID: eid(hass, "number", "NBE1Ziel"), "value": 25}, blocking=True)
+        await call(hass, "number", "set_value", entity_id=eid(hass, "number", "Luefterstufe"), value=3)
     assert device.writes == []
+
+
+async def test_writes_are_answered_without_data(hass: HomeAssistant, device) -> None:
+    """The unit answers a write with a status only; that must not count as an error."""
+    await setup(hass)
+    await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "E-Heizstab"))
+    await call(hass, "climate", "set_temperature", entity_id=eid(hass, "climate", "NBE0Thermostat"), temperature=22)
+    assert [w["address"] for w in device.writes] == [1, 150]
+    assert device.writes[-1]["value"] == 2200
+
+
+# ---------------- writing with read-back ----------------
+async def test_write_is_confirmed_by_reading_back(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    entity = eid(hass, "number", "GrenzwertFeuchte")
+    await call(hass, "number", "set_value", entity_id=entity, value=45)
+    assert float(hass.states.get(entity).state) == 45.0
+    assert device.raw[(True, 0, 118)] == 45  # what the unit holds
+
+
+async def test_a_slow_unit_gets_a_moment(hass: HomeAssistant, device) -> None:
+    """The value shows up only on the second read: the read-back tries again before giving up."""
+    await setup(hass)
+    device.apply_delay = 1
+    entity = eid(hass, "number", "GrenzwertFeuchte")
+    await call(hass, "number", "set_value", entity_id=entity, value=55)
+    assert float(hass.states.get(entity).state) == 55.0
+
+
+async def test_a_value_the_unit_does_not_take_is_reported(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    living = eid(hass, "climate", "NBE0Thermostat")
+    device.ignore_writes = True
+    with pytest.raises(HomeAssistantError, match="did not take over"):
+        await call(hass, "climate", "set_temperature", entity_id=living, temperature=22)
+    await hass.async_block_till_done()
+    assert hass.states.get(living).attributes["temperature"] == 20.0  # shows what the unit really holds, not what was asked
+    device.ignore_writes = False
+    await call(hass, "climate", "set_temperature", entity_id=living, temperature=22)
+    assert hass.states.get(living).attributes["temperature"] == 22.0

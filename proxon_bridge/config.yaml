@@ -1,5 +1,5 @@
 name: Proxon Bridge
-version: "0.1.0"
+version: "0.2.0"
 slug: proxon_bridge
 description: Verbindet die Proxon-Anlage über den Proxon-Server (Device ID + Passwort) mit der Integration „Proxon Control“.
 arch:
@@ -14,6 +14,8 @@ ports_description:
 options:
   device_id: ""
   password: ""
+  poll_seconds: 10
 schema:
   device_id: str
   password: password
+  poll_seconds: int(5,3600)

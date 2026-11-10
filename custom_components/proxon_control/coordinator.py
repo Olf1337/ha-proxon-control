@@ -1,22 +1,25 @@
-"""Reads all values every 10 seconds and writes changes."""
+"""Reads all values at the chosen interval (default 10 seconds) and writes changes with read-back."""
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import AuthError, BridgeApi, DirectApi, ProxonError
-from .const import DOMAIN, SCAN_INTERVAL
+from .api import AuthError, BridgeApi, DirectApi, ProxonError, WriteNotAccepted
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, api: DirectApi | BridgeApi) -> None:
-        super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=SCAN_INTERVAL)
+        seconds = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        seconds = max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, seconds))
+        super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=timedelta(seconds=seconds))
         self.api = api
         self._rooms_logged = False
 
@@ -38,14 +41,19 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
             raise UpdateFailed(str(err)) from err
 
     async def async_write(self, key: str, value: float) -> None:
+        """Write a value and read it back from the unit. What the unit really reports is what is shown afterwards;
+        if it did not take over the value, the change is reported as failed."""
         try:
-            await self.hass.async_add_executor_job(self.api.write, key, value)
+            got = await self.hass.async_add_executor_job(self.api.write, key, value)
+        except WriteNotAccepted as err:
+            if err.values:  # show what the unit really holds
+                self.async_set_updated_data({**(self.data or {}), **err.values})
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_not_accepted",
+                translation_placeholders={"name": err.key or key, "wanted": f"{err.wanted:g}", "actual": "?" if err.got is None else f"{err.got:g}"},
+            ) from err
         except ProxonError as err:
             raise HomeAssistantError(f"Proxon: {err}") from err
-        data = dict(self.data or {})
-        data[key] = float(value)
-        if key == "Intensivlueftung":
-            # turning boost on also shows the full boost time right away (as the original does)
-            data["IntensivlueftungsRestDauer"] = data.get("IntensivlueftungsDauer", 0.0) if value else 0.0
-        self.async_set_updated_data(data)
+        self.async_set_updated_data({**(self.data or {}), **got})
         await self.async_request_refresh()

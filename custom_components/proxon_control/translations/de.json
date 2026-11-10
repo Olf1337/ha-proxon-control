@@ -141,9 +141,6 @@
       },
       "boost_temperature": {
         "name": "Temperatur E-Heizstab / Boost"
-      },
-      "room_target": {
-        "name": "{room} Soll-Temperatur"
       }
     },
     "switch": {
@@ -158,9 +155,6 @@
       },
       "immersion_heater": {
         "name": "E-Heizstab / Boost"
-      },
-      "room_heater": {
-        "name": "{room} Wärmeelement"
       }
     },
     "binary_sensor": {
@@ -170,6 +164,11 @@
       "compressor": {
         "name": "Kompressor"
       }
+    },
+    "climate": {
+      "room_thermostat": {
+        "name": "{room}"
+      }
     }
   },
   "exceptions": {
@@ -178,6 +177,23 @@
     },
     "room_limit": {
       "message": "Dieser Raum kann nur zwischen {low} und {high} °C eingestellt werden (Sollwert des Raums ± 3 °C)."
+    },
+    "write_not_accepted": {
+      "message": "Die Anlage hat {name} nicht übernommen: gewünscht {wanted}, sie meldet {actual}."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Proxon Control",
+        "description": "Wie oft soll Home Assistant die Anlage nach ihren Werten fragen? Kürzere Zeiten zeigen Änderungen früher, belasten aber die Verbindung über den Proxon-Server stärker.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        },
+        "data_description": {
+          "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10."
+        }
+      }
     }
   }
 }

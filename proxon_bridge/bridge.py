@@ -1,7 +1,7 @@
 """Proxon Bridge add-on: logs in to the Proxon server (Nabto) and offers the values on port 8765.
 
 GET  /values  -> {"device_id": "...", "values": {...}, "error": null}
-POST /write   <- {"key": "Luefterstufe", "value": 3}
+POST /write   <- {"key": "Luefterstufe", "value": 3}  -> {"ok": true, "values": {…read back…}}, or 409 if the unit did not take over the value
 The Proxon Control integration reads and writes through this when it can't load the Nabto library itself.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ log = logging.getLogger("proxon-bridge")
 OPTIONS = os.environ.get("PROXON_OPTIONS", "/data/options.json")
 DATA = os.environ.get("PROXON_DATA", "/data")
 PORT = int(os.environ.get("PROXON_PORT", "8765"))
-POLL_SECONDS = 10
+POLL_SECONDS = 10  # default; adjustable with the add-on option "poll_seconds"
 
 
 class Bridge:
@@ -63,9 +63,15 @@ class Bridge:
             self.error = str(err)
             log.warning("read failed: %s", err)
 
-    def write(self, key: str, value: float) -> None:
-        self._run(lambda c: registers.write_value(c, key, value))
-        self.values[key] = float(value)
+    def write(self, key: str, value: float) -> dict:
+        """Write and read back; returns the values the unit reports afterwards (raises registers.WriteMismatch if it holds another value)."""
+        try:
+            got = self._run(lambda c: registers.write_and_verify(c, key, value))
+        except registers.WriteMismatch as err:
+            self.values.update(err.values)
+            raise
+        self.values.update(got)
+        return got
 
 
 def make_handler(bridge: Bridge):
@@ -96,12 +102,15 @@ def make_handler(bridge: Bridge):
                 key, value = body["key"], float(body["value"])
                 if key not in registers.BY_KEY or registers.BY_KEY[key].write is None:
                     return self._send(400, {"error": f"{key} kann nicht geschrieben werden"})
-                bridge.write(key, value)
+                got = bridge.write(key, value)
             except (KeyError, ValueError, TypeError) as err:
                 return self._send(400, {"error": f"ungültige Anfrage: {err}"})
+            except registers.WriteMismatch as err:
+                # the unit did not take over the value
+                return self._send(409, {"error": str(err), "key": err.key, "wanted": err.wanted, "got": err.got, "values": err.values})
             except NabtoError as err:
                 return self._send(502, {"error": str(err)})
-            self._send(200, {"ok": True})
+            self._send(200, {"ok": True, "values": got})
 
     return Handler
 
@@ -112,12 +121,13 @@ def main() -> None:
     if not opts.get("device_id") or not opts.get("password"):
         log.error("Bitte Device ID und Passwort in der Add-on-Konfiguration eintragen.")
     bridge = Bridge(opts.get("device_id", ""), opts.get("password", ""))
+    poll_seconds = max(5, min(3600, int(opts.get("poll_seconds", POLL_SECONDS))))
 
     def loop() -> None:
         while True:
             if bridge.device_id and bridge.password:
                 bridge.poll()
-            time.sleep(POLL_SECONDS)
+            time.sleep(poll_seconds)
 
     threading.Thread(target=loop, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), make_handler(bridge))  # noqa: S104 - add-on port

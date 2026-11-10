@@ -141,9 +141,6 @@
       },
       "boost_temperature": {
         "name": "Immersion / boost temperature"
-      },
-      "room_target": {
-        "name": "{room} target temperature"
       }
     },
     "switch": {
@@ -158,9 +155,6 @@
       },
       "immersion_heater": {
         "name": "Immersion / boost"
-      },
-      "room_heater": {
-        "name": "{room} heating element"
       }
     },
     "binary_sensor": {
@@ -170,6 +164,11 @@
       "compressor": {
         "name": "Compressor"
       }
+    },
+    "climate": {
+      "room_thermostat": {
+        "name": "{room}"
+      }
     }
   },
   "exceptions": {
@@ -178,6 +177,23 @@
     },
     "room_limit": {
       "message": "This room can only be set between {low} and {high} °C (the room's own value ± 3 °C)."
+    },
+    "write_not_accepted": {
+      "message": "The unit did not take over {name}: wanted {wanted}, it reports {actual}."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Proxon Control",
+        "description": "How often should Home Assistant ask the unit for its values? Shorter times show changes sooner but put more load on the connection through Proxon's server.",
+        "data": {
+          "scan_interval": "Query interval (seconds)"
+        },
+        "data_description": {
+          "scan_interval": "Between 5 and 3600 seconds. Default: 10."
+        }
+      }
     }
   }
 }
