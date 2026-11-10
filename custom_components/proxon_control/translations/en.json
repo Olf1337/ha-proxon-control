@@ -169,6 +169,24 @@
       "room_thermostat": {
         "name": "{room}"
       }
+    },
+    "fan": {
+      "ventilation": {
+        "name": "Ventilation",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "normal": "Normal",
+              "boost": "Boost ventilation"
+            }
+          }
+        }
+      }
+    },
+    "water_heater": {
+      "hot_water": {
+        "name": "Hot water"
+      }
     }
   },
   "exceptions": {
@@ -180,6 +198,12 @@
     },
     "write_not_accepted": {
       "message": "The unit did not take over {name}: wanted {wanted}, it reports {actual}."
+    },
+    "fan_no_off": {
+      "message": "The ventilation can't be switched off on its own. To switch off the whole unit, set the operating mode to Off."
+    },
+    "water_limit": {
+      "message": "The hot water can only be set between {low} and {high} °C."
     }
   },
   "options": {

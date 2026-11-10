@@ -4,9 +4,9 @@
 [![Add the add-on repository to your Home Assistant.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FOlf1337%2Fha-proxon-control)
 [![Buy me a coffee / Spendier mir einen Kaffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/olf1337)
 
-Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: every connected room as its own thermostat, operating mode,
-ventilation level, boost ventilation, hot water, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
-Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s).
+Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: every connected room as its own thermostat, the ventilation as a fan (level 1–4, boost as preset),
+hot water as a water heater, operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
+Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
 **Works from outside your home network.** It uses the same remote access as the phone app, so no VPN or port forwarding is needed – Home Assistant and the
 unit only need internet access, and they don't have to be in the same network.
@@ -28,7 +28,7 @@ Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Ap
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.2.0)
+# Proxon Control – Integration für Home Assistant (Version 0.3.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -44,11 +44,24 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Art | Entitäten |
 |---|---|
 | Thermostate | **Jeder angeschlossene Raum als eigenes Thermostat**: Ist- und Soll-Temperatur, Wärmeelement an/aus, „heizt gerade“. Wohnzimmer 10–30 °C in 0,5-°C-Schritten, andere Räume 14–26 °C in ganzen Grad (± 3 °C um den eigenen Grundwert des Raums) |
+| Lüftung | **Als Ventilator**: Stufe 1–4 als Geschwindigkeit (25/50/75/100 %), Intensivlüftung als Voreinstellung „Intensivlüftung“. Passt zu den Ventilator-Karten und zu Sprachassistenten. Ausschalten geht nur über die Betriebsart „Aus“ (das würde die ganze Anlage ausschalten) |
+| Warmwasser | **Als Warmwasserbereiter**: Ist- und Soll-Temperatur (20–55 °C) und Betriebsart Aus / Wärmepumpe / Wärmepumpe + E-Heizstab / nur E-Heizstab (nur mit Warmwasser-Wärmepumpe T300) |
 | Auswahl | Betriebsart (ECO Komfort, Winter, Sommer, Aus; Urlaub wird angezeigt) |
 | Zahlen (Schieberegler) | Lüftungsstufe 1–4, Grenzwert CO₂ 400–1500 ppm (nur mit CO₂-Sensor), Grenzwert Feuchte 0–100 %, Warmwasser 20–55 °C, E-Heizstab 20–70 °C |
 | Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab |
 | Sensoren | Raumtemperaturen, Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter, Betriebsstunden, 4-Wegeventil, Firmware |
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“ |
+
+## Neu in Version 0.3.0
+
+* **Lüftung als Ventilator.** Lüftungsstufe und Intensivlüftung in einer Entität (`fan.…`) – mit Ventilator-Karte im Dashboard und per Sprache steuerbar
+  („Stell die Lüftung auf 75 %“ = Stufe 3). In ECO Komfort und während der Intensivlüftung wählt die Anlage die Stufe selbst; dann zeigt der Ventilator die tatsächliche Stufe.
+* **Warmwasser als Warmwasserbereiter.** Temperatur und Heizquelle in einer Entität (`water_heater.…`) statt verteilt auf Zahl und zwei Schalter.
+* **Diagnose herunterladen.** *Einstellungen → Geräte & Dienste → Proxon Control → ⋮ → Diagnose herunterladen* liefert die Rohwerte der letzten Abfrage.
+  Device ID, Passwort, Bridge-Adresse und Raumnamen sind darin entfernt. Bitte bei Fehlermeldungen (Issues) mitschicken.
+
+Die bisherigen Schieberegler und Schalter für Lüftungsstufe, Intensivlüftung, Warmwasser-Temperatur, Wärmepumpe und E-Heizstab bleiben erhalten –
+bestehende Automationen funktionieren weiter.
 
 ## Neu in Version 0.2.0
 

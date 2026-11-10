@@ -169,6 +169,24 @@
       "room_thermostat": {
         "name": "{room}"
       }
+    },
+    "fan": {
+      "ventilation": {
+        "name": "Lüftung",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "normal": "Normal",
+              "boost": "Intensivlüftung"
+            }
+          }
+        }
+      }
+    },
+    "water_heater": {
+      "hot_water": {
+        "name": "Warmwasser"
+      }
     }
   },
   "exceptions": {
@@ -180,6 +198,12 @@
     },
     "write_not_accepted": {
       "message": "Die Anlage hat {name} nicht übernommen: gewünscht {wanted}, sie meldet {actual}."
+    },
+    "fan_no_off": {
+      "message": "Die Lüftung lässt sich nicht einzeln ausschalten. Um die ganze Anlage auszuschalten, die Betriebsart auf „Aus“ stellen."
+    },
+    "water_limit": {
+      "message": "Warmwasser lässt sich nur zwischen {low} und {high} °C einstellen."
     }
   },
   "options": {

@@ -21,7 +21,16 @@ from .const import (
 )
 from .coordinator import ProxonCoordinator
 
-PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.SWITCH, Platform.BINARY_SENSOR, Platform.CLIMATE]
+PLATFORMS = [
+    Platform.SENSOR,
+    Platform.SELECT,
+    Platform.NUMBER,
+    Platform.SWITCH,
+    Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
+    Platform.FAN,
+    Platform.WATER_HEATER,
+]
 
 type ProxonConfigEntry = ConfigEntry[ProxonCoordinator]
 
