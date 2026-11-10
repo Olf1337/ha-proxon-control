@@ -165,6 +165,29 @@
           "blocked": "Blocked (hot water off / holiday)",
           "no_source": "No sensor chosen"
         }
+      },
+      "night_cooling_status": {
+        "name": "Summer night cooling",
+        "state": {
+          "off": "Off",
+          "idle": "Nothing to do",
+          "waiting": "Waiting (15 min)",
+          "cooling": "Cooling with outside air",
+          "heat_protection": "Heat protection (level 1)",
+          "not_summer": "Only in summer mode",
+          "blocked": "Paused (holiday / boost ventilation)"
+        }
+      },
+      "hot_water_boost_status": {
+        "name": "Hot-water boost",
+        "state": {
+          "off": "Off",
+          "idle": "Warm enough",
+          "heating": "Immersion heater on",
+          "heater_on": "Immersion heater already on",
+          "paused": "Pause (protection)",
+          "blocked": "Paused (holiday mode)"
+        }
       }
     },
     "select": {
@@ -203,6 +226,15 @@
       },
       "store_temperature": {
         "name": "Hot-water store temperature"
+      },
+      "cooling_wish": {
+        "name": "Night cooling wish temperature"
+      },
+      "cooling_level": {
+        "name": "Night cooling level"
+      },
+      "boost_limit": {
+        "name": "Hot-water boost below"
       }
     },
     "switch": {
@@ -226,6 +258,12 @@
       },
       "cheap_hot_water": {
         "name": "Cheap electricity hot water"
+      },
+      "night_cooling": {
+        "name": "Summer night cooling"
+      },
+      "hot_water_boost": {
+        "name": "Hot-water boost"
       }
     },
     "binary_sensor": {

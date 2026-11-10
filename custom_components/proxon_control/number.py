@@ -54,6 +54,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     ]
     if coordinator.energy.supported:
         entities += [ProxonEnergyNumber(coordinator, d) for d in ENERGY_NUMBERS]
+    comfort = coordinator.comfort
+    if comfort.cooling.supported:
+        entities += [ProxonEnergyNumber(coordinator, d, comfort.cooling) for d in COOLING_NUMBERS]
+    if comfort.boost.supported:
+        entities += [ProxonEnergyNumber(coordinator, d, comfort.boost) for d in BOOST_NUMBERS]
     async_add_entities(entities)
 
 
@@ -99,13 +104,33 @@ ENERGY_NUMBERS: list[ProxonEnergyNumberDescription] = [
 ]
 
 
+COOLING_NUMBERS: list[ProxonEnergyNumberDescription] = [
+    ProxonEnergyNumberDescription(
+        key="KuehlWunsch", translation_key="cooling_wish", setting="wish", native_min_value=18, native_max_value=28, native_step=0.5,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE, mode=NumberMode.BOX,
+        icon="mdi:home-thermometer", entity_category=EntityCategory.CONFIG,
+    ),
+    ProxonEnergyNumberDescription(
+        key="KuehlStufe", translation_key="cooling_level", setting="level", native_min_value=2, native_max_value=4, native_step=1,
+        mode=NumberMode.SLIDER, icon="mdi:fan", entity_category=EntityCategory.CONFIG,
+    ),
+]
+BOOST_NUMBERS: list[ProxonEnergyNumberDescription] = [
+    ProxonEnergyNumberDescription(
+        key="BoostGrenze", translation_key="boost_limit", setting="limit", native_min_value=20, native_max_value=55, native_step=1,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE, mode=NumberMode.BOX,
+        icon="mdi:heating-coil", entity_category=EntityCategory.CONFIG,
+    ),
+]
+
+
 class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
     """Limits of the hot-water energy manager: solar surplus from, electricity price up to, and the store temperature."""
 
     entity_description: ProxonEnergyNumberDescription
 
-    def __init__(self, coordinator, description: ProxonEnergyNumberDescription) -> None:
-        super().__init__(coordinator, description.key, description.translation_key or description.key)
+    def __init__(self, coordinator, description: ProxonEnergyNumberDescription, manager=None) -> None:
+        super().__init__(coordinator, description.key, description.translation_key or description.key, manager)
         self.entity_description = description
 
     @property
@@ -113,4 +138,5 @@ class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
         return float(getattr(self.manager.settings, self.entity_description.setting))
 
     async def async_set_native_value(self, value: float) -> None:
-        await self.manager.async_set(**{self.entity_description.setting: float(value)})
+        setting = self.entity_description.setting
+        await self.manager.async_set(**{setting: int(value) if setting == "level" else float(value)})

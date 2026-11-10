@@ -5,7 +5,7 @@
 [![Buy me a coffee / Spendier mir einen Kaffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/olf1337)
 
 Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assistant: every connected room as its own thermostat, the ventilation as a fan (level 1–4, boost as preset),
-hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
+hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, **summer night cooling**, a **hot-water boost** with the immersion heater, the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
 Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
 **Works from outside your home network.** It uses the same remote access as the phone app, so no VPN or port forwarding is needed – Home Assistant and the
@@ -57,7 +57,9 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
 
-## Neu in Version 0.6.0: Warmwasser als Speicher für Solarstrom und günstigen Strom
+## Neu in Version 0.6.0
+
+### Warmwasser als Speicher für Solarstrom und günstigen Strom
 
 Der Warmwasserspeicher wird zur „Batterie“: Bei Solarüberschuss oder günstigem Strom hebt die Integration den Warmwasser-Sollwert an
 (z. B. 46 → 55 °C), die Warmwasser-Wärmepumpe heizt den Speicher mit diesem Strom auf. Danach wird der vorherige Sollwert wiederhergestellt.
@@ -84,6 +86,39 @@ z. B. Netzleistung des Wechselrichters oder Smart Meters; Haken setzen, wenn Ein
 * Nach einem Ende **30 Minuten Pause**, höchstens **6 Starts pro Tag**.
 * Nichts passiert, wenn die Warmwasser-Wärmepumpe aus ist oder der Urlaubsmodus läuft. Hat jemand den Sollwert zwischendurch selbst geändert,
   wird er am Ende nicht überschrieben. Schalter aus = sofort zurück zum vorherigen Sollwert.
+
+### Sommer-Nachtkühlung
+
+Kühlt das Haus im Sommer kostenlos mit kühler Außenluft – nur mit den Sensoren der Anlage (Außenluft T3, Raumluft/Abluft T7), ohne fremde Geräte.
+
+| Entität | |
+|---|---|
+| **Sommer-Nachtkühlung** (Schalter) | an/aus |
+| **Nachtkühlung Wunschtemperatur** (°C) | ab welcher Raumtemperatur gekühlt wird (Standard 22 °C) |
+| **Nachtkühlung Lüftungsstufe** (2–4) | Stufe beim Kühlen (Standard 3) |
+| **Sommer-Nachtkühlung** (Sensor) | was gerade passiert, mit Innen-/Außentemperatur und vorheriger Stufe |
+
+* **Kühlen:** innen wärmer als die Wunschtemperatur und außen mindestens 3 °C kühler → Lüftung auf die Kühlstufe. Gekühlt wird weiter bis 0,5 °C unter der
+  Wunschtemperatur, solange es außen mindestens 1 °C kühler ist.
+* **Hitzeschutz:** innen wärmer als gewünscht und außen wärmer als innen (heißer Tag) → Stufe 1, damit möglichst wenig Hitze hereinkommt.
+* Sonst wird die Stufe von vorher wiederhergestellt.
+* **Schutz:** Eine neue Situation muss 15 Minuten anhalten, die Stufe ändert sich höchstens alle 15 Minuten.
+* Nur in der Betriebsart **Sommer** (in ECO Komfort wählt die Anlage die Stufe selbst, im Winter soll nicht gekühlt werden); pausiert während
+  Urlaubsmodus und Intensivlüftung. Wie stark die Kühlung wirkt, hängt davon ab, ob die Anlage im Sommer die Wärmerückgewinnung umgeht (Bypass).
+
+### Warmwasser-Boost
+
+| Entität | |
+|---|---|
+| **Warmwasser-Boost** (Schalter) | an/aus |
+| **Warmwasser-Boost unter** (°C) | Schwellwert (Standard 40 °C) |
+| **Warmwasser-Boost** (Sensor) | was gerade passiert, mit Warmwasser-Temperatur |
+
+* Fällt das Warmwasser unter den Schwellwert, wird der **E-Heizstab** zugeschaltet, bis der Schwellwert wieder erreicht ist – dann wieder aus.
+* Ausgeschaltet wird der Heizstab nur, wenn der Boost ihn eingeschaltet hat; ein von Hand eingeschalteter Heizstab bleibt unberührt.
+* **Schutz:** mindestens 10 Minuten an und danach 10 Minuten Pause, damit er nicht taktet, wenn die Temperatur um den Schwellwert pendelt.
+* **Inaktiv im Urlaubsmodus.** Hinweis: Der Heizstab heizt höchstens bis zu seiner eigenen Solltemperatur (*Immersion / boost temperature*) –
+  sie sollte über dem Boost-Schwellwert liegen.
 
 ## Neu in Version 0.5.0
 

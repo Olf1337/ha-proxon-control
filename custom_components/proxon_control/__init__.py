@@ -22,6 +22,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import ProxonCoordinator
+from .comfort_manager import ComfortManager
 from .energy_manager import EnergyManager
 from .holiday import HolidayMode
 from .repairs_watch import remove_issues, update_issues
@@ -72,6 +73,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     await coordinator.holiday.async_load()
     coordinator.energy = EnergyManager(hass, coordinator, entry)
     await coordinator.energy.async_load()
+    coordinator.comfort = ComfortManager(hass, coordinator, entry)
+    await coordinator.comfort.async_load()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     # notices under Settings -> Repairs (filter change soon, fault of the unit)
@@ -82,6 +85,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     # hot water as a store for solar surplus / cheap electricity
     coordinator.energy.async_start()
     entry.async_on_unload(coordinator.energy.async_stop)
+    # summer night cooling and hot-water boost
+    coordinator.comfort.async_start()
+    entry.async_on_unload(coordinator.comfort.async_stop)
     return True
 
 

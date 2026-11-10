@@ -24,6 +24,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     data = coordinator.data or {}
     entities: list[SwitchEntity] = [ProxonSwitch(coordinator, key, tk, icon, room) for key, tk, icon, room in SWITCHES if key in data]
     entities.append(ProxonHolidaySwitch(coordinator))
+    comfort = coordinator.comfort
+    if comfort.cooling.supported:
+        entities.append(ProxonEnergySwitch(coordinator, "on", "Nachtkuehlung", "night_cooling", "mdi:weather-night", comfort.cooling))
+    if comfort.boost.supported:
+        entities.append(ProxonEnergySwitch(coordinator, "on", "WarmwasserBoost", "hot_water_boost", "mdi:heating-coil", comfort.boost))
     if coordinator.energy.supported:
         entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water", "mdi:solar-power-variant"),
                      ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water", "mdi:cash-clock")]
@@ -84,8 +89,8 @@ class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
 
     _attr_entity_category = EntityCategory.CONFIG
 
-    def __init__(self, coordinator, setting: str, key: str, tk: str, icon: str) -> None:
-        super().__init__(coordinator, key, tk)
+    def __init__(self, coordinator, setting: str, key: str, tk: str, icon: str, manager=None) -> None:
+        super().__init__(coordinator, key, tk, manager)
         self._setting = setting
         self._attr_icon = icon
 

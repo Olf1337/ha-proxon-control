@@ -50,11 +50,12 @@ class ProxonEntity(CoordinatorEntity[ProxonCoordinator]):
 
 
 class ProxonEnergyEntity(ProxonEntity):
-    """Entities of the hot-water energy manager (solar surplus / cheap electricity). Their values live in the manager."""
+    """Entities whose values live in a manager, not in the unit: the hot-water energy manager (solar surplus / cheap
+    electricity), summer night cooling and hot-water boost."""
 
-    def __init__(self, coordinator, key: str, translation_key: str) -> None:
+    def __init__(self, coordinator, key: str, translation_key: str, manager=None) -> None:
         super().__init__(coordinator, key, translation_key)
-        self.manager = coordinator.energy
+        self.manager = manager or coordinator.energy
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

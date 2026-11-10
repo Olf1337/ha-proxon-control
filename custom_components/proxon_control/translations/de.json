@@ -165,6 +165,29 @@
           "blocked": "Gesperrt (Warmwasser aus / Urlaub)",
           "no_source": "Kein Sensor gewählt"
         }
+      },
+      "night_cooling_status": {
+        "name": "Sommer-Nachtkühlung",
+        "state": {
+          "off": "Aus",
+          "idle": "Nichts zu tun",
+          "waiting": "Wartet (15 min)",
+          "cooling": "Kühlt mit Außenluft",
+          "heat_protection": "Hitzeschutz (Stufe 1)",
+          "not_summer": "Nur im Sommerbetrieb",
+          "blocked": "Pausiert (Urlaub / Intensivlüftung)"
+        }
+      },
+      "hot_water_boost_status": {
+        "name": "Warmwasser-Boost",
+        "state": {
+          "off": "Aus",
+          "idle": "Warm genug",
+          "heating": "Heizstab an",
+          "heater_on": "Heizstab schon an",
+          "paused": "Pause (Schutz)",
+          "blocked": "Pausiert (Urlaubsmodus)"
+        }
       }
     },
     "select": {
@@ -203,6 +226,15 @@
       },
       "store_temperature": {
         "name": "Warmwasser-Speichertemperatur"
+      },
+      "cooling_wish": {
+        "name": "Nachtkühlung Wunschtemperatur"
+      },
+      "cooling_level": {
+        "name": "Nachtkühlung Lüftungsstufe"
+      },
+      "boost_limit": {
+        "name": "Warmwasser-Boost unter"
       }
     },
     "switch": {
@@ -226,6 +258,12 @@
       },
       "cheap_hot_water": {
         "name": "Günstiger Strom – Warmwasser"
+      },
+      "night_cooling": {
+        "name": "Sommer-Nachtkühlung"
+      },
+      "hot_water_boost": {
+        "name": "Warmwasser-Boost"
       }
     },
     "binary_sensor": {

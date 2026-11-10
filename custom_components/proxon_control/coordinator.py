@@ -30,6 +30,7 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
         self._schedule: dict[str, float] = {}
         self.holiday = None  # HolidayMode, set up by __init__
         self.energy = None  # EnergyManager, set up by __init__
+        self.comfort = None  # ComfortManager (night cooling, hot-water boost), set up by __init__
         self._schedule_read_at: float | None = None
 
     async def _async_update_data(self) -> dict[str, float]:

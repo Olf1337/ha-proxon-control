@@ -18,6 +18,10 @@ from . import ProxonConfigEntry
 from .const import PPM
 from .entity import ProxonEnergyEntity, ProxonEntity, room_name
 from .registers import ROOM_COUNT, room_connected
+from .comfort import (
+    B_ALREADY_ON, B_BLOCKED, B_HEATING, B_IDLE, B_OFF, B_PAUSED,
+    C_BLOCKED, C_COOLING, C_IDLE, C_NOT_SUMMER, C_OFF, C_PROTECTING, C_WAITING,
+)
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
 
@@ -115,6 +119,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonClock(coordinator))
     if coordinator.energy.supported:
         entities.append(ProxonEnergyStatus(coordinator))
+    comfort = coordinator.comfort
+    if comfort.cooling.supported:
+        entities.append(ProxonFeatureStatus(coordinator, comfort.cooling, "NachtkuehlungStatus", "night_cooling_status", "mdi:weather-night",
+                                            [C_OFF, C_IDLE, C_WAITING, C_COOLING, C_PROTECTING, C_NOT_SUMMER, C_BLOCKED]))
+    if comfort.boost.supported:
+        entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status", "mdi:heating-coil",
+                                            [B_OFF, B_IDLE, B_HEATING, B_ALREADY_ON, B_PAUSED, B_BLOCKED]))
     if "Antwortzeit" in data:
         entities += [ProxonResponseTime(coordinator), ProxonConnectionPath(coordinator)]
     async_add_entities(entities)
@@ -264,3 +275,26 @@ class ProxonEnergyStatus(ProxonEnergyEntity, SensorEntity):
             "heating_since": st.since.isoformat() if st.since else None,
             "previous_target": st.saved_target,
         }
+
+
+class ProxonFeatureStatus(ProxonEnergyEntity, SensorEntity):
+    """What summer night cooling / hot-water boost is doing; the values it decided on as attributes."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+
+    def __init__(self, coordinator, feature, key: str, tk: str, icon: str, options: list[str]) -> None:
+        super().__init__(coordinator, key, tk, feature)
+        self._attr_icon = icon
+        self._attr_options = options
+
+    @property
+    def native_value(self) -> str:
+        return self.manager.status
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attrs = dict(self.manager.details)
+        saved = getattr(self.manager.state, "saved_level", None)
+        if saved is not None:
+            attrs["previous_level"] = saved
+        return attrs
