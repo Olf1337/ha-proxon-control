@@ -5,8 +5,6 @@ from collections.abc import Mapping
 import logging
 from typing import Any
 
-import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
@@ -20,6 +18,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
+import voluptuous as vol
 
 from .api import MODE_LOCAL, AuthError, BridgeApi, HybridApi, ProxonError, TokenError, connect
 from .const import (
@@ -30,8 +29,8 @@ from .const import (
     CONF_LOCAL_HOST,
     CONF_MODE,
     CONF_PASSWORD,
-    CONF_PORT,
     CONF_PICTURE_THEME,
+    CONF_PORT,
     CONF_PRICE_SENSOR,
     CONF_SCAN_INTERVAL,
     CONF_SURPLUS_SENSOR,

@@ -11,7 +11,15 @@ from homeassistant.util.yaml import dump, parse_yaml
 from custom_components.proxon_control import image as image_module
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.pictures import (
-    HOUSE_W, Room, house_layout, house_svg, house_targets, tank_svg, tank_targets, unit_svg, unit_targets,
+    HOUSE_W,
+    Room,
+    house_layout,
+    house_svg,
+    house_targets,
+    tank_svg,
+    tank_targets,
+    unit_svg,
+    unit_targets,
 )
 
 from .test_integration import call, eid, make_entry, setup

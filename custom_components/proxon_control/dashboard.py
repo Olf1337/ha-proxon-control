@@ -9,13 +9,15 @@ On a phone the sections are shown one below the other.
 """
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .pictures import TANK_H, TANK_W, UNIT_H, UNIT_W, HOUSE_W, house_layout, house_targets, tank_targets, unit_targets
+from .pictures import HOUSE_W, TANK_H, TANK_W, UNIT_H, UNIT_W, house_layout, house_targets, tank_targets, unit_targets
 
-TEXT = {
+TEXT: dict[str, dict[str, Any]] = {
     "de": {
         "overview": "Übersicht", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus",
         "functions": "Funktionen", "store": "Warmwasser-Speicher (Solar / Strompreis)", "cooling": "Sommer-Nachtkühlung",
@@ -156,7 +158,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     # two columns without gaps: unit and house on the left (two columns wide), hot water and functions on the right
     if len(functions) == 1:
         functions = []
-    overview = [
+    overview: list[dict[str, Any]] = [
         {"type": "grid", "column_span": 2, "cards": [*unit, *house]},
         {"type": "grid", "cards": [*tank, *functions]},
     ]

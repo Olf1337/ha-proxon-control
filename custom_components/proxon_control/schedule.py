@@ -56,7 +56,7 @@ def read_day(values: dict, day: int) -> list[Phase] | None:
         raw = [values.get(schedule_key(day, p, f)) for f in range(len(SCHEDULE_FIELDS))]
         if any(not isinstance(v, (int, float)) for v in raw):
             return None
-        sh, sm, eh, em, lv = (int(v) for v in raw)
+        sh, sm, eh, em, lv = (int(v) for v in raw if v is not None)
         phases.append(Phase(sh * 60 + sm, eh * 60 + em, lv if 0 <= lv <= 4 else 0))
     return phases
 
@@ -73,7 +73,7 @@ def unit_clock(values: dict) -> datetime | None:
     raw = [values.get(k) for k in keys]
     if any(not isinstance(v, (int, float)) for v in raw):
         return None
-    minute, hour, day, month, year = (int(v) for v in raw)
+    minute, hour, day, month, year = (int(v) for v in raw if v is not None)
     try:
         return datetime(2000 + year if year < 100 else year, month, day, hour, minute)
     except ValueError:
@@ -98,15 +98,16 @@ def _covered(p: Phase) -> set[int]:
     return set(range(p.start, DAY_MINUTES)) | set(range(0, p.end + 1))
 
 
-def validate_day(phases: list[Phase], changed: set[int] | None = None) -> None:
+def validate_day(phases: list[Phase], changed: set[int] | None = None, allow_overnight: bool = False) -> None:
     """Check a day's phases. `changed`: the phases being changed (None = all) - a phase across midnight is only accepted
-    when it is not one of them (it was set at the unit itself)."""
+    when it is not one of them (it was set at the unit itself), or when `allow_overnight` (copied from another day of the
+    unit, which holds it)."""
     for i, p in enumerate(phases):
         if not p.active:
             continue
         if not (0 <= p.start < DAY_MINUTES and 0 <= p.end < DAY_MINUTES):
             raise ScheduleError("schedule_invalid_time", phase=str(i + 1))
-        if p.end == p.start or (p.end < p.start and (changed is None or i in changed)):
+        if p.end == p.start or (p.end < p.start and not allow_overnight and (changed is None or i in changed)):
             raise ScheduleError("schedule_end_before_start", phase=str(i + 1), start=hhmm(p.start), end=hhmm(p.end))
     active = sorted((p for p in phases if p.active), key=lambda p: p.start)
     for n, a in enumerate(active):
@@ -133,11 +134,14 @@ def _minutes_until(now: datetime, day: int, minute: int) -> int:
     return (day * 24 * 60 + minute - now_m) % WEEK_MINUTES
 
 
-def plan_day(day: int, old: list[Phase], new: list[Phase], now: datetime | None) -> list[tuple[str, int]]:
+def plan_day(day: int, old: list[Phase], new: list[Phase], now: datetime | None, allow_overnight: bool = False) -> list[tuple[str, int]]:
     """Check a new set of phases for one day against the rules and return the writes (key, value) in a safe order:
     first switch off phases whose times change, then write the times, then the levels."""
     # phases whose times change or that are switched on: these must end after they start (a level change alone is fine)
-    validate_day(new, {i for i, (o, n) in enumerate(zip(old, new)) if n.active and ((o.start, o.end) != (n.start, n.end) or not o.active)})
+    validate_day(
+        new, {i for i, (o, n) in enumerate(zip(old, new)) if n.active and ((o.start, o.end) != (n.start, n.end) or not o.active)},
+        allow_overnight,
+    )
     deactivate: list[tuple[str, int]] = []
     times: list[tuple[str, int]] = []
     levels: list[tuple[str, int]] = []

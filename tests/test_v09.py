@@ -3,15 +3,17 @@ devices, schedule entities, write guard, clock deviation, heat recovery and the 
 from __future__ import annotations
 
 from datetime import datetime
-import shutil
 from pathlib import Path
-
-import pytest
+import shutil
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er, issue_registry as ir
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
+import pytest
 
 from custom_components.proxon_control import registers as R
 from custom_components.proxon_control.const import DOMAIN
@@ -186,7 +188,7 @@ async def test_last_write_error_when_the_unit_ignores_a_value(hass: HomeAssistan
 async def test_rooms_are_devices_in_their_areas(hass: HomeAssistant, device) -> None:
     bath = ar.async_get(hass).async_create("Bad")
     await setup(hass)
-    devices, entities = dr.async_get(hass), er.async_get(hass)
+    entities = er.async_get(hass)
     unit = get_device(hass, "abc123")
     bedroom = get_device(hass, "abc123_room1")
     assert bedroom.name == "Proxon Schlafzimmer" and bedroom.via_device_id == unit.id
@@ -214,7 +216,6 @@ async def test_area_chosen_by_hand_stays(hass: HomeAssistant, device) -> None:
 # ---------------- weekly schedule as entities ----------------
 async def test_schedule_entities(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    devices = dr.async_get(hass)
     tuesday = get_device(hass, "abc123_schedule1")
     assert tuesday.name == "Proxon schedule Tuesday"
     start = eid(hass, "time", "ZP1_0_start")

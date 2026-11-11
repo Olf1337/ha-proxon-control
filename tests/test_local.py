@@ -11,7 +11,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from custom_components.proxon_control import api as A, local as L, local_cert as C, registers as R
+from custom_components.proxon_control import api as A
+from custom_components.proxon_control import local as L
+from custom_components.proxon_control import local_cert as C
+from custom_components.proxon_control import registers as R
 
 from .conftest import FakeDevice
 
@@ -49,7 +52,7 @@ class FakeUnit:
         while not self._stop.is_set():
             try:
                 data, addr = self.sock.recvfrom(4096)
-            except (socket.timeout, OSError):
+            except (TimeoutError, OSError):
                 continue
             if self.silent or len(data) < 16:
                 continue

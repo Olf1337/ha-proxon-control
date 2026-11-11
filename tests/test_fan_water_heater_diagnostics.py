@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+import pytest
 
 from custom_components.proxon_control.diagnostics import async_get_config_entry_diagnostics
 
@@ -116,7 +115,7 @@ async def test_no_water_heater_without_hot_water_heat_pump(hass: HomeAssistant, 
     read_all = R.read_all
     with pytest.MonkeyPatch.context() as mp:
         # a unit without the hot-water heat pump doesn't report its operating mode
-        mp.setattr(R, "read_all", lambda c: {k: v for k, v in read_all(c).items() if k != "T300Betriebsart"})
+        mp.setattr(R, "read_all", lambda c, names=True: {k: v for k, v in read_all(c, names).items() if k != "T300Betriebsart"})
         await setup(hass)
     assert no_entity(hass, "water_heater", "Warmwasser")
 

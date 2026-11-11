@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
+import pytest
 
-from custom_components.proxon_control import comfort as C, registers as R
+from custom_components.proxon_control import comfort as C
+from custom_components.proxon_control import registers as R
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.runtime import RuntimeTracker
 
@@ -19,10 +19,10 @@ from .test_v09 import raw_key, state, writes
 T0 = datetime(2026, 11, 9, 0, 0)
 
 
-def feed(st: C.SeasonState, temps: list[float], start: datetime = T0, step: timedelta = timedelta(minutes=30)) -> datetime:
+def feed(st: C.SeasonState, temps: list[float], start: datetime = T0, step: timedelta = timedelta(minutes=30), mode: int = 2) -> datetime:
     now = start
     for t in temps:
-        C.decide_season(now, C.SeasonSettings(), st, mode=2, outside=t, holiday=False)
+        C.decide_season(now, C.SeasonSettings(), st, mode=mode, outside=t, holiday=False)
         now += step
     return now
 
@@ -42,14 +42,25 @@ def test_season_switches_back_only_after_twelve_hours_and_below_the_lower_limit(
     st, s = C.SeasonState(), C.SeasonSettings(on=True)
     now = feed(st, [20.0] * 30)
     assert C.decide_season(now, s, st, mode=2, outside=20.0, holiday=False)[0] == C.MODE_SUMMER
-    now = feed(st, [5.0] * 10, now)  # cold, but the average is still high and the last switch recent
+    now = feed(st, [5.0] * 10, now, mode=1)  # cold, but the average is still high and the last switch recent
     assert C.decide_season(now, s, st, mode=1, outside=5.0, holiday=False)[:2] == (None, C.S_SUMMER)
-    now = feed(st, [5.0] * 90, now)  # two cold days
+    now = feed(st, [5.0] * 90, now, mode=1)  # two cold days
     assert C.decide_season(now, s, st, mode=1, outside=5.0, holiday=False)[0] == C.MODE_WINTER
     # between the limits: nothing changes
     st2 = C.SeasonState()
     now = feed(st2, [15.5] * 30)
     assert C.decide_season(now, s, st2, mode=2, outside=15.5, holiday=False)[:2] == (None, C.S_WINTER)
+
+
+def test_season_keeps_a_mode_set_by_hand_for_twelve_hours() -> None:
+    st, s = C.SeasonState(), C.SeasonSettings(on=True)
+    now = feed(st, [20.0] * 30, mode=1)  # warm and in Summer
+    assert C.decide_season(now, s, st, mode=1, outside=20.0, holiday=False)[:2] == (None, C.S_SUMMER)
+    # set to Winter by hand: kept although the average says summer
+    assert C.decide_season(now, s, st, mode=2, outside=20.0, holiday=False)[:2] == (None, C.S_WINTER)
+    later = now + timedelta(hours=11)
+    assert C.decide_season(later, s, st, mode=2, outside=20.0, holiday=False)[0] is None
+    assert C.decide_season(now + timedelta(hours=13), s, st, mode=2, outside=20.0, holiday=False)[0] == C.MODE_SUMMER
 
 
 def test_season_leaves_other_modes_alone() -> None:
@@ -134,12 +145,20 @@ def test_t300_fault_names() -> None:
 
 
 async def test_t300_fault_in_sensor_and_notice(hass: HomeAssistant, device) -> None:
-    device.raw[raw_key("Fehlerwort3_61")] = 1 << 14
+    device.raw[raw_key("Fehlerwort3_61")] = 1 << 1
     entry = await setup(hass)
     fault = state(hass, "binary_sensor", "Stoerung")
-    assert fault.state == "on" and fault.attributes["hot_water_module"] == ["Change filter"]
+    assert fault.state == "on" and fault.attributes["hot_water_module"] == ["Low pressure"]
     issue = ir.async_get(hass).async_get_issue(DOMAIN, f"unit_fault_{entry.entry_id}")
-    assert "hot-water module: Change filter" in issue.translation_placeholders["words"]
+    assert "hot-water module: Low pressure" in issue.translation_placeholders["words"]
+
+
+async def test_t300_filter_reminder_is_no_fault(hass: HomeAssistant, device) -> None:
+    device.raw[raw_key("Fehlerwort3_61")] = 1 << 14
+    await setup(hass)
+    fault = state(hass, "binary_sensor", "Stoerung")
+    assert fault.state == "off" and fault.attributes["hot_water_module"] == ["Change filter"]  # shown, but no fault
+    await call(hass, "number", "set_value", entity_id=eid(hass, "number", "SollWassertemperatur"), value=45)  # not blocked
 
 
 # ---------------- 0.12: room heat demand, heating elements, device type, compressor power ----------------
@@ -174,3 +193,68 @@ async def test_no_cooling_switch_on_heating_only_units(hass: HomeAssistant, devi
     await setup(hass)
     assert er.async_get(hass).async_get_entity_id("switch", DOMAIN, "abc123_GlobalKuehlungFreigabe") is None
     assert state(hass, "sensor", "GeraeteTyp").state == "heating_only"
+
+
+# ---------------- review fixes (0.12.1) ----------------
+def test_copy_takes_over_a_night_phase_from_the_unit() -> None:
+    from custom_components.proxon_control.schedule import Phase, plan_day
+
+    monday = [Phase(361, 1260, 3), Phase(1261, 360, 2), Phase(421, 1275, 0)]
+    tuesday = [Phase(420, 1260, 3), Phase(1261, 419, 2), Phase(360, 419, 0)]
+    now = datetime(2026, 11, 9, 10, 0)
+    writes = plan_day(1, tuesday, monday, now, allow_overnight=True)
+    assert ("ZP1_1_end_m", 0) in writes and ("ZP1_1_level", 2) in writes  # night phase now ends 06:00, switched on again
+
+
+def test_home_network_is_the_last_resort_while_paused() -> None:
+    from custom_components.proxon_control import api as A
+
+    class Way:
+        def __init__(self, error=None):
+            self.error, self.calls = error, 0
+
+        def read(self):
+            self.calls += 1
+            if self.error:
+                raise self.error
+            return {"x": 1.0}
+
+    local, cloud = Way(A.ProxonError("blip")), Way()
+    api = A.HybridApi(A.MODE_AUTO, local, cloud)
+    assert api.read()[A.PATH_KEY] == "cloud"  # local failed once: paused
+    cloud.error, local.error = A.ProxonError("internet down"), None
+    assert api.read()[A.PATH_KEY] == "local" and local.calls == 2  # cloud down too: home network tried anyway
+
+
+def test_room_names_are_read_only_now_and_then() -> None:
+    from .conftest import FakeDevice
+
+    dev = FakeDevice()
+    asked: list[int] = []
+
+    class Client:
+        def invoke(self, query, request):
+            asked.append(len(request["list"]))
+            return dev.invoke(query, request)
+
+    cache = R.NameCache()
+    first = cache.read(Client())
+    sizes_first = sum(asked)
+    asked.clear()
+    second = cache.read(Client())
+    assert sum(asked) < sizes_first  # names left out
+    assert second["NBE1name"] == first["NBE1name"] == "Schlafzimmer"  # but still there
+
+
+def test_key_file_is_private(tmp_path) -> None:
+    import os
+    from unittest.mock import MagicMock, patch
+
+    from custom_components.proxon_control import local_cert as LC
+
+    cert = "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"
+    resp = MagicMock()
+    resp.__enter__.return_value.read.return_value = ("0\nOK\n" + cert).encode()
+    with patch.object(LC.urllib.request, "urlopen", return_value=resp):
+        LC.fetch(str(tmp_path), "abc123", "pw")
+    assert os.stat(tmp_path / "local" / "abc123" / "key.pem").st_mode & 0o777 == 0o600

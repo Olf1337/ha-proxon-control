@@ -97,10 +97,12 @@ def fetch(storage_dir: str, device_id: str, password: str, timeout: float = 30) 
     folder = _folder(storage_dir, device_id)
     os.makedirs(folder, exist_ok=True)
     key_path = os.path.join(folder, KEY_FILE)
-    with open(key_path, "w", encoding="ascii") as f:
+    # created readable for the owner only from the start (not written first and protected afterwards)
+    fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="ascii") as f:
         f.write(key_pem)
     try:
-        os.chmod(key_path, 0o600)
+        os.chmod(key_path, 0o600)  # also when the file existed before with other rights
     except OSError:
         pass
     with open(os.path.join(folder, CERT_FILE), "w", encoding="ascii") as f:

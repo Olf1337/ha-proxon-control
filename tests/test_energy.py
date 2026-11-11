@@ -207,8 +207,8 @@ async def test_sensors_are_chosen_in_the_options(hass: HomeAssistant, device) ->
 
 async def test_checks_every_minute_on_its_own(hass: HomeAssistant, device) -> None:
     """A cheaper price arrives between two queries of the unit: the check every minute picks it up (in Home Assistant's event loop)."""
-    from pytest_homeassistant_custom_component.common import async_fire_time_changed
     from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
     await setup_with_sensors(hass)
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PreisWarmwasser"))

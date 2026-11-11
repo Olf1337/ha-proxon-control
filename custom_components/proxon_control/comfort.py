@@ -101,7 +101,7 @@ def decide_cooling(
     wanted = _situation(s, st, inside, outside)
     if wanted == st.mode:
         st.want, st.want_since = None, None
-        status = {COOLING: C_COOLING, PROTECTING: C_PROTECTING}.get(st.mode, C_IDLE)
+        status = {COOLING: C_COOLING, PROTECTING: C_PROTECTING}.get(st.mode or "", C_IDLE)
         # cooling level changed while cooling: follow it
         if st.mode == COOLING and int(level_now) != s.level and (st.last_change is None or now - st.last_change >= HOLD):
             st.last_change = now
@@ -180,7 +180,8 @@ def decide_boost(now: datetime, s: BoostSettings, st: BoostState, *, water: floa
 # ---------------- automatic summer / winter ----------------
 # Switches between the operating modes "Summer" and "Winter" by the average outdoor temperature (fresh air T3) of the last
 # two days: below "winter below" -> Winter, above "summer above" -> Summer, in between nothing changes. Only while the unit
-# is in Summer or Winter (ECO Comfort, Off, stove mode and holiday stay untouched), at most every MIN_SWITCH.
+# is in Summer or Winter (ECO Comfort, Off, stove mode and holiday stay untouched), at most every MIN_SWITCH. A mode set by
+# hand (at the panel, in the app or in Home Assistant) is kept for MIN_SWITCH as well.
 SEASON_WINDOW = timedelta(hours=48)
 SEASON_MIN_DATA = timedelta(hours=12)  # enough values for an average
 SEASON_SAMPLE = timedelta(minutes=30)
@@ -205,12 +206,14 @@ class SeasonSettings:
 @dataclass
 class SeasonState:
     samples: list[tuple[datetime, float]] = field(default_factory=list)
-    last_switch: datetime | None = None
+    last_switch: datetime | None = None  # last change of the mode, by this automatic or by hand
+    last_mode: int | None = None  # the mode seen (or written) last
 
     def to_dict(self) -> dict:
         return {
             "samples": [[t.isoformat(), v] for t, v in self.samples],
             "last_switch": self.last_switch.isoformat() if self.last_switch else None,
+            "last_mode": self.last_mode,
         }
 
     @classmethod
@@ -222,7 +225,8 @@ class SeasonState:
             except (TypeError, ValueError, IndexError):
                 continue
         ls = d.get("last_switch")
-        return cls(samples=samples, last_switch=datetime.fromisoformat(ls) if ls else None)
+        lm = d.get("last_mode")
+        return cls(samples=samples, last_switch=datetime.fromisoformat(ls) if ls else None, last_mode=int(lm) if lm is not None else None)
 
 
 def season_average(st: SeasonState, now: datetime) -> float | None:
@@ -241,6 +245,10 @@ def decide_season(
         st.samples.append((now, float(outside)))
     avg = season_average(st, now)
     details = {"average_outdoor": avg, "hours_known": round((now - st.samples[0][0]).total_seconds() / 3600, 1) if st.samples else 0}
+    if mode is not None:
+        if st.last_mode is not None and mode != st.last_mode:
+            st.last_switch = now  # changed by hand: keep it for a while
+        st.last_mode = mode
     if not s.on:
         return None, S_OFF, details
     if holiday or mode is None:
@@ -253,9 +261,9 @@ def decide_season(
     if st.last_switch is not None and now - st.last_switch < SEASON_MIN_SWITCH:
         return None, current, details
     if mode == MODE_WINTER and avg > s.summer_above:
-        st.last_switch = now
+        st.last_switch, st.last_mode = now, MODE_SUMMER
         return MODE_SUMMER, S_SUMMER, details
     if mode == MODE_SUMMER and avg < s.winter_below:
-        st.last_switch = now
+        st.last_switch, st.last_mode = now, MODE_WINTER
         return MODE_WINTER, S_WINTER, details
     return None, current, details

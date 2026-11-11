@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import time
 
 from homeassistant.components.sensor import (
@@ -12,24 +13,46 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfEnergy, UnitOfPower, UnitOfPressure, UnitOfTemperature, UnitOfTime,
+    PERCENTAGE,
+    REVOLUTIONS_PER_MINUTE,
+    EntityCategory,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfPressure,
+    UnitOfTemperature,
+    UnitOfTime,
 )
-from homeassistant.core import callback
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
 from .api import PATH_KEY
+from .comfort import (
+    B_ALREADY_ON,
+    B_BLOCKED,
+    B_HEATING,
+    B_IDLE,
+    B_OFF,
+    B_PAUSED,
+    C_BLOCKED,
+    C_COOLING,
+    C_IDLE,
+    C_NOT_SUMMER,
+    C_OFF,
+    C_PROTECTING,
+    C_WAITING,
+    S_BLOCKED,
+    S_COLLECTING,
+    S_MANUAL,
+    S_OFF,
+    S_SUMMER,
+    S_WINTER,
+)
 from .const import PPM
+from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
 from .registers import HOUR_COUNTERS, OPERATION_KEYS, ROOM_COUNT, filter_months, heat_recovery, room_connected
-from .comfort import (
-    B_ALREADY_ON, B_BLOCKED, B_HEATING, B_IDLE, B_OFF, B_PAUSED,
-    C_BLOCKED, C_COOLING, C_IDLE, C_NOT_SUMMER, C_OFF, C_PROTECTING, C_WAITING,
-    S_BLOCKED, S_COLLECTING, S_MANUAL, S_OFF, S_SUMMER, S_WINTER,
-)
-from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
 
 
@@ -190,7 +213,7 @@ SENSORS: list[ProxonSensorDescription] = [
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}
-    entities = []
+    entities: list[SensorEntity] = []
     for d in SENSORS:
         # only what the unit actually reports (rooms, CO2 sensor, hot-water heat pump)
         if d.key not in data:
@@ -327,7 +350,7 @@ class ProxonHeatRecovery(ProxonEntity, SensorEntity):
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Waermerueckgewinnung", "heat_recovery")
         self._last: float | None = None
-        self._measured_at = None
+        self._measured_at: datetime | None = None
 
     @property
     def available(self) -> bool:
@@ -411,7 +434,7 @@ class ProxonClock(ProxonEntity, SensorEntity):
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "UhrMinute", "unit_clock")
-        self._attr_unique_id = f"{self._attr_unique_id.removesuffix('_UhrMinute')}_Uhr"
+        self._attr_unique_id = f"{(self._attr_unique_id or '').removesuffix('_UhrMinute')}_Uhr"
 
     @property
     def native_value(self):

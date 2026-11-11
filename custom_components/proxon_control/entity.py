@@ -19,7 +19,7 @@ def room_name(i: int, data: dict | None = None) -> str:
 
 
 def base_id(coordinator: ProxonCoordinator) -> str:
-    entry = coordinator.config_entry
+    entry = coordinator.entry
     return entry.unique_id or entry.entry_id
 
 
@@ -67,7 +67,7 @@ class ProxonEntity(CoordinatorEntity[ProxonCoordinator]):
         *, device: DeviceInfo | None = None,
     ) -> None:
         super().__init__(coordinator)
-        entry = coordinator.config_entry
+        entry = coordinator.entry
         base = base_id(coordinator)
         self._key = key
         self._attr_unique_id = f"{base}_{key}"

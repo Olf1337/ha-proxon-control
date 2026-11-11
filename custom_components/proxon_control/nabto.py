@@ -338,8 +338,11 @@ def extract_deb(deb: bytes, wanted: dict[str, str], directory: str) -> None:
             if m is None or not m.isfile():
                 raise NabtoError(f"{src} fehlt im Debian-Paket")
             tmp = os.path.join(directory, dst + ".part")
+            extracted = tf.extractfile(m)
+            if extracted is None:
+                raise NabtoError(f"{src} fehlt im Debian-Paket")
             with open(tmp, "wb") as f:
-                f.write(tf.extractfile(m).read())
+                f.write(extracted.read())
             os.replace(tmp, os.path.join(directory, dst))
 
 
@@ -421,7 +424,8 @@ class HelperClient:
         if self._relocated or self._runtime is None or self._helper is None:
             return False
         self._relocated = True
-        for base in dict.fromkeys([tempfile.gettempdir(), "/dev/shm", "/run"]):
+        # mkdtemp makes a new folder only this user can read, so these shared places are safe to use
+        for base in dict.fromkeys([tempfile.gettempdir(), "/dev/shm", "/run"]):  # nosec B108
             try:
                 dest = tempfile.mkdtemp(prefix="proxon_rt_", dir=base)
                 rt = os.path.join(dest, "runtime")

@@ -8,15 +8,15 @@ The Proxon Control integration reads and writes through this when it can't load 
 from __future__ import annotations
 
 import hmac
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
 import os
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-import registers
 from nabto import NabtoClient, NabtoError, ensure_library
+import registers
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("proxon-bridge")

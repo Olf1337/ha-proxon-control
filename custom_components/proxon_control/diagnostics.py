@@ -21,7 +21,7 @@ TO_REDACT = {CONF_DEVICE_ID, CONF_PASSWORD, CONF_HOST}
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ProxonConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data
-    values = dict(coordinator.data or {})
+    values: dict[str, Any] = dict(coordinator.data or {})
     # room names are chosen by the user and may contain names of people
     for key in values:
         if key.endswith("name"):

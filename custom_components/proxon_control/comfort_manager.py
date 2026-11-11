@@ -172,7 +172,7 @@ class ComfortManager:
                     await self._write("E-Heizstab", 0, "hot-water boost: immersion heater off")
             if self.season.supported:
                 mode = num("Betriebsart")
-                samples_before = len(self.season.state.samples)
+                before = (len(self.season.state.samples), self.season.state.last_switch, self.season.state.last_mode)
                 write, status, details = C.decide_season(
                     now, self.season.settings, self.season.state, mode=None if mode is None else int(mode),
                     outside=num("T3Frischluft"), holiday=self._holiday(),
@@ -182,8 +182,8 @@ class ComfortManager:
                     changed = True
                     await self.async_save()  # saved first: after a restart it knows when it last switched
                     await self._write("Betriebsart", write, f"automatic summer/winter: mode {'Summer' if write == C.MODE_SUMMER else 'Winter'}")
-                elif len(self.season.state.samples) != samples_before:
-                    changed = True  # a new outdoor temperature: keep it across restarts
+                elif (len(self.season.state.samples), self.season.state.last_switch, self.season.state.last_mode) != before:
+                    changed = True  # a new outdoor temperature or a mode set by hand: keep it across restarts
             if changed:
                 await self.async_save()
             self.cooling.notify()

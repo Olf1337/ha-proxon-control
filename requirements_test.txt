@@ -1,1 +1,2 @@
-pytest-homeassistant-custom-component
+# pinned so a new release of the test package does not break the checks unnoticed; updated by Dependabot
+pytest-homeassistant-custom-component==0.13.375

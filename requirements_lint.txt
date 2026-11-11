@@ -1,0 +1,4 @@
+# code checks run in CI next to the tests (see .github/workflows/tests.yml); pinned, updated by Dependabot
+ruff==0.17.4
+mypy==2.4.1
+bandit==1.9.4

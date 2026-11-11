@@ -2,14 +2,11 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from http.server import ThreadingHTTPServer
+from pathlib import Path
 import shutil
 import sys
 import threading
-from http.server import ThreadingHTTPServer
-from pathlib import Path
-
-import pytest
-from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
@@ -17,8 +14,9 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
+import pytest
+from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.proxon_control import registers as R
 from custom_components.proxon_control.api import BridgeApi, TokenError
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.sensor import connection_path

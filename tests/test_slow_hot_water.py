@@ -1,9 +1,8 @@
 """The hot-water module (T300) takes over values slowly: the read-back waits longer and sends the value again."""
 from __future__ import annotations
 
-import pytest
-
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.proxon_control import registers as R
 

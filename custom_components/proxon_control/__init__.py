@@ -6,10 +6,14 @@ import re
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import area_registry as ar, config_validation as cv, device_registry as dr, entity_registry as er
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .api import BridgeApi, HybridApi, connect
+from .comfort_manager import ComfortManager
 from .const import (
     CONF_CONNECTION,
     CONF_DEVICE_ID,
@@ -27,12 +31,11 @@ from .const import (
     MODEL,
 )
 from .coordinator import ProxonCoordinator
-from .entity import room_identifier, room_name
-from .registers import ROOM_COUNT
-from .comfort_manager import ComfortManager
 from .energy_manager import EnergyManager
+from .entity import room_identifier, room_name
 from .holiday import HolidayMode
 from .nabto import library_supported
+from .registers import ROOM_COUNT
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
 

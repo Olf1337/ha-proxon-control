@@ -4,9 +4,9 @@ No Home Assistant imports: the bridge add-on uses this file too.
 """
 from __future__ import annotations
 
-import time
 from collections.abc import Callable
 from dataclasses import dataclass
+import time
 
 QUERY_SET_READ = "setpointReadListValue"
 QUERY_DATA_READ = "datapointReadListValue"
@@ -99,7 +99,8 @@ def schedule_key(day: int, phase: int, field: int) -> str:
 # fault words of the unit (data points; any bit set = fault). Addresses as documented by the ha-lan-proxon project (MIT),
 # found on a real unit. Some bits are known, harmless notices and are not counted as a fault.
 FAULT_POINTS = ((0, 2), (0, 48), (0, 49), (0, 50), (0, 51), (1, 7), (2, 78), (2, 79), (2, 80), (3, 61))
-TOLERATED_FAULT_BITS = {(0, 50): 64, (2, 79): 16}
+# (the hot-water module's "change filter" bit is a maintenance reminder, not a fault: it is shown, but doesn't block anything)
+TOLERATED_FAULT_BITS = {(0, 50): 64, (2, 79): 16, (3, 61): 1 << 14}
 
 
 def fault_key(point: tuple[int, int]) -> str:
@@ -378,8 +379,9 @@ def parse_values(regs: list[Reg], reply: dict) -> dict[str, float | str]:
     return out
 
 
-def read_all(client) -> dict[str, float | str]:
-    """Read every value: two list queries for the unit, then two for the connected rooms (client: anything with invoke(query, request))."""
+def read_all(client, names: bool = True) -> dict[str, float | str]:
+    """Read every value: two list queries for the unit, then two for the connected rooms (client: anything with invoke(query, request)).
+    names=False leaves out the room names (they rarely change, see NameCache)."""
     out: dict[str, float | str] = {}
     times: list[float] = []
     if hasattr(client, "last_rtt"):
@@ -391,11 +393,12 @@ def read_all(client) -> dict[str, float | str]:
         times.append(time.monotonic() - t)
         return reply
 
-    for query, regs in read_requests():
+    base = BASE_REGISTERS if names else [g for g in BASE_REGISTERS if g.conv != "text"]
+    for query, regs in read_requests(base):
         out.update(parse_values(regs, ask(query, regs)))
     # then only the rooms the unit reports connected (up to 20), so the queries stay small
     rooms = connected_rooms(out)
-    room_regs = [g for n in rooms for g in ROOM_REGISTERS[n]]
+    room_regs = [g for n in rooms for g in ROOM_REGISTERS[n] if names or g.conv != "text"]
     for query, regs in read_requests(room_regs):
         if regs:
             out.update(parse_values(regs, ask(query, regs)))
@@ -411,7 +414,7 @@ def read_all(client) -> dict[str, float | str]:
     if (charge := water_charge(out)) is not None:
         out["WarmwasserLadezustand"] = charge
     if "LaufzeitFilter" in out:
-        out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - out["LaufzeitFilter"])
+        out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - float(out["LaufzeitFilter"]))
     return out
 
 
@@ -434,7 +437,7 @@ def water_charge(values: dict) -> float | None:
     """How full the hot-water tank is (0-100 %): the middle and bottom sensors measured against cold water and the target.
     An estimate - the tank has no sensor at the top."""
     mid, bottom, target = values.get("WarmwasserIstTemperatur"), values.get("WarmwasserUntenTemperatur"), values.get("SollWassertemperatur")
-    if not all(isinstance(v, (int, float)) for v in (mid, bottom)):
+    if not isinstance(mid, (int, float)) or not isinstance(bottom, (int, float)):
         return None
     target = float(target) if isinstance(target, (int, float)) and target > COLD_WATER + 5 else 50.0
     share = ((mid - COLD_WATER) + (bottom - COLD_WATER)) / (2 * (target - COLD_WATER))
@@ -448,7 +451,7 @@ def heat_recovery(values: dict) -> float | None:
     """Efficiency of the heat exchanger in %: how much of the difference between outdoor and extract air the supply air
     gains. Only meaningful while the heat pump is off and the bypass closed (otherwise the supply air is heated / bypassed)."""
     t_out, t_sup, t_ext = values.get("T3Frischluft"), values.get("T1Zuluft"), values.get("T7Abluft")
-    if not all(isinstance(v, (int, float)) for v in (t_out, t_sup, t_ext)):
+    if not isinstance(t_out, (int, float)) or not isinstance(t_sup, (int, float)) or not isinstance(t_ext, (int, float)):
         return None
     if values.get("DrehzahlKompressor") or values.get("Bypass") or int(values.get("Betriebsart", 0) or 0) == MODE_OFF:
         return None
@@ -469,6 +472,29 @@ def allowed_during_fault(key: str, value: float) -> bool:
     if key in _HARMLESS_KEYS or (key.startswith("NBE") and key.endswith("OffsetTemperatur")):
         return True
     return (key in _OFF_KEYS or (key.startswith("NBE") and key.endswith("PTC"))) and not value
+
+
+class NameCache:
+    """Reads the room names only every EVERY queries (and whenever a connected room has no name yet) - they are ten values
+    per room and change about once in the life of a unit. The names from the last time are added in between."""
+
+    EVERY = 30
+
+    def __init__(self) -> None:
+        self.names: dict[str, str] = {}
+        self._count = 0
+
+    def read(self, client) -> dict[str, float | str]:
+        fresh = self._count % self.EVERY == 0 or not self.names
+        self._count += 1
+        out = read_all(client, names=fresh)
+        if fresh:
+            self.names = {k: v for k, v in out.items() if isinstance(v, str) and k.endswith("name")}
+        else:
+            out.update(self.names)
+            if any(f"NBE{n}name" not in self.names for n in connected_rooms(out)):
+                self._count = 0  # a newly connected room: names again next time
+        return out
 
 
 def write_value(client, key: str, value: float) -> None:

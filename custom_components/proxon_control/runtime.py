@@ -68,11 +68,11 @@ class RuntimeTracker:
             since = last
             if c.day != day:
                 midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                if counted and last < midnight:  # running time before midnight still belongs to the old day
+                if counted and last is not None and last < midnight:  # running time before midnight still belongs to the old day
                     c.seconds += (midnight - last).total_seconds()
                     since = midnight
                 self._new_day(c, day)
-            if counted:
+            if counted and since is not None:
                 c.seconds += max(0.0, (now - since).total_seconds())
             if running and c.on is False:
                 c.starts += 1

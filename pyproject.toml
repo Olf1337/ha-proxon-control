@@ -1,0 +1,31 @@
+# Settings of the code checks (ruff, mypy, bandit) - the integration itself is installed by HACS, not as a package.
+
+[tool.ruff]
+line-length = 200
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "B905",  # zip() without strict=: the zipped lists have the same length by construction
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components"]
+force-sort-within-sections = true
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+files = ["custom_components/proxon_control"]
+
+# Home Assistant 2026.10 types its schemas with probatio; the voluptuous schemas used here (still accepted) don't match
+[[tool.mypy.overrides]]
+module = ["*.config_flow", "*.services"]
+disable_error_code = ["arg-type"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+# B310: urlopen of fixed https addresses (Proxon portal, Nabto release) and the bridge address the user entered
+# B104/B311: binding to all interfaces for the UDP discovery reply; random client ids (not for security)
+skips = ["B310", "B104", "B311"]

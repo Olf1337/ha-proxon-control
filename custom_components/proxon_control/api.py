@@ -56,6 +56,7 @@ class DirectApi:
         self._dir = storage_dir
         self._client = None
         self._lock = threading.Lock()
+        self._names = registers.NameCache()
 
     def _connect(self):
         try:
@@ -88,7 +89,7 @@ class DirectApi:
         return self.read()
 
     def read(self) -> dict[str, float]:
-        return {**self._call(registers.read_all), PATH_KEY: "cloud"}
+        return {**self._call(self._names.read), PATH_KEY: "cloud"}
 
     def read_schedule(self) -> dict[str, float]:
         return self._call(registers.read_schedule)
@@ -120,6 +121,7 @@ class LocalApi:
         self.port = port
         self._fp: bytes | None = None
         self._lock = threading.Lock()
+        self._names = registers.NameCache()
 
     def _certificate(self) -> bytes:
         if self._fp is None:
@@ -165,7 +167,7 @@ class LocalApi:
         return self.read()
 
     def read(self) -> dict[str, float]:
-        return {**self._call(registers.read_all), PATH_KEY: "local"}
+        return {**self._call(self._names.read), PATH_KEY: "local"}
 
     def read_schedule(self) -> dict[str, float]:
         return self._call(registers.read_schedule)
@@ -189,16 +191,21 @@ class HybridApi:
         self.cloud = cloud_api
         self.path: str | None = None
         self._local_failed_at: float | None = None
+        # reading and writing can run at the same time (in different worker threads): the shared state is guarded
+        self._state = threading.Lock()
 
     def _ways(self) -> list:
         if self.mode == MODE_LOCAL or self.cloud is None:
             return [self.local]
         if self.mode == MODE_CLOUD or self.local is None:
             return [self.cloud]
-        local_paused = self._local_failed_at is not None and time.monotonic() - self._local_failed_at < LOCAL_RETRY
-        return [self.cloud] if local_paused else [self.local, self.cloud]
+        with self._state:
+            local_paused = self._local_failed_at is not None and time.monotonic() - self._local_failed_at < LOCAL_RETRY
+        # while the home network pauses after a failure, it is still the last resort when the cloud fails too
+        return [self.cloud, self.local] if local_paused else [self.local, self.cloud]
 
-    def _run(self, action):
+    def _run(self, action) -> tuple:
+        """Try the ways in turn; returns (result, "local" / "cloud")."""
         last: ProxonError | None = None
         ways = self._ways()
         for api in ways:
@@ -211,30 +218,33 @@ class HybridApi:
                     raise  # Device ID / password wrong: Home Assistant asks to log in again
                 last = err
                 if api is self.local and self.mode == MODE_AUTO and self.cloud is not None:
-                    if self._local_failed_at is None:
-                        _LOGGER.warning("Proxon: home network connection failed (%s) - using the Proxon server for now", err)
-                    self._local_failed_at = time.monotonic()
+                    with self._state:
+                        if self._local_failed_at is None:
+                            _LOGGER.warning("Proxon: home network connection failed (%s) - using the Proxon server for now", err)
+                        self._local_failed_at = time.monotonic()
                 continue
-            if api is self.local:
-                if self._local_failed_at is not None:
-                    _LOGGER.info("Proxon: home network connection works again")
-                self._local_failed_at = None
-            self.path = "local" if api is self.local else "cloud"
-            return result
+            path = "local" if api is self.local else "cloud"
+            with self._state:
+                if api is self.local:
+                    if self._local_failed_at is not None:
+                        _LOGGER.info("Proxon: home network connection works again")
+                    self._local_failed_at = None
+                self.path = path
+            return result, path
         raise last or ProxonError("keine Verbindung")
 
     def test(self) -> dict[str, float]:
-        return self._run(lambda api: api.test())
+        return self._run(lambda api: api.test())[0]
 
     def read(self) -> dict[str, float]:
-        data = self._run(lambda api: api.read())
-        return {**data, PATH_KEY: self.path or "cloud"}
+        data, path = self._run(lambda api: api.read())
+        return {**data, PATH_KEY: path}
 
     def read_schedule(self) -> dict[str, float]:
-        return self._run(lambda api: api.read_schedule())
+        return self._run(lambda api: api.read_schedule())[0]
 
     def write(self, key: str, value: float) -> dict:
-        return self._run(lambda api: api.write(key, value))
+        return self._run(lambda api: api.write(key, value))[0]
 
     def close(self) -> None:
         for api in (self.local, self.cloud):
@@ -260,10 +270,10 @@ class BridgeApi:
             with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - local add-on address
                 out = json.loads(resp.read().decode() or "{}")
         except urllib.error.HTTPError as err:
-            body: dict = {}
+            answer: dict = {}
             try:
-                body = json.loads(err.read().decode())
-                msg = body.get("error", str(err))
+                answer = json.loads(err.read().decode())
+                msg = answer.get("error", str(err))
             except ValueError:
                 msg = str(err)
             if err.code == 401:
@@ -272,17 +282,17 @@ class BridgeApi:
                 raise TokenError(msg) from err
             if err.code == 409:  # the unit did not take over the written value
                 raise WriteNotAccepted(
-                    str(body.get("key", "")), float(body.get("wanted", 0)), body.get("got"), body.get("values", {})
+                    str(answer.get("key", "")), float(answer.get("wanted", 0)), answer.get("got"), answer.get("values", {})
                 ) from err
             raise ProxonError(msg) from err
         except (urllib.error.URLError, OSError, ValueError) as err:
             raise ProxonError(f"Bridge nicht erreichbar: {err}") from err
         return out
 
-    def test(self) -> dict[str, float]:
+    def test(self) -> dict[str, float | str]:
         return self.read()
 
-    def read(self) -> dict[str, float]:
+    def read(self) -> dict[str, float | str]:
         return {k: (v if isinstance(v, str) else float(v)) for k, v in self._req("/values").get("values", {}).items()}
 
     def read_schedule(self) -> dict[str, float]:

@@ -3,12 +3,11 @@ from __future__ import annotations
 
 from datetime import time
 
-import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+import voluptuous as vol
 
 from .const import DOMAIN
 from .coordinator import ProxonCoordinator
@@ -115,7 +114,8 @@ async def async_copy_day(hass: HomeAssistant, coordinator: ProxonCoordinator, so
         if day == source:
             continue
         try:
-            plans.append(plan_day(day, _phases(hass, coordinator, day), phases, now))
+            # phases across midnight come from a day the unit already holds: they may be copied
+            plans.append(plan_day(day, _phases(hass, coordinator, day), phases, now, allow_overnight=True))
         except ScheduleError as err:
             raise _fail(hass, day, err) from err
     for writes in plans:

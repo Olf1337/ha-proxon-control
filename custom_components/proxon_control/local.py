@@ -18,13 +18,13 @@ No Home Assistant imports.
 from __future__ import annotations
 
 import base64
+from dataclasses import dataclass
 import hashlib
 import logging
 import secrets
 import socket
 import struct
 import time
-from dataclasses import dataclass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ def discover(port: int = PORT, timeout: float = 3.0, broadcast: str = "255.255.2
             sock.settimeout(max(0.05, deadline - time.monotonic()))
             try:
                 data, addr = sock.recvfrom(4096)
-            except (socket.timeout, OSError):
+            except (TimeoutError, OSError):
                 break
             if len(data) >= 16 and data[:4] == client_id:
                 found.setdefault(addr[0], Found(addr[0], port))
@@ -196,7 +196,7 @@ class LocalClient:
             self._sock.settimeout(min(0.25, max(0.02, deadline - time.monotonic())))
             try:
                 data, _ = self._sock.recvfrom(4096)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if len(data) < 16 or data[:4] != self._client_id or data[8:9] != want:
                 continue

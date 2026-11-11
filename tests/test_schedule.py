@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+import pytest
 
 from custom_components.proxon_control import registers as R
 from custom_components.proxon_control.const import DOMAIN

@@ -1,23 +1,28 @@
 """Reads all values at the chosen interval (default 10 seconds) and writes changes with read-back."""
 from __future__ import annotations
 
+from datetime import timedelta
 import logging
 import time
-from datetime import timedelta
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
-from .api import AuthError, BridgeApi, DirectApi, ProxonError, WriteNotAccepted
 from homeassistant.helpers.storage import Store
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .api import AuthError, BridgeApi, DirectApi, HybridApi, ProxonError, WriteNotAccepted
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
 from .registers import SCHEDULE_KEYS, active_faults, allowed_during_fault
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
+
+if TYPE_CHECKING:
+    from .comfort_manager import ComfortManager
+    from .energy_manager import EnergyManager
+    from .holiday import HolidayMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,17 +30,22 @@ _LOGGER = logging.getLogger(__name__)
 SCHEDULE_SECONDS = 300
 
 
-class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, api: DirectApi | BridgeApi) -> None:
+class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """The values of the unit (numbers, plus room names and the connection path as text) and the managers using them."""
+
+    # set up by __init__ before the entities are created
+    holiday: HolidayMode
+    energy: EnergyManager
+    comfort: ComfortManager
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, api: HybridApi | DirectApi | BridgeApi) -> None:
         seconds = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
         seconds = max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, seconds))
         super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=timedelta(seconds=seconds))
+        self.entry = entry
         self.api = api
         self._rooms_logged = False
         self._schedule: dict[str, float] = {}
-        self.holiday = None  # HolidayMode, set up by __init__
-        self.energy = None  # EnergyManager, set up by __init__
-        self.comfort = None  # ComfortManager (night cooling, hot-water boost), set up by __init__
         self._schedule_read_at: float | None = None
         # the last write the unit didn't take (shown by the sensor "Last write error")
         self.last_write_error: dict | None = None
@@ -48,9 +58,9 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
     async def async_load_runtime(self) -> None:
         self.runtime.load(await self._runtime_store.async_load() or {})
 
-    async def _async_update_data(self) -> dict[str, float]:
+    async def _async_update_data(self) -> dict[str, Any]:
         try:
-            data = await self.hass.async_add_executor_job(self.api.read)
+            data: dict[str, Any] = await self.hass.async_add_executor_job(self.api.read)
             if self._schedule_read_at is None or time.monotonic() - self._schedule_read_at >= SCHEDULE_SECONDS:
                 try:
                     self._schedule.update(await self.hass.async_add_executor_job(self.api.read_schedule))

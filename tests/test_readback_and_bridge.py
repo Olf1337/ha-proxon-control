@@ -1,10 +1,10 @@
 """Writing with read-back: the rule itself, and the same behaviour through the add-on's local interface."""
 from __future__ import annotations
 
-import sys
-import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+import sys
+import threading
 
 import pytest
 

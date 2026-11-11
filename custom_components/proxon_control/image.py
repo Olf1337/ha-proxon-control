@@ -61,12 +61,12 @@ class ProxonPicture(ProxonEntity, ImageEntity):
         """The picture, and what makes it look different apart from temperatures (a change there is shown right away)."""
         data = self.coordinator.data or {}
         lang = self.hass.config.language if self.hass else "de"
-        theme = self.coordinator.config_entry.options.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME)
+        theme = self.coordinator.entry.options.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME)
         energy, cooling, boost = self._features()
         if self._kind == "unit":
             cooling_status = cooling.status if cooling and cooling.supported and cooling.settings.on else None
             fault = bool(active_faults(data))
-            sig = (data.get("Betriebsart"), data.get("IstLuefterstufe"), data.get("Luefterstufe"), bool(data.get("DrehzahlKompressor")),
+            sig: tuple = (data.get("Betriebsart"), data.get("IstLuefterstufe"), data.get("Luefterstufe"), bool(data.get("DrehzahlKompressor")),
                    data.get("Kuehlbetrieb4Wegeventil"), data.get("Intensivlueftung"), fault, cooling_status, theme, lang)
             return unit_svg(data, lang, theme, cooling_status, fault), sig
         if self._kind == "tank":
@@ -91,7 +91,7 @@ class ProxonPicture(ProxonEntity, ImageEntity):
         """Draw the picture; announce it when it shows something new. Returns whether it was announced."""
         svg, signature = self._draw()
         raw = svg.encode()
-        digest = hashlib.sha1(raw).hexdigest()
+        digest = hashlib.sha1(raw, usedforsecurity=False).hexdigest()  # only tells whether the picture changed
         if digest == self._hash:
             return False
         now = time.monotonic()

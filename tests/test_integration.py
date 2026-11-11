@@ -4,16 +4,14 @@ from __future__ import annotations
 from datetime import timedelta
 from unittest.mock import patch
 
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.proxon_control.api import AuthError
 from custom_components.proxon_control.const import DOMAIN

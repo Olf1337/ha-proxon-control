@@ -322,7 +322,7 @@ def house_layout(count: int) -> tuple[int, list[tuple[float, float, float, float
     cols = 3 if count <= 9 else 4
     rows = max(1, -(-count // cols))
     room_w = (HOUSE_W - 96 - (cols - 1) * 12) / cols
-    boxes = [(48 + (i % cols) * (room_w + 12), HOUSE_TOP + (i // cols) * (ROOM_H + 12), room_w, ROOM_H) for i in range(count)]
+    boxes = [(48 + (i % cols) * (room_w + 12), float(HOUSE_TOP + (i // cols) * (ROOM_H + 12)), room_w, float(ROOM_H)) for i in range(count)]
     height = HOUSE_TOP + rows * (ROOM_H + 12) + 54
     return int(height), boxes
 

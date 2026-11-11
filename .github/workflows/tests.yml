@@ -16,3 +16,17 @@ jobs:
           python-version: "3.14"  # Home Assistant 2026.3 and newer
       - run: pip install -r requirements_test.txt
       - run: python -m pytest -q
+
+  checks:
+    name: Code checks (ruff, mypy, bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install -r requirements_test.txt -r requirements_lint.txt
+      - run: ruff check custom_components tests proxon_bridge
+      - run: mypy
+      # medium and high findings only (the low ones are known: asserts, subprocess for the helper program)
+      - run: bandit -c pyproject.toml -r custom_components proxon_bridge -ll
