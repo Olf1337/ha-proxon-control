@@ -271,6 +271,21 @@
           "heating": "Heizen",
           "cooling": "Kühlen"
         }
+      },
+      "power_total": {
+        "name": "Leistungsaufnahme"
+      },
+      "power_compressor": {
+        "name": "Leistung Kompressor"
+      },
+      "power_ventilation": {
+        "name": "Leistung Lüftung und Elektronik"
+      },
+      "energy_total": {
+        "name": "Energieverbrauch"
+      },
+      "energy_compressor": {
+        "name": "Energieverbrauch Kompressor"
       }
     },
     "select": {

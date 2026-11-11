@@ -2,16 +2,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.const import (
-    PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfPressure, UnitOfTemperature, UnitOfTime,
+    PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfEnergy, UnitOfPower, UnitOfPressure, UnitOfTemperature, UnitOfTime,
 )
+from homeassistant.core import callback
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -72,6 +75,13 @@ SENSORS: list[ProxonSensorDescription] = [
     _temp("T300Verdampfer", "t300_evaporator", diag=True),
     _temp("T300Kompressor", "t300_compressor", diag=True),
     _temp("WarmwasserUntenTemperatur", "water_bottom"),
+    *[
+        ProxonSensorDescription(
+            key=key, translation_key=tk, native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER,
+            state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0,
+        )
+        for key, tk in (("LeistungGesamt", "power_total"), ("LeistungKompressor", "power_compressor"), ("LeistungLueftung", "power_ventilation"))
+    ],
     ProxonSensorDescription(
         key="WarmwasserLadezustand", translation_key="water_charge", native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT, icon="mdi:water-boiler",
@@ -160,6 +170,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         if d.key in ("FirmwareT300", "T300LuefterDrehzahl") and "T300Betriebsart" not in data:
             continue
         entities.append(ProxonSensor(coordinator, d))
+    entities += [ProxonEnergy(coordinator, key, power, tk) for key, power, tk in ENERGY if power in data]
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
     entities.append(ProxonLastWriteError(coordinator))
@@ -210,6 +221,57 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         if self._key == "FilterRestStunden":
             return {"filter_lifetime_months": filter_months(data)}
         return None
+
+
+# energy counters for the Energy dashboard: (key, power value they add up, translation key)
+ENERGY = [("EnergieGesamt", "LeistungGesamt", "energy_total"), ("EnergieKompressor", "LeistungKompressor", "energy_compressor")]
+# a gap between two readings longer than this (or three query intervals; Home Assistant stopped, unit not reachable) isn't counted
+MAX_GAP_SECONDS = 15 * 60
+
+
+class ProxonEnergy(ProxonEntity, RestoreSensor):
+    """Energy the unit used (kWh), added up from its power readings (trapezoidal rule). Kept across restarts; for the
+    Energy dashboard (individual devices)."""
+
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator, key: str, power_key: str, tk: str) -> None:
+        super().__init__(coordinator, key, tk)
+        self._power_key = power_key
+        self._kwh = 0.0
+        self._last: tuple[float, float] | None = None  # (watt, monotonic time)
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_sensor_data()) is not None and isinstance(last.native_value, (int, float)):
+            self._kwh = float(last.native_value)
+        self._add(time.monotonic())
+
+    def _add(self, now: float) -> None:
+        watt = (self.coordinator.data or {}).get(self._power_key)
+        if not isinstance(watt, (int, float)) or not self.coordinator.last_update_success:
+            self._last = None
+            return
+        interval = self.coordinator.update_interval.total_seconds() if self.coordinator.update_interval else 0
+        if self._last is not None and 0 < now - self._last[1] <= max(MAX_GAP_SECONDS, 3 * interval):
+            self._kwh += (self._last[0] + watt) / 2 * (now - self._last[1]) / 3_600_000
+        self._last = (float(watt), now)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._add(time.monotonic())
+        super()._handle_coordinator_update()
+
+    @property
+    def native_value(self) -> float:
+        return round(self._kwh, 4)
 
 
 class ProxonHeatRecovery(ProxonEntity, SensorEntity):

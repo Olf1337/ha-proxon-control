@@ -292,3 +292,30 @@ async def test_new_blueprints_load(hass: HomeAssistant, device, blueprints) -> N
     await hass.async_block_till_done()
     autos = hass.states.async_entity_ids("automation")
     assert len(autos) == 3 and all(hass.states.get(a).state == "on" for a in autos)
+
+
+# ---------------- power and energy (0.10) ----------------
+async def test_power_and_energy(hass: HomeAssistant, device) -> None:
+    from unittest.mock import patch
+
+    from custom_components.proxon_control import sensor as sensor_module
+
+    t = [1000.0]
+    with patch.object(sensor_module.time, "monotonic", lambda: t[0]):
+        entry = await setup(hass)
+        assert state(hass, "sensor", "LeistungGesamt").state == "531.8"
+        assert state(hass, "sensor", "LeistungKompressor").state == "470.9"
+        assert state(hass, "sensor", "LeistungLueftung").state == "60.9"
+        energy = eid(hass, "sensor", "EnergieGesamt")
+        assert float(hass.states.get(energy).state) == 0
+        coordinator = entry.runtime_data
+        t[0] += 720  # 12 minutes from 531.8 W to 468.2 W: on average 500 W = 0.1 kWh
+        coordinator.async_set_updated_data({**coordinator.data, "LeistungGesamt": 468.2})
+        await hass.async_block_till_done()
+        assert float(hass.states.get(energy).state) == 0.1
+        t[0] += 2 * 3600  # a gap of two hours (Home Assistant was stopped): not counted
+        coordinator.async_set_updated_data({**coordinator.data, "LeistungGesamt": 468.2})
+        await hass.async_block_till_done()
+        assert float(hass.states.get(energy).state) == 0.1
+    s = hass.states.get(energy)
+    assert s.attributes["state_class"] == "total_increasing" and s.attributes["unit_of_measurement"] == "kWh"

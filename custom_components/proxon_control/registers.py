@@ -31,8 +31,9 @@ MODE_CHOICES = [MODE_COMFORT, MODE_WINTER, MODE_SUMMER, MODE_STOVE, MODE_OFF]
 OPERATION_KEYS = {0: "ventilation", 1: "heating", 2: "cooling"}
 
 # Data points named in Proxon's Modbus register list (FWT 2.0) whose meaning over the network isn't confirmed yet: read only
-# into the diagnostics download, so a real unit's values can show what they hold (power, air volume, COP, fault flag).
-PROBE_POINTS = (19, 20, 23, 25, 26, 27, 29, 32, 34, 47)
+# into the diagnostics download, so a real unit's values can show what they hold (air volume, fault flag). (Confirmed on a
+# real unit and now values of their own: the power figures. The COP figures of the list stay 0 there.)
+PROBE_POINTS = (26, 47)
 
 # clock of the unit: summer time flag, minute, hour, ISO weekday (1 = Monday), day, month, year (two digits)
 CLOCK_KEYS = ("UhrSommerzeit", "UhrMinute", "UhrStunde", "UhrWochentag", "UhrTag", "UhrMonat", "UhrJahr")
@@ -145,6 +146,11 @@ def _registers() -> list[Reg]:
         Reg("BedienpanelGesperrt", True, (0, 403), None, "bool"),  # the stored value is a code: only "locked or not" is kept
         Reg("PVFreigabe", True, (7, 11), None, "bool"),  # PV input of the hot-water module enabled
         *[Reg(f"Pruefwert_DP0_{n}", False, (0, n)) for n in PROBE_POINTS],
+        # electrical power the unit draws (Modbus list: Power Total = PCB + FU, in tenths of a watt; checked on a real unit:
+        # 60.9 W + 470.9 W = 531.8 W with the compressor running). The hot-water module isn't included.
+        Reg("LeistungGesamt", False, (0, 25), None, "div10"),
+        Reg("LeistungKompressor", False, (0, 20), None, "div10"),
+        Reg("LeistungLueftung", False, (0, 19), None, "div10"),
         Reg("WarmwasserUntenTemperatur", False, (3, 13), None, "water"),
         Reg("PVSignalHeizstab", False, (3, 99), None, "bool"),
         Reg("PVSignalWaermepumpe", False, (3, 100), None, "bool"),

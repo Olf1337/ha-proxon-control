@@ -58,6 +58,32 @@ def test_invalid_days(phases, key) -> None:
     assert err.value.key == key
 
 
+# a real unit's day, set at the panel: the evening phase runs on to 06:00 the next morning
+NIGHT = [Phase(6 * 60 + 1, 21 * 60, 3), Phase(21 * 60 + 1, 6 * 60, 2), Phase(7 * 60 + 1, 21 * 60 + 15, 0)]
+
+
+def test_phase_across_midnight_set_at_the_unit_is_kept() -> None:
+    validate_day(NIGHT, changed=set())  # as it is: fine
+    # its level can change; the morning phase can move as long as it doesn't touch the night phase
+    assert plan_day(1, NIGHT, [NIGHT[0], Phase(21 * 60 + 1, 6 * 60, 3), NIGHT[2]], MON_10) == [("ZP1_1_level", 3)]
+    writes = plan_day(1, NIGHT, [Phase(6 * 60 + 30, 21 * 60, 3), NIGHT[1], NIGHT[2]], MON_10)
+    assert ("ZP1_0_start_m", 30) in writes
+    with pytest.raises(ScheduleError) as err:  # into the night phase
+        plan_day(1, NIGHT, [Phase(5 * 60, 21 * 60, 3), NIGHT[1], NIGHT[2]], MON_10)
+    assert err.value.key == "schedule_overlap"
+    with pytest.raises(ScheduleError) as err:  # a new phase across midnight isn't written from here
+        plan_day(1, DAY, [DAY[0], Phase(22 * 60 + 30, 5 * 60, 2), DAY[2]], MON_10)
+    assert err.value.key == "schedule_end_before_start"
+
+
+def test_phase_across_midnight_is_running_the_next_morning() -> None:
+    tue_3 = datetime(2026, 11, 10, 3, 0)  # Tuesday 03:00: Monday's night phase is still running
+    with pytest.raises(ScheduleError) as err:
+        plan_day(0, NIGHT, [NIGHT[0], Phase(21 * 60 + 1, 6 * 60, 0), NIGHT[2]], tue_3)  # switching it off while it runs
+    assert err.value.key == "schedule_running"
+    assert plan_day(0, NIGHT, [NIGHT[0], Phase(21 * 60 + 1, 6 * 60, 1), NIGHT[2]], tue_3) == [("ZP0_1_level", 1)]
+
+
 def test_inactive_phases_dont_count() -> None:
     validate_day([Phase(360, 480, 2), Phase(400, 300, 0), Phase(0, 0, 0)])
 

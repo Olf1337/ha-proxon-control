@@ -2,7 +2,8 @@
 
 7 days x 3 phases; each phase has a start, an end and a ventilation level (0 = phase not active, 1..4).
 Rules (found on a real unit and documented by the ha-lan-proxon project, MIT licence):
-  * an active phase ends after it starts (no phases across midnight),
+  * an active phase ends after it starts. Phases across midnight (e.g. 21:01-06:00, set at the unit's panel) do exist on
+    real units: they are kept and respected, only new ones aren't written from here,
   * active phases of a day don't overlap and don't share a boundary minute,
   * a phase that is running right now may only change its level (1..4), with at least 10 minutes to both ends,
   * times may only change (or a phase be switched on) when it starts at least 2 hours from now by the unit's clock.
@@ -87,20 +88,43 @@ def clock_drift(values: dict, now: datetime) -> int | None:
     return round((clock - now.replace(tzinfo=None, second=0, microsecond=0)).total_seconds() / 60)
 
 
-def validate_day(phases: list[Phase]) -> None:
+DAY_MINUTES = 24 * 60
+
+
+def _covered(p: Phase) -> set[int]:
+    """The minutes of the day a phase covers, both ends included (a phase across midnight covers the evening and the morning)."""
+    if p.start <= p.end:
+        return set(range(p.start, p.end + 1))
+    return set(range(p.start, DAY_MINUTES)) | set(range(0, p.end + 1))
+
+
+def validate_day(phases: list[Phase], changed: set[int] | None = None) -> None:
+    """Check a day's phases. `changed`: the phases being changed (None = all) - a phase across midnight is only accepted
+    when it is not one of them (it was set at the unit itself)."""
     for i, p in enumerate(phases):
         if not p.active:
             continue
-        if not (0 <= p.start < 24 * 60 and 0 <= p.end < 24 * 60):
+        if not (0 <= p.start < DAY_MINUTES and 0 <= p.end < DAY_MINUTES):
             raise ScheduleError("schedule_invalid_time", phase=str(i + 1))
-        if p.end <= p.start:
+        if p.end == p.start or (p.end < p.start and (changed is None or i in changed)):
             raise ScheduleError("schedule_end_before_start", phase=str(i + 1), start=hhmm(p.start), end=hhmm(p.end))
     active = sorted((p for p in phases if p.active), key=lambda p: p.start)
-    for a, b in zip(active, active[1:]):
-        if b.start <= a.end:
-            raise ScheduleError(
-                "schedule_overlap", first=f"{hhmm(a.start)}–{hhmm(a.end)}", second=f"{hhmm(b.start)}–{hhmm(b.end)}"
-            )
+    for n, a in enumerate(active):
+        for b in active[n + 1:]:
+            if _covered(a) & _covered(b):
+                raise ScheduleError(
+                    "schedule_overlap", first=f"{hhmm(a.start)}–{hhmm(a.end)}", second=f"{hhmm(b.start)}–{hhmm(b.end)}"
+                )
+
+
+def _running(p: Phase, day: int, now: datetime) -> bool:
+    """Whether a phase of `day` is running at `now` (a phase across midnight runs on into the next morning)."""
+    if not p.active:
+        return False
+    now_m = now.hour * 60 + now.minute
+    if p.start < p.end:
+        return now.weekday() == day and p.start <= now_m < p.end
+    return (now.weekday() == day and now_m >= p.start) or (now.weekday() == (day + 1) % 7 and now_m < p.end)
 
 
 def _minutes_until(now: datetime, day: int, minute: int) -> int:
@@ -112,7 +136,8 @@ def _minutes_until(now: datetime, day: int, minute: int) -> int:
 def plan_day(day: int, old: list[Phase], new: list[Phase], now: datetime | None) -> list[tuple[str, int]]:
     """Check a new set of phases for one day against the rules and return the writes (key, value) in a safe order:
     first switch off phases whose times change, then write the times, then the levels."""
-    validate_day(new)
+    # phases whose times change or that are switched on: these must end after they start (a level change alone is fine)
+    validate_day(new, {i for i, (o, n) in enumerate(zip(old, new)) if n.active and ((o.start, o.end) != (n.start, n.end) or not o.active)})
     deactivate: list[tuple[str, int]] = []
     times: list[tuple[str, int]] = []
     levels: list[tuple[str, int]] = []
@@ -126,14 +151,11 @@ def plan_day(day: int, old: list[Phase], new: list[Phase], now: datetime | None)
                     times.append((schedule_key(day, p, f), b))
             continue
         times_change = (o.start, o.end) != (n.start, n.end)
-        running = (
-            o.active and now is not None and now.weekday() == day and o.start <= now.hour * 60 + now.minute < o.end
-        )
-        if running:
+        if now is not None and _running(o, day, now):
             if times_change or not n.active:
                 raise ScheduleError("schedule_running", phase=str(p + 1), start=hhmm(o.start), end=hhmm(o.end))
             now_m = now.hour * 60 + now.minute
-            if now_m - o.start < RUNNING_MARGIN_MINUTES or o.end - now_m < RUNNING_MARGIN_MINUTES:
+            if (now_m - o.start) % DAY_MINUTES < RUNNING_MARGIN_MINUTES or (o.end - now_m) % DAY_MINUTES < RUNNING_MARGIN_MINUTES:
                 raise ScheduleError("schedule_running_margin", phase=str(p + 1))
             levels.append((schedule_key(day, p, 4), n.level))
             continue

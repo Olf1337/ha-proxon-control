@@ -31,6 +31,7 @@ RAW_DEFAULT.update({
     "Schieberposition": 0, "VentilHeizung": 40, "VentilVorwaerme": 0, "VentilKuehlung": 0, "StatusKompressor": 1, "StatusVentilatoren": 3,
     "DruckVerdampfer": 2850, "T12VorKondensator": 3500, "T13Kompressor": 6000, "T14Sauggas": 1200, "T300Saugleitung": 1100,
     "T300LuefterDrehzahl": 900, "FirmwareT300": 35,
+    "LeistungGesamt": 5318, "LeistungKompressor": 4709, "LeistungLueftung": 609,
 })
 # unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on
 RAW_DEFAULT.update({"UhrSommerzeit": 0, "UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26,

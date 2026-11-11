@@ -30,6 +30,7 @@ TEXT = {
             "Soll-E-Heizstab-Temperatur": "Heizstab-Soll", "BoostStatus": "Status", "SollWassertemperatur": "Warmwasser-Soll",
             "WarmwasserLadezustand": "Ladezustand", "Legionellenfunktion": "Legionellenschaltung", "AktuellerBetrieb": "Betrieb",
             "Waermerueckgewinnung": "Wärmerückgewinnung", "IntensivlueftungsDauer": "Dauer Intensivlüftung",
+            "LeistungGesamt": "Leistung", "EnergieGesamt": "Verbrauch",
             "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
@@ -52,6 +53,7 @@ TEXT = {
             "Soll-E-Heizstab-Temperatur": "Heater target", "BoostStatus": "Status", "SollWassertemperatur": "Hot-water target",
             "WarmwasserLadezustand": "Charge", "Legionellenfunktion": "Legionella protection", "AktuellerBetrieb": "Operation",
             "Waermerueckgewinnung": "Heat recovery", "IntensivlueftungsDauer": "Boost duration",
+            "LeistungGesamt": "Power", "EnergieGesamt": "Consumption",
             "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
@@ -123,6 +125,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Betriebsart", HALF, features=[{"type": "select-options"}], features_position="inline"),
         *tile("Stoerung", HALF), *tile("FilterRestStunden_warning", HALF),
         *tile("AktuellerBetrieb", HALF), *tile("Waermerueckgewinnung", HALF),
+        *tile("LeistungGesamt", HALF), *tile("EnergieGesamt", HALF),
     ]
     tank_areas = [_area(ids["Warmwasser"], tank_targets()["tank"], (TANK_W, TANK_H))] if "Warmwasser" in ids else []
     tank = [

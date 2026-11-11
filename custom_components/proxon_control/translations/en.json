@@ -271,6 +271,21 @@
           "heating": "Heating",
           "cooling": "Cooling"
         }
+      },
+      "power_total": {
+        "name": "Power draw"
+      },
+      "power_compressor": {
+        "name": "Compressor power"
+      },
+      "power_ventilation": {
+        "name": "Ventilation and electronics power"
+      },
+      "energy_total": {
+        "name": "Energy consumption"
+      },
+      "energy_compressor": {
+        "name": "Compressor energy consumption"
       }
     },
     "select": {
