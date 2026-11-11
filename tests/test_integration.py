@@ -55,7 +55,7 @@ async def test_login_dialog(hass: HomeAssistant, device) -> None:
     assert result["type"] is FlowResultType.FORM and result["step_id"] == "direct"
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"device_id": " abc123 ", "password": "secret"})
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == DATA
+    assert result["data"] == {**DATA, "mode": "auto"}  # home network first, Proxon server as fallback
 
 
 async def test_login_wrong_password(hass: HomeAssistant, device) -> None:
@@ -67,11 +67,27 @@ async def test_login_wrong_password(hass: HomeAssistant, device) -> None:
     assert result["errors"] == {"base": "invalid_auth"}
 
 
-async def test_unsupported_system_points_to_addon(hass: HomeAssistant) -> None:
+async def test_raspberry_pi_logs_in_over_the_home_network(hass: HomeAssistant, local_device) -> None:
+    """Without Nabto's library (e.g. Raspberry Pi) the same login works, over the home network only."""
     with patch("custom_components.proxon_control.config_flow.library_supported", return_value=False):
         result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {"next_step_id": "direct"})
-    assert result["type"] is FlowResultType.ABORT and result["reason"] == "unsupported_system"
+        assert result["type"] is FlowResultType.FORM and result["step_id"] == "local"
+        assert "mode" not in result["data_schema"].schema  # nothing to choose
+        with patch("custom_components.proxon_control.api.DirectApi.test", side_effect=AssertionError("no cloud here")):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {"device_id": "abc123", "password": "secret", "local_host": " 192.168.1.50 "}
+            )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {**DATA, "mode": "local", "local_host": "192.168.1.50"}
+
+
+async def test_unit_not_found_in_the_home_network(hass: HomeAssistant, device) -> None:
+    with patch("custom_components.proxon_control.config_flow.library_supported", return_value=False):
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"next_step_id": "direct"})
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"device_id": "abc123", "password": "secret"})
+    assert result["type"] is FlowResultType.FORM and result["errors"] == {"base": "cannot_connect_local"}
 
 
 async def test_bridge_dialog(hass: HomeAssistant, device) -> None:
@@ -119,6 +135,19 @@ async def test_query_interval_is_adjustable(hass: HomeAssistant, device) -> None
     await hass.async_block_till_done()
     assert entry.options == {"scan_interval": 30}
     assert entry.runtime_data.update_interval == timedelta(seconds=30)  # the integration was reloaded with the new interval
+
+
+async def test_connection_is_chosen_in_the_options(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert {"mode", "local_host"} <= {str(k) for k in result["data_schema"].schema}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"scan_interval": 10, "mode": "cloud", "local_host": ""}
+    )
+    await hass.async_block_till_done()
+    assert entry.options == {"scan_interval": 10, "mode": "cloud"}
+    api = entry.runtime_data.api
+    assert api.mode == "cloud" and api.local is None
 
 
 async def test_query_interval_limits(hass: HomeAssistant, device) -> None:

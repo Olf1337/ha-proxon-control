@@ -15,6 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
+from .api import PATH_KEY
 from .const import PPM
 from .entity import ProxonEnergyEntity, ProxonEntity, room_name
 from .registers import ROOM_COUNT, room_connected
@@ -229,8 +230,9 @@ class ProxonResponseTime(ProxonEntity, SensorEntity):
 
 
 class ProxonConnectionPath(ProxonEntity, SensorEntity):
-    """Estimated way the data takes: home network, directly over the internet, or through Nabto's relay server.
-    Estimated from the response time, because the Nabto library doesn't tell it for these queries."""
+    """The way the data takes: home network, directly over the internet, or through Nabto's relay server.
+    Exact for the integration's own home network connection; through the Proxon server estimated from the response time,
+    because the Nabto library doesn't tell it."""
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["local", "internet", "relay"]
@@ -242,12 +244,21 @@ class ProxonConnectionPath(ProxonEntity, SensorEntity):
         self._attr_unique_id = f"{self._attr_unique_id}_path"
 
     @property
+    def _direct(self) -> bool:
+        return (self.coordinator.data or {}).get(PATH_KEY) == "local"
+
+    @property
     def native_value(self) -> str | None:
+        if self._direct:
+            return "local"
         return None if self.raw_value is None else connection_path(float(self.raw_value))
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {"response_time_ms": self.raw_value, "estimated": True}
+        attrs = {"response_time_ms": self.raw_value, "estimated": not self._direct}
+        if via := (self.coordinator.data or {}).get(PATH_KEY):
+            attrs["via"] = via  # "local": the integration's home network connection, "cloud": through the Proxon server
+        return attrs
 
 
 class ProxonEnergyStatus(ProxonEnergyEntity, SensorEntity):

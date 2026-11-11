@@ -9,15 +9,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
-from .api import BridgeApi, DirectApi
+from .api import BridgeApi, HybridApi, connect
 from .const import (
     CONF_CONNECTION,
     CONF_DEVICE_ID,
     CONF_HOST,
+    CONF_LOCAL_HOST,
+    CONF_MODE,
     CONF_PASSWORD,
     CONF_PORT,
     CONF_TOKEN,
     CONNECTION_BRIDGE,
+    DEFAULT_MODE,
     DEFAULT_PORT,
     DOMAIN,
 )
@@ -25,6 +28,7 @@ from .coordinator import ProxonCoordinator
 from .comfort_manager import ComfortManager
 from .energy_manager import EnergyManager
 from .holiday import HolidayMode
+from .nabto import library_supported
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
 
@@ -51,10 +55,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-def make_api(hass: HomeAssistant, data: dict) -> DirectApi | BridgeApi:
+def make_api(hass: HomeAssistant, data: dict) -> HybridApi | BridgeApi:
+    """The way to the unit. `data`: the entry's data and options together.
+
+    Logged in with Device ID + password: home network and/or Proxon server, as chosen. Where Nabto's library doesn't exist
+    (e.g. Raspberry Pi), only the home network is possible.
+    """
     if data.get(CONF_CONNECTION) == CONNECTION_BRIDGE:
         return BridgeApi(data[CONF_HOST], data.get(CONF_PORT, DEFAULT_PORT), data.get(CONF_TOKEN))
-    return DirectApi(data[CONF_DEVICE_ID], data[CONF_PASSWORD], hass.config.path(DOMAIN))
+    return connect(
+        data[CONF_DEVICE_ID], data[CONF_PASSWORD], hass.config.path(DOMAIN),
+        data.get(CONF_MODE) or DEFAULT_MODE, data.get(CONF_LOCAL_HOST), library_supported(),
+    )
 
 
 # entities of version 0.1.x that the room thermostats replace (room target numbers, room heating element switches)
@@ -69,7 +81,7 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bool:
-    coordinator = ProxonCoordinator(hass, entry, make_api(hass, dict(entry.data)))
+    coordinator = ProxonCoordinator(hass, entry, make_api(hass, {**entry.data, **entry.options}))
     coordinator.holiday = HolidayMode(hass, coordinator, entry.entry_id)
     await coordinator.holiday.async_load()
     coordinator.energy = EnergyManager(hass, coordinator, entry)

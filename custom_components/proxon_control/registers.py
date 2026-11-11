@@ -259,6 +259,8 @@ def read_all(client) -> dict[str, float | str]:
     """Read every value: two list queries for the unit, then two for the connected rooms (client: anything with invoke(query, request))."""
     out: dict[str, float | str] = {}
     times: list[float] = []
+    if hasattr(client, "last_rtt"):
+        client.last_rtt = None  # the client measures the time on the wire itself (without its pauses between packets)
 
     def ask(query: str, regs: list[Reg]) -> dict:
         t = time.monotonic()
@@ -275,7 +277,8 @@ def read_all(client) -> dict[str, float | str]:
         if regs:
             out.update(parse_values(regs, ask(query, regs)))
     # response time of the unit: the quickest of these queries, in milliseconds
-    out["Antwortzeit"] = round(min(times) * 1000, 1)
+    rtt = getattr(client, "last_rtt", None)
+    out["Antwortzeit"] = round((rtt if rtt is not None else min(times)) * 1000, 1)
     # derived values the original shows
     if "NBEverbunden0" in out and "NBEverbunden1" in out:
         for n in range(1, ROOM_COUNT):

@@ -27,6 +27,12 @@ CONF_PICTURE_THEME = "picture_theme"
 PICTURE_THEMES = ["auto", "light", "dark"]
 DEFAULT_PICTURE_THEME = "auto"
 CONF_TOKEN = "token"  # access key of the bridge (optional)
+# how the integration reaches the unit when logged in with Device ID + password:
+# "auto" = home network first, Proxon server as fallback; "local" = home network only; "cloud" = Proxon server only
+CONF_MODE = "mode"
+MODES = ["auto", "local", "cloud"]
+DEFAULT_MODE = "auto"
+CONF_LOCAL_HOST = "local_host"  # IP address of the unit in the home network (optional; found automatically otherwise)
 
 CONNECTION_DIRECT = "direct"
 CONNECTION_BRIDGE = "bridge"

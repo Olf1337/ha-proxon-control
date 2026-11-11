@@ -5,16 +5,34 @@
         "title": "Proxon Control",
         "description": "Wie soll Home Assistant Ihre Proxon-Anlage erreichen?",
         "menu_options": {
-          "direct": "Am Proxon-Server anmelden (Device ID + Passwort)",
+          "direct": "Mit Device ID + Passwort anmelden (Heimnetz und/oder Proxon-Server)",
           "bridge": "Über das Proxon-Bridge-Add-on"
         }
       },
       "direct": {
-        "title": "Am Proxon-Server anmelden",
-        "description": "Dieselbe Anmeldung wie in der App Proxon Control: Device ID und Passwort Ihrer Anlage.",
+        "title": "Mit Device ID + Passwort anmelden",
+        "description": "Dieselbe Anmeldung wie in der App Proxon Control: Device ID und Passwort Ihrer Anlage.\n\nHome Assistant kann direkt im Heimnetz mit der Anlage sprechen (schnell, funktioniert ohne Internet) und den Proxon-Server als Ausweichweg nutzen. Bei der ersten Verbindung wird einmalig ein Zertifikat vom Proxon-Portal geholt; die Anlage muss danach mindestens einmal online gewesen sein.",
         "data": {
           "device_id": "Device ID",
-          "password": "Passwort"
+          "password": "Passwort",
+          "mode": "Verbindung",
+          "local_host": "IP-Adresse der Anlage (optional)"
+        },
+        "data_description": {
+          "mode": "Heimnetz zuerst: am schnellsten, der Proxon-Server wird nur genutzt, wenn die Anlage direkt nicht erreichbar ist.",
+          "local_host": "Leer lassen, dann wird die Anlage automatisch gesucht. Adresse eintragen, wenn sie nicht gefunden wird (z. B. anderes Subnetz oder VLAN); eine feste Adresse im Router hilft."
+        }
+      },
+      "local": {
+        "title": "Mit Device ID + Passwort anmelden (Heimnetz)",
+        "description": "Dieselbe Anmeldung wie in der App Proxon Control: Device ID und Passwort Ihrer Anlage.\n\nAuf diesem System (z. B. Raspberry Pi) spricht Home Assistant direkt im Heimnetz mit der Anlage – die Nabto-Bibliothek für den Proxon-Server gibt es hier nicht. Einmalig wird ein Zertifikat vom Proxon-Portal geholt; die Anlage muss danach mindestens einmal online gewesen sein. Home Assistant und die Anlage müssen im selben Netz sein.",
+        "data": {
+          "device_id": "Device ID",
+          "password": "Passwort",
+          "local_host": "IP-Adresse der Anlage (optional)"
+        },
+        "data_description": {
+          "local_host": "Leer lassen, dann wird die Anlage automatisch gesucht. Adresse eintragen, wenn sie nicht gefunden wird (z. B. anderes Subnetz oder VLAN); eine feste Adresse im Router hilft."
         }
       },
       "bridge": {
@@ -41,12 +59,12 @@
       "invalid_auth": "Device ID oder Passwort ist falsch.",
       "cannot_connect": "Die Anlage ist nicht erreichbar. Bitte Device ID und Internetverbindung prüfen.",
       "unknown": "Unerwarteter Fehler, siehe Protokoll.",
-      "invalid_token": "Die Bridge hat den Zugriffsschlüssel abgelehnt. Bitte denselben Schlüssel wie in der Bridge eintragen."
+      "invalid_token": "Die Bridge hat den Zugriffsschlüssel abgelehnt. Bitte denselben Schlüssel wie in der Bridge eintragen.",
+      "cannot_connect_local": "Die Anlage hat im Heimnetz nicht geantwortet. Bitte prüfen, ob sie eingeschaltet und im selben Netz ist, oder ihre IP-Adresse eintragen. Für den allerersten Kontakt braucht sie einmal Internet."
     },
     "abort": {
       "already_configured": "Diese Anlage ist bereits eingerichtet.",
-      "reauth_successful": "Erneut angemeldet.",
-      "unsupported_system": "Die Verbindungsbibliothek von Nabto gibt es nur für Linux auf Intel/AMD (x86-64) und für Macs mit Apple-Chip, auf diesem System (z. B. Raspberry Pi) läuft sie nicht. Lösung: die Proxon-Bridge als Docker-Container auf einem anderen x86-64-Rechner (z. B. NAS) laufen lassen und „Über das Proxon-Bridge-Add-on“ wählen – siehe README."
+      "reauth_successful": "Erneut angemeldet."
     }
   },
   "entity": {
@@ -146,7 +164,7 @@
         "name": "Antwortzeit"
       },
       "connection_path": {
-        "name": "Verbindungsweg (geschätzt)",
+        "name": "Verbindungsweg",
         "state": {
           "local": "Heimnetz",
           "internet": "Direkt über das Internet",
@@ -427,8 +445,10 @@
     "step": {
       "init": {
         "title": "Proxon Control",
-        "description": "Wie oft soll Home Assistant die Anlage abfragen? Kürzere Zeiten zeigen Änderungen schneller, belasten aber die Verbindung über den Proxon-Server stärker.\n\nWarmwasser als Speicher: Sensoren für Solarüberschuss und Strompreis auswählen. Ein-/Ausschalten und die Schwellwerte gibt es auf der Geräteseite der Proxon-Anlage.",
+        "description": "Wie soll Home Assistant die Anlage erreichen, und wie oft soll es sie abfragen? Über das Heimnetz sind kurze Intervalle kein Problem; über den Proxon-Server belasten kürzere Zeiten die Verbindung stärker.\n\nWarmwasser als Speicher: Sensoren für Solarüberschuss und Strompreis auswählen. Ein-/Ausschalten und die Schwellwerte gibt es auf der Geräteseite der Proxon-Anlage.",
         "data": {
+          "mode": "Verbindung",
+          "local_host": "IP-Adresse der Anlage (optional)",
           "scan_interval": "Abfrageintervall (Sekunden)",
           "surplus_sensor": "Sensor für Solarüberschuss",
           "feed_in_negative": "Einspeisung wird negativ angezeigt",
@@ -436,6 +456,8 @@
           "picture_theme": "Dashboard-Bilder"
         },
         "data_description": {
+          "mode": "Heimnetz zuerst: am schnellsten, der Proxon-Server wird nur genutzt, wenn die Anlage direkt nicht erreichbar ist.",
+          "local_host": "Leer lassen, dann wird die Anlage automatisch gesucht. Adresse eintragen, wenn sie nicht gefunden wird (z. B. anderes Subnetz oder VLAN); eine feste Adresse im Router hilft.",
           "scan_interval": "Zwischen 5 und 3600 Sekunden. Standard: 10.",
           "surplus_sensor": "Ins Netz eingespeiste Leistung (W oder kW), z. B. die Netzleistung deines Wechselrichters oder Stromzählers.",
           "feed_in_negative": "Einschalten, wenn dein Sensor die Einspeisung als negative Zahl anzeigt.",
@@ -522,6 +544,13 @@
         "auto": "Automatisch",
         "light": "Hell",
         "dark": "Dunkel"
+      }
+    },
+    "mode": {
+      "options": {
+        "auto": "Heimnetz zuerst, Proxon-Server als Ausweichweg",
+        "local": "Nur Heimnetz",
+        "cloud": "Nur Proxon-Server"
       }
     }
   },

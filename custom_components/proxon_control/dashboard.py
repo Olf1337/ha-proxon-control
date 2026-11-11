@@ -31,7 +31,7 @@ TEXT = {
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
         "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "schedule_on": "Programm aktiv",
-        "diag": {"Antwortzeit": "Antwortzeit", "Antwortzeit_path": "Verbindungsweg (geschätzt)", "Uhr": "Uhr der Anlage",
+        "diag": {"Antwortzeit": "Antwortzeit", "Antwortzeit_path": "Verbindungsweg", "Uhr": "Uhr der Anlage",
                  "FilterRestStunden": "Filter-Restlaufzeit", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Betriebsstunden"},
     },
     "en": {
@@ -49,7 +49,7 @@ TEXT = {
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "schedule_on": "Schedule active",
-        "diag": {"Antwortzeit": "Response time", "Antwortzeit_path": "Connection path (estimated)", "Uhr": "Unit clock",
+        "diag": {"Antwortzeit": "Response time", "Antwortzeit_path": "Connection path", "Uhr": "Unit clock",
                  "FilterRestStunden": "Filter time left", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Working hours"},
     },
 }

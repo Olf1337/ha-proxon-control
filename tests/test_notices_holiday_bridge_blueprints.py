@@ -111,10 +111,21 @@ def test_connection_path_from_response_time() -> None:
 
 
 async def test_response_time_sensors(hass: HomeAssistant, device) -> None:
+    """Through the Proxon server the way is estimated from the response time."""
     await setup(hass)
     assert float(hass.states.get(eid(hass, "sensor", "Antwortzeit")).state) < 15
     path = hass.states.get(eid(hass, "sensor", "Antwortzeit_path"))
-    assert path.state == "local" and path.attributes["estimated"] is True
+    assert path.state == "local" and path.attributes["estimated"] is True and path.attributes["via"] == "cloud"
+
+
+async def test_connection_path_is_exact_in_the_home_network(hass: HomeAssistant, local_device) -> None:
+    entry = await setup(hass)
+    path = hass.states.get(eid(hass, "sensor", "Antwortzeit_path"))
+    assert path.state == "local" and path.attributes["estimated"] is False and path.attributes["via"] == "local"
+    # slow answers in the home network are still the home network
+    entry.runtime_data.async_set_updated_data({**entry.runtime_data.data, "Antwortzeit": 300.0})
+    await hass.async_block_till_done()
+    assert hass.states.get(eid(hass, "sensor", "Antwortzeit_path")).state == "local"
 
 
 # ---------------- bridge with access key ----------------

@@ -8,12 +8,15 @@ Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assis
 hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, **summer night cooling**, a **hot-water boost** with the immersion heater, an **animated dashboard** (unit, hot water, house), the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
 Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
-**Works from outside your home network.** It uses the same remote access as the phone app, so no VPN or port forwarding is needed – Home Assistant and the
-unit only need internet access, and they don't have to be in the same network.
+**Home network first, cloud as fallback (new in 0.8.0).** Home Assistant talks to the unit directly in your home network (UDP port 5570, plain Python,
+fast, keeps working when the internet is down) and falls back to Proxon's remote-access server when the unit can't be reached there. You can also choose
+*home network only* or *Proxon server only*. A certificate is fetched once from the Proxon portal with your Device ID and password; after that the home
+network connection needs no internet. Through the Proxon server it also works from elsewhere (no VPN or port forwarding needed).
 
 **Unofficial.** This project is not made, endorsed or supported by Proxon or Nabto. "Proxon" and "Nabto" belong to their owners. It talks to the unit the
-same way the phone app does (through Proxon's remote-access server and Nabto's connection library), so it needs an internet connection and may stop working if
-those services change. Use at your own risk.
+same ways the phone app does (in the home network, or through Proxon's remote-access server and Nabto's connection library), and may stop working if
+those change. Use at your own risk. The home network protocol follows the [ha-lan-proxon](https://github.com/Fummy1990/ha-lan-proxon) project (MIT, see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 
 **Not included:** logos, images or texts of the original app, and Nabto's library. The library is downloaded from Nabto's own release on first use
 (on Home Assistant OS also some Debian system files, see below). The small helper program that runs the library on Home Assistant OS is in `helper/`, its
@@ -22,7 +25,9 @@ source is included.
 **Install:** HACS → three-dot menu → *Custom repositories* → `https://github.com/Olf1337/ha-proxon-control` (type *Integration*) → install → restart Home Assistant →
 *Settings → Devices & services → Add integration → Proxon Control*.
 
-Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. **Raspberry Pi / ARM:** Nabto's library doesn't exist there – run the Proxon Bridge as a Docker container on another x86-64 machine (e.g. a NAS) and connect through it (see below).
+**Raspberry Pi / ARM: supported from 0.8.0** over the home network (Home Assistant and the unit in the same network). The Proxon server fallback needs
+Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
+needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
 **Upgrading to 0.3.2:** room thermostats now use the modes `auto` (unit regulates the room) and `heat` (electric heating element released) instead of `off`/`heat`; up to 20 rooms are supported.
 
@@ -30,16 +35,15 @@ Works on Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Ap
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.7.0)
+# Proxon Control – Integration für Home Assistant (Version 0.8.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
 
-> ### Funktioniert auch von außerhalb des Heimnetzes
-> Die Integration spricht die Anlage über denselben Fernzugriff an wie die Proxon-App (Proxon-Server und Nabto-Verbindung). Dafür braucht es **kein VPN,
-> keine Portfreigabe und keine feste Adresse im Heimnetz**: Anlage und Home Assistant brauchen nur Internet. Home Assistant kann also an einem ganz anderen
-> Ort laufen als die Anlage (z. B. Home Assistant in der Wohnung, Anlage im Ferienhaus), und auch eine Verbindung aus dem Mobilfunknetz genügt.
-> Das unterscheidet sie von Integrationen, die die Anlage nur im lokalen Netz erreichen. Umgekehrt gilt: ohne Internet geht es nicht.
+> ### Heimnetz zuerst, Proxon-Server als Ausweichweg (neu in 0.8.0)
+> Die Integration spricht die Anlage **direkt im Heimnetz** an (schnell, funktioniert auch ohne Internet, auch auf dem **Raspberry Pi**). Ist sie dort
+> nicht erreichbar, nimmt sie automatisch den **Proxon-Server** – denselben Fernzugriff wie die Proxon-App. Damit funktioniert sie weiterhin auch von außerhalb
+> des Heimnetzes, ohne VPN und Portfreigabe. Wer möchte, stellt „Nur Heimnetz“ oder „Nur Proxon-Server“ ein.
 
 Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → Proxon Control* ein Gerät „Proxon“ mit:
 
@@ -55,7 +59,22 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Sensoren | Raumtemperaturen, Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter, Betriebsstunden, 4-Wegeventil, Firmware |
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute); Filterwechsel und Störung erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
-| Diagnose | Antwortzeit der Anlage, geschätzter Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver), Uhr der Anlage, Firmware, Betriebsstunden |
+| Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage, Firmware, Betriebsstunden |
+
+## Neu in Version 0.8.0: Direkt im Heimnetz, auch auf dem Raspberry Pi
+
+* **Heimnetz zuerst, Proxon-Server als Ausweichweg.** Die Integration spricht die Anlage direkt im Heimnetz an (UDP-Port 5570, reines Python, keine
+  Nabto-Bibliothek, kein Hilfsprogramm). Antwortet sie dort nicht, geht es über den Proxon-Server weiter; nach 10 Minuten wird das Heimnetz erneut versucht.
+* **Raspberry Pi und andere ARM-Systeme** werden unterstützt (über das Heimnetz). Die Proxon-Bridge ist dafür nicht mehr nötig.
+* **Verbindung wählbar** beim Einrichten und unter *Konfigurieren*: „Heimnetz zuerst“ (Standard), „Nur Heimnetz“, „Nur Proxon-Server“. Optional die
+  IP-Adresse der Anlage, falls sie nicht automatisch gefunden wird (anderes Subnetz/VLAN).
+* **Zertifikat einmalig:** Beim ersten Verbinden im Heimnetz holt die Integration – wie die Original-App beim ersten Anmelden – mit Device ID und Passwort
+  ein Zertifikat vom Proxon-Portal. Danach braucht die Heimnetz-Verbindung kein Internet mehr. Der Schlüssel bleibt auf Ihrem Home Assistant
+  (`/config/proxon_control/local/`). Die Anlage selbst muss das Zertifikat einmal online gelernt haben.
+* **Verbindungsweg exakt:** Läuft die Verbindung über das Heimnetz, zeigt der Diagnose-Sensor das sicher an (Attribut `estimated: false`);
+  über den Proxon-Server bleibt er geschätzt.
+* Bestehende Installationen nutzen nach dem Update automatisch „Heimnetz zuerst“.
+* Das Heimnetz-Protokoll folgt dem Projekt [ha-lan-proxon](https://github.com/Fummy1990/ha-lan-proxon) (MIT-Lizenz, siehe [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) – danke!
 
 ## Neu in Version 0.6.0 / 0.7.0
 
@@ -240,26 +259,29 @@ nachgebildete Anlage; im Alltag läuft die Integration mit Home Assistant 2026.1
 
 ## Welche Systeme funktionieren?
 
-Die Verbindung zum Proxon-Server läuft (wie in der Original-App) über die Nabto-Bibliothek des Herstellers Nabto.
-Diese Bibliothek gibt es nur für **Linux auf Intel/AMD (x86-64)** und **Mac mit Apple-Chip**.
+* **Heimnetz-Verbindung: überall**, auch auf **Raspberry Pi / ARM**. Voraussetzung: Home Assistant und die Anlage sind im selben Netz (bzw. die Anlage ist
+  per IP-Adresse erreichbar, UDP-Port 5570).
+* **Proxon-Server (Ausweichweg)** läuft – wie in der Original-App – über die Nabto-Bibliothek. Diese gibt es nur für **Linux auf Intel/AMD (x86-64)** und
+  **Mac mit Apple-Chip**:
+  * **Home Assistant OS / Supervised / Container auf Intel- oder AMD-PC:** Home Assistant läuft dort auf Alpine Linux, in das Nabtos Bibliothek eigentlich
+    nicht passt. Die Integration bringt deshalb ein kleines Hilfsprogramm (`bin/proxon-nabto-helper-linux-x86_64`) mit und lädt bei der ersten Verbindung
+    über den Proxon-Server die passenden Debian-12-Systemdateien (glibc, ca. 5 MB, mit Prüfsumme) und Nabtos Bibliothek herunter (`/config/proxon_control/`).
+  * **Home Assistant Core auf Debian/Ubuntu (x86-64):** die Bibliothek wird direkt geladen.
+  * **Raspberry Pi / ARM:** Hier gibt es keinen Ausweichweg über den Proxon-Server; die Integration nutzt nur das Heimnetz.
 
-* **Home Assistant OS / Supervised / Container auf Intel- oder AMD-PC (Mini-PC, NUC, VM):** funktioniert direkt.
-  Home Assistant läuft dort auf Alpine Linux, in das Nabtos Bibliothek eigentlich nicht passt. Die Integration bringt deshalb ein kleines
-  Hilfsprogramm (`bin/proxon-nabto-helper-linux-x86_64`) mit und lädt beim ersten Anmelden die dazu passenden Debian-12-Systemdateien
-  (glibc, ca. 5 MB, mit Prüfsumme) und Nabtos Bibliothek herunter. Beides liegt dann unter `/config/proxon_control/`.
-* **Home Assistant Core auf Debian/Ubuntu (x86-64):** funktioniert ebenfalls; die Bibliothek wird direkt geladen.
-* **Raspberry Pi / ARM:** Für ARM gibt es die Nabto-Bibliothek nicht – die Server-Verbindung funktioniert dort leider nicht.
-
-Das **Proxon-Bridge-Add-on** (Schritt 2) ist nur noch eine Alternative, falls Sie die Verbindung lieber in einem eigenen Add-on laufen lassen möchten.
+Die **Proxon-Bridge** (Add-on oder Docker-Container) ist nur noch für Sonderfälle gedacht, z. B. Home Assistant auf ARM in einem anderen Netz als die Anlage.
 
 ## Wie wird die Anlage angesprochen?
 
-Wie in der Original-App: **über den Proxon-Server** (Anmeldung mit Device ID und Passwort) und die Fernzugriffs-Technik Nabto. Die Anlage
-meldet sich selbst dort an; Home Assistant verbindet sich nicht direkt mit ihr, sondern fragt sie über diese Verbindung ab. Nabto entscheidet dabei
-selbst, ob die Daten direkt im Heimnetz oder über seinen Vermittlungsserver laufen. Welchen Weg es bei Ihnen nimmt, kann die Integration derzeit nicht anzeigen.
-Ohne Internetverbindung der Anlage oder von Home Assistant geht es deshalb nicht. Genau deshalb funktioniert die Integration auch von außerhalb des Heimnetzes
-(siehe oben). Der Fernzugriff ist dabei derselbe Weg wie in der Proxon-App; ich habe ihn in dieser Entwicklungsumgebung allerdings nicht an einer echten Anlage
-in einem fremden Netz ausprobiert.
+* **Im Heimnetz:** Home Assistant sucht die Anlage per Broadcast (oder nimmt die eingetragene IP-Adresse) und spricht sie direkt über UDP-Port 5570 an –
+  so wie die Proxon-App, wenn das Handy im selben WLAN ist. Die Anlage nimmt nur Verbindungen mit einem vom Proxon-Portal unterschriebenen Zertifikat an;
+  dieses holt die Integration einmalig. **Hinweis:** Die Daten laufen im Heimnetz unverschlüsselt (so arbeitet die Anlage lokal) – also nur in einem
+  vertrauenswürdigen Netz verwenden.
+* **Über den Proxon-Server:** Anmeldung mit Device ID und Passwort und die Fernzugriffs-Technik Nabto, wie in der Original-App. Die Anlage meldet sich selbst
+  dort an; das funktioniert auch von außerhalb des Heimnetzes. Nabto entscheidet dabei selbst, ob die Daten direkt oder über seinen Vermittlungsserver laufen;
+  der Diagnose-Sensor „Verbindungsweg“ schätzt das aus der Antwortzeit.
+
+Welcher Weg gerade genutzt wird, zeigt das Attribut `via` des Sensors „Verbindungsweg“ (`local` oder `cloud`). Wechsel stehen im Protokoll.
 
 ## 1. Integration installieren
 
@@ -269,10 +291,10 @@ Ab Home Assistant 2026.11 ist HACS fest eingebaut und heißt *Einstellungen → 
 **Von Hand:** Den Ordner `custom_components/proxon_control` in den Home-Assistant-Konfigurationsordner kopieren
 (z. B. über das Samba- oder File-Editor-Add-on), sodass er unter `/config/custom_components/proxon_control` liegt. Home Assistant neu starten.
 
-## Raspberry Pi: Bridge auf einem anderen Rechner
+## Sonderfall: Bridge auf einem anderen Rechner
 
-Auf einem Raspberry Pi (ARM) gibt es die Nabto-Bibliothek nicht. Dann läuft die Verbindung über die Proxon-Bridge auf einem anderen, ständig laufenden
-x86-64-Rechner im Heimnetz (NAS mit Intel/AMD-Prozessor, Mini-PC, Server) mit Docker:
+Ab 0.8.0 braucht der Raspberry Pi keine Bridge mehr. Nur wenn Home Assistant auf ARM läuft **und** die Anlage nicht im selben Netz ist, kann die Verbindung
+über die Proxon-Bridge auf einem x86-64-Rechner laufen (NAS mit Intel/AMD-Prozessor, Mini-PC, Server) mit Docker:
 
 1. [`proxon_bridge/docker-compose.yml`](proxon_bridge/docker-compose.yml) in einen leeren Ordner auf diesem Rechner legen, Device ID, Passwort und einen
    langen, zufälligen **Zugriffsschlüssel** eintragen.
@@ -291,12 +313,16 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 
 *Einstellungen → Geräte & Dienste → Integration hinzufügen → „Proxon Control“* und dann:
 
-* **„Am Proxon-Server anmelden“** – Device ID und Passwort eingeben, oder
+* **„Mit Device ID + Passwort anmelden“** – Device ID und Passwort eingeben, Verbindung wählen (Standard: „Heimnetz zuerst“), optional die IP-Adresse der
+  Anlage. Auf dem Raspberry Pi entfällt die Auswahl (nur Heimnetz). Oder
 * **„Über das Proxon-Bridge-Add-on“** (nur wenn Sie das Add-on nutzen) – Adresse `homeassistant.local` (oder die IP von Home Assistant) und Port `8765`.
 
 ## Hinweise
 
-* Der Proxon-Server und die Nabto-Bibliothek gehören den jeweiligen Herstellern; ändern diese ihren Dienst, kann die Verbindung ausfallen.
+* Der Proxon-Server und die Nabto-Bibliothek gehören den jeweiligen Herstellern; ändern diese ihren Dienst, kann die Verbindung über den Server ausfallen.
+  Die Heimnetz-Verbindung braucht nach dem einmaligen Zertifikat keinen Dienst mehr.
+* Im Heimnetz sind die Daten unverschlüsselt (wie bei der Anlage üblich). Die Anlage erlaubt pro Sitzung nur eine begrenzte Zahl von Abfragen; die
+  Integration öffnet für jede Abfrage eine eigene Sitzung und schließt sie danach wieder.
 * Das Bridge-Add-on ist im Heimnetz ohne Passwort erreichbar. Wer das nicht möchte, entfernt unter *Add-on → Netzwerk* den Port 8765
   und trägt in der Integration statt `homeassistant.local` den internen Namen des Add-ons ein (steht oben auf der Add-on-Seite als „Hostname“).
 * Änderungen am Warmwasser (Temperatur, Wärmepumpe, E-Heizstab) übernimmt das Warmwasser-Modul der Anlage langsam. Die Integration wartet darauf bis zu
@@ -304,6 +330,10 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 * Die Grenze für „Filterwechsel bald nötig“ (30 Tage) ist geschätzt; die Original-App nennt keine feste Grenze.
 
 ## Fehlersuche
+
+* „Die Anlage hat im Heimnetz nicht geantwortet“: Ist Home Assistant im selben Netz? Hilft eine feste IP-Adresse der Anlage im Router, die unter
+  *Konfigurieren* eingetragen wird? UDP-Port 5570 darf nicht von einer Firewall/VLAN-Regel blockiert sein. Wird das Zertifikat abgelehnt, holt die
+  Integration beim nächsten Versuch automatisch ein neues; die Anlage muss dafür einmal online gewesen sein.
 
 * „Permission denied“ beim Starten des Hilfsprogramms: Die Integration setzt die nötige Berechtigung jetzt selbst und weicht notfalls auf einen
   temporären Ordner aus, falls Home Assistant in `/config` keine Programme starten lässt.

@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from custom_components.proxon_control import registers as R
+from custom_components.proxon_control.api import ProxonError
 
 RAW_DEFAULT = {
     "Betriebsart": 3, "GlobalKuehlungFreigabe": 0, "Luefterstufe": 2, "GrenzwertCO2": 800, "GrenzwertFeuchte": 30,
@@ -85,10 +86,24 @@ def no_waiting():
         yield
 
 
+def _no_unit_in_home_network(self, fn):
+    raise ProxonError("no unit in the home network (test)")
+
+
 @pytest.fixture
 def device():
+    """The unit reachable through the Proxon server; in the home network it isn't found (so "auto" falls back to the cloud)."""
     dev = FakeDevice()
     with patch("custom_components.proxon_control.api.DirectApi._call", lambda self, fn: fn(dev)), \
          patch("custom_components.proxon_control.api.DirectApi.close", lambda self: None), \
+         patch("custom_components.proxon_control.api.LocalApi._call", _no_unit_in_home_network), \
+         patch("custom_components.proxon_control.library_supported", return_value=True), \
          patch("custom_components.proxon_control.config_flow.library_supported", return_value=True):
         yield dev
+
+
+@pytest.fixture
+def local_device(device):
+    """The same unit, answering in the home network too."""
+    with patch("custom_components.proxon_control.api.LocalApi._call", lambda self, fn: fn(device)):
+        yield device

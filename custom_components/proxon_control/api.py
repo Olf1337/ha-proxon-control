@@ -1,17 +1,32 @@
-"""The two ways the integration reaches the unit. Both are blocking; Home Assistant runs them in its executor.
+"""The ways the integration reaches the unit. All are blocking; Home Assistant runs them in its executor.
 
-DirectApi  - logs in to the Proxon server itself (needs the Nabto library to load on this system).
-BridgeApi  - talks to the "Proxon Bridge" add-on over the home network (for Home Assistant OS).
+LocalApi   - directly in the home network (plain Python, no cloud while running; a portal-signed certificate is fetched once).
+DirectApi  - through the Proxon server / Nabto cloud (needs the Nabto library to load on this system).
+HybridApi  - local first, the cloud when the unit can't be reached locally (and local again a few minutes later).
+BridgeApi  - talks to the "Proxon Bridge" add-on over the home network.
 """
 from __future__ import annotations
 
 import json
+import logging
 import threading
+import time
 import urllib.error
 import urllib.request
 
-from . import registers
+from . import local, local_cert, registers
 from .nabto import NabtoError, create_client
+
+_LOGGER = logging.getLogger(__name__)
+
+# connection modes of a Device ID login
+MODE_AUTO = "auto"  # home network first, cloud as fallback
+MODE_LOCAL = "local"  # home network only
+MODE_CLOUD = "cloud"  # Proxon server / Nabto cloud only
+MODES = [MODE_AUTO, MODE_LOCAL, MODE_CLOUD]
+LOCAL_RETRY = 600  # seconds: after a failed local attempt, the auto mode uses the cloud this long before trying again
+CERT_RENEW_AFTER = 24 * 3600  # seconds: a refused certificate younger than this is kept
+PATH_KEY = "Verbindung"  # value added to the data: "local" or "cloud"
 
 
 class ProxonError(Exception):
@@ -73,7 +88,7 @@ class DirectApi:
         return self.read()
 
     def read(self) -> dict[str, float]:
-        return self._call(registers.read_all)
+        return {**self._call(registers.read_all), PATH_KEY: "cloud"}
 
     def read_schedule(self) -> dict[str, float]:
         return self._call(registers.read_schedule)
@@ -90,6 +105,141 @@ class DirectApi:
             if self._client:
                 self._client.close()
                 self._client = None
+
+
+class LocalApi:
+    """Directly in the home network. The certificate is fetched from the Proxon portal once (with Device ID and password),
+    the unit is found by a broadcast unless its address is given. One session per task, closed afterwards."""
+
+    def __init__(self, device_id: str, password: str, storage_dir: str, host: str | None = None, port: int = local.PORT) -> None:
+        self.device_id = device_id.strip()
+        self._password = password
+        self._dir = storage_dir
+        self._fixed_host = (host or "").strip() or None
+        self.host = self._fixed_host
+        self.port = port
+        self._fp: bytes | None = None
+        self._lock = threading.Lock()
+
+    def _certificate(self) -> bytes:
+        if self._fp is None:
+            try:
+                self._fp = local.fingerprint(local_cert.ensure(self._dir, self.device_id, self._password))
+            except local_cert.PortalRejected as err:
+                raise AuthError(f"Proxon-Portal: {err}") from err
+            except local_cert.CertificateError as err:
+                raise ProxonError(f"Zertifikat für die lokale Verbindung: {err}") from err
+        return self._fp
+
+    def _address(self) -> str:
+        if not self.host:
+            found = local.discover(self.port)
+            if not found:
+                raise ProxonError("Die Anlage wurde im Heimnetz nicht gefunden (UDP-Port 5570).")
+            self.host = found[0].host
+            _LOGGER.info("Proxon unit found in the home network at %s", self.host)
+        return self.host
+
+    def _call(self, fn):
+        with self._lock:
+            client = local.LocalClient(self._address(), self.port, self.device_id, self._certificate())
+            try:
+                return fn(client)
+            except local.LocalRejected as err:
+                # the unit doesn't know this certificate. A new one only helps if this one is older (the unit learns certificates
+                # while online); renewed at most once a day, so the portal isn't asked again and again.
+                age = local_cert.age(self._dir, self.device_id)
+                if age is None or age > CERT_RENEW_AFTER:
+                    local_cert.forget(self._dir, self.device_id)
+                    self._fp = None
+                    raise ProxonError(f"{err}. Ein neues Zertifikat wird beim nächsten Versuch geholt.") from err
+                raise ProxonError(f"{err}. Die Anlage kennt das neue Zertifikat noch nicht - sie lernt es, wenn sie online ist.") from err
+            except local.LocalError as err:
+                if not self._fixed_host:
+                    self.host = None  # the unit may have a new address: look again next time
+                raise ProxonError(str(err)) from err
+            finally:
+                client.close()
+
+    def test(self) -> dict[str, float]:
+        return self.read()
+
+    def read(self) -> dict[str, float]:
+        return {**self._call(registers.read_all), PATH_KEY: "local"}
+
+    def read_schedule(self) -> dict[str, float]:
+        return self._call(registers.read_schedule)
+
+    def write(self, key: str, value: float) -> dict:
+        try:
+            return self._call(lambda c: registers.write_and_verify(c, key, value))
+        except registers.WriteMismatch as err:
+            raise WriteNotAccepted(key, err.wanted, err.got, err.values) from err
+
+    def close(self) -> None:
+        pass
+
+
+class HybridApi:
+    """Home network first, the cloud as fallback (mode "auto"), or only one of them."""
+
+    def __init__(self, mode: str, local_api: LocalApi | None, cloud_api: DirectApi | None) -> None:
+        self.mode = mode
+        self.local = local_api
+        self.cloud = cloud_api
+        self.path: str | None = None
+        self._local_failed_at: float | None = None
+
+    def _ways(self) -> list:
+        if self.mode == MODE_LOCAL or self.cloud is None:
+            return [self.local]
+        if self.mode == MODE_CLOUD or self.local is None:
+            return [self.cloud]
+        local_paused = self._local_failed_at is not None and time.monotonic() - self._local_failed_at < LOCAL_RETRY
+        return [self.cloud] if local_paused else [self.local, self.cloud]
+
+    def _run(self, action):
+        last: ProxonError | None = None
+        ways = self._ways()
+        for api in ways:
+            try:
+                result = action(api)
+            except WriteNotAccepted:
+                raise  # the unit answered but didn't take over the value: the other way wouldn't change that
+            except ProxonError as err:
+                if isinstance(err, AuthError) and api is ways[-1]:
+                    raise  # Device ID / password wrong: Home Assistant asks to log in again
+                last = err
+                if api is self.local and self.mode == MODE_AUTO and self.cloud is not None:
+                    if self._local_failed_at is None:
+                        _LOGGER.warning("Proxon: home network connection failed (%s) - using the Proxon server for now", err)
+                    self._local_failed_at = time.monotonic()
+                continue
+            if api is self.local:
+                if self._local_failed_at is not None:
+                    _LOGGER.info("Proxon: home network connection works again")
+                self._local_failed_at = None
+            self.path = "local" if api is self.local else "cloud"
+            return result
+        raise last or ProxonError("keine Verbindung")
+
+    def test(self) -> dict[str, float]:
+        return self._run(lambda api: api.test())
+
+    def read(self) -> dict[str, float]:
+        data = self._run(lambda api: api.read())
+        return {**data, PATH_KEY: self.path or "cloud"}
+
+    def read_schedule(self) -> dict[str, float]:
+        return self._run(lambda api: api.read_schedule())
+
+    def write(self, key: str, value: float) -> dict:
+        return self._run(lambda api: api.write(key, value))
+
+    def close(self) -> None:
+        for api in (self.local, self.cloud):
+            if api is not None:
+                api.close()
 
 
 class BridgeApi:
@@ -146,3 +296,12 @@ class BridgeApi:
 
     def close(self) -> None:
         pass
+
+
+def connect(device_id: str, password: str, storage_dir: str, mode: str = MODE_AUTO, host: str | None = None,
+            cloud_possible: bool = True) -> HybridApi:
+    """The way to the unit for a login with Device ID + password. Without Nabto's library (e.g. Raspberry Pi) only the
+    home network is possible, whatever the mode says."""
+    cloud = DirectApi(device_id, password, storage_dir) if mode != MODE_LOCAL and cloud_possible else None
+    local_api = LocalApi(device_id, password, storage_dir, host) if mode != MODE_CLOUD or cloud is None else None
+    return HybridApi(mode, local_api, cloud)

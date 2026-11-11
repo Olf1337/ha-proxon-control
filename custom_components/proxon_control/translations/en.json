@@ -5,16 +5,34 @@
         "title": "Proxon Control",
         "description": "How should Home Assistant reach your Proxon unit?",
         "menu_options": {
-          "direct": "Log in to the Proxon server (Device ID + password)",
+          "direct": "Log in with Device ID + password (home network and/or Proxon server)",
           "bridge": "Through the Proxon Bridge add-on"
         }
       },
       "direct": {
-        "title": "Log in to the Proxon server",
-        "description": "The same login as in the Proxon Control app: your appliance's Device ID and password.",
+        "title": "Log in with Device ID + password",
+        "description": "The same login as in the Proxon Control app: your appliance's Device ID and password.\n\nHome Assistant can talk to the unit directly in your home network (fast, works without internet) and use the Proxon server as a fallback. On the first connection a certificate is fetched once from the Proxon portal; the unit must have been online at least once since.",
         "data": {
           "device_id": "Device ID",
-          "password": "Password"
+          "password": "Password",
+          "mode": "Connection",
+          "local_host": "IP address of the unit (optional)"
+        },
+        "data_description": {
+          "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
+          "local_host": "Leave empty to find the unit automatically. Enter its address if it isn't found (e.g. a different subnet or VLAN); a fixed address in the router helps."
+        }
+      },
+      "local": {
+        "title": "Log in with Device ID + password (home network)",
+        "description": "The same login as in the Proxon Control app: your appliance's Device ID and password.\n\nOn this system (for example a Raspberry Pi) Home Assistant talks to the unit directly in your home network – Nabto's library for the Proxon server isn't available here. A certificate is fetched once from the Proxon portal; the unit must have been online at least once since. Home Assistant and the unit must be in the same network.",
+        "data": {
+          "device_id": "Device ID",
+          "password": "Password",
+          "local_host": "IP address of the unit (optional)"
+        },
+        "data_description": {
+          "local_host": "Leave empty to find the unit automatically. Enter its address if it isn't found (e.g. a different subnet or VLAN); a fixed address in the router helps."
         }
       },
       "bridge": {
@@ -41,12 +59,12 @@
       "invalid_auth": "Device ID or password is wrong.",
       "cannot_connect": "Could not reach the unit. Check the Device ID and the internet connection.",
       "unknown": "Unexpected error, see the log.",
-      "invalid_token": "The bridge rejected the access key. Enter the same key as in the bridge."
+      "invalid_token": "The bridge rejected the access key. Enter the same key as in the bridge.",
+      "cannot_connect_local": "The unit didn't answer in the home network. Check that it is switched on and in the same network, or enter its IP address. Its first contact needs the internet once."
     },
     "abort": {
       "already_configured": "This unit is already set up.",
-      "reauth_successful": "Logged in again.",
-      "unsupported_system": "Nabto's connection library only exists for Linux on Intel/AMD (x86-64) and for Macs with an Apple chip, so it can't run on this system (for example a Raspberry Pi). Run the Proxon Bridge as a Docker container on another x86-64 computer (e.g. a NAS) and choose \"Through the Proxon Bridge add-on\" – see the README."
+      "reauth_successful": "Logged in again."
     }
   },
   "entity": {
@@ -146,7 +164,7 @@
         "name": "Response time"
       },
       "connection_path": {
-        "name": "Connection path (estimated)",
+        "name": "Connection path",
         "state": {
           "local": "Home network",
           "internet": "Directly over the internet",
@@ -427,8 +445,10 @@
     "step": {
       "init": {
         "title": "Proxon Control",
-        "description": "How often should Home Assistant ask the unit for its values? Shorter times show changes sooner but put more load on the connection through Proxon's server.\n\nHot water as a store: choose the sensors for solar surplus and electricity price. Switch the use on and off and set the limits on the Proxon device page.",
+        "description": "How should Home Assistant reach the unit, and how often should it ask for its values? Over the home network short intervals are no problem; through Proxon's server, shorter times put more load on the connection.\n\nHot water as a store: choose the sensors for solar surplus and electricity price. Switch the use on and off and set the limits on the Proxon device page.",
         "data": {
+          "mode": "Connection",
+          "local_host": "IP address of the unit (optional)",
           "scan_interval": "Query interval (seconds)",
           "surplus_sensor": "Solar surplus sensor",
           "feed_in_negative": "Feed-in is shown as negative",
@@ -436,6 +456,8 @@
           "picture_theme": "Dashboard pictures"
         },
         "data_description": {
+          "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
+          "local_host": "Leave empty to find the unit automatically. Enter its address if it isn't found (e.g. a different subnet or VLAN); a fixed address in the router helps.",
           "scan_interval": "Between 5 and 3600 seconds. Default: 10.",
           "surplus_sensor": "Power fed into the grid (W or kW), e.g. the grid power of your inverter or smart meter.",
           "feed_in_negative": "Turn on if your sensor shows power fed into the grid as a negative number.",
@@ -522,6 +544,13 @@
         "auto": "Automatic",
         "light": "Light",
         "dark": "Dark"
+      }
+    },
+    "mode": {
+      "options": {
+        "auto": "Home network first, Proxon server as fallback",
+        "local": "Home network only",
+        "cloud": "Proxon server only"
       }
     }
   },
