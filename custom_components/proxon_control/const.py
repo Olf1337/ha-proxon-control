@@ -12,6 +12,7 @@ except (ImportError, AttributeError):  # older Home Assistant
     from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION as PPM
 MANUFACTURER = "Proxon"
 MODEL = "Frischluft-Wärmetechnik"
+ROOM_MODEL = "Raumbedienelement"
 
 CONF_CONNECTION = "connection"
 CONF_DEVICE_ID = "device_id"

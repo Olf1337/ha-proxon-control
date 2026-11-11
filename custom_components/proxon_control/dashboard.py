@@ -28,11 +28,15 @@ TEXT = {
             "SpeicherTemperatur": "Speichertemperatur", "Energiemanager": "Status", "KuehlWunsch": "Wunschtemperatur",
             "KuehlStufe": "Kühlstufe", "NachtkuehlungStatus": "Status", "BoostGrenze": "Boost unter",
             "Soll-E-Heizstab-Temperatur": "Heizstab-Soll", "BoostStatus": "Status", "SollWassertemperatur": "Warmwasser-Soll",
+            "WarmwasserLadezustand": "Ladezustand", "Legionellenfunktion": "Legionellenschaltung", "AktuellerBetrieb": "Betrieb",
+            "Waermerueckgewinnung": "Wärmerückgewinnung", "IntensivlueftungsDauer": "Dauer Intensivlüftung",
+            "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
         "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "schedule_on": "Programm aktiv",
         "diag": {"Antwortzeit": "Antwortzeit", "Antwortzeit_path": "Verbindungsweg", "Uhr": "Uhr der Anlage",
-                 "FilterRestStunden": "Filter-Restlaufzeit", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Betriebsstunden"},
+                 "FilterRestStunden": "Filter-Restlaufzeit", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Betriebsstunden",
+                 "UhrAbweichung": "Uhrabweichung", "LetzterSchreibfehler": "Letzter Schreibfehler", "FirmwareT300": "Firmware Warmwasser"},
     },
     "en": {
         "overview": "Overview", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House",
@@ -46,11 +50,15 @@ TEXT = {
             "SpeicherTemperatur": "Store temperature", "Energiemanager": "Status", "KuehlWunsch": "Wish temperature",
             "KuehlStufe": "Cooling level", "NachtkuehlungStatus": "Status", "BoostGrenze": "Boost below",
             "Soll-E-Heizstab-Temperatur": "Heater target", "BoostStatus": "Status", "SollWassertemperatur": "Hot-water target",
+            "WarmwasserLadezustand": "Charge", "Legionellenfunktion": "Legionella protection", "AktuellerBetrieb": "Operation",
+            "Waermerueckgewinnung": "Heat recovery", "IntensivlueftungsDauer": "Boost duration",
+            "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "schedule_on": "Schedule active",
         "diag": {"Antwortzeit": "Response time", "Antwortzeit_path": "Connection path", "Uhr": "Unit clock",
-                 "FilterRestStunden": "Filter time left", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Working hours"},
+                 "FilterRestStunden": "Filter time left", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Working hours",
+                 "UhrAbweichung": "Clock deviation", "LetzterSchreibfehler": "Last write error", "FirmwareT300": "Hot-water firmware"},
     },
 }
 
@@ -114,11 +122,13 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Lueftung", HALF, features=[{"type": "fan-speed"}], features_position="inline"),
         *tile("Betriebsart", HALF, features=[{"type": "select-options"}], features_position="inline"),
         *tile("Stoerung", HALF), *tile("FilterRestStunden_warning", HALF),
+        *tile("AktuellerBetrieb", HALF), *tile("Waermerueckgewinnung", HALF),
     ]
     tank_areas = [_area(ids["Warmwasser"], tank_targets()["tank"], (TANK_W, TANK_H))] if "Warmwasser" in ids else []
     tank = [
         *picture("BildWarmwasser", tank_areas),
         *tile("Warmwasser", FULL, features=[{"type": "water-heater-operation-modes", "operation_modes": ["off", "heat_pump", "high_demand", "electric"]}]),
+        *tile("WarmwasserLadezustand", FULL),
     ]
     rooms = sorted((k for k in ids if k.startswith("NBE") and k.endswith("Thermostat")), key=lambda k: int(k[3:-10]))
     house_size = (HOUSE_W, house_layout(len(rooms))[0])
@@ -145,10 +155,17 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     cooling = [heading(t["cooling"]), *tile("Nachtkuehlung", FULL, state_content=["state", "status"]), *number("KuehlWunsch"),
                *number("KuehlStufe")]
     boost = [heading(t["boost"]), *tile("WarmwasserBoost", FULL, state_content=["state", "status"]), *number("BoostGrenze"),
-             *number("Soll-E-Heizstab-Temperatur"), *number("SollWassertemperatur")]
+             *number("Soll-E-Heizstab-Temperatur"), *number("SollWassertemperatur"), *tile("Legionellenfunktion", FULL),
+             *number("IntensivlueftungsDauer")]
     rows = [("ZeitprogrammAktiv", t["schedule_on"]), *[(f"Zeitprogramm{d}", t["days"][d]) for d in range(7)]]
     schedule_rows = [{"entity": ids[k], "name": name} for k, name in rows if k in ids]
     schedule = [heading(t["schedule"]), {"type": "entities", "entities": schedule_rows, "grid_options": FULL}] if schedule_rows else []
+    if schedule:  # copy Monday with one tap (asks first: it changes several days)
+        for key in ("ZeitprogrammMoDiFr", "ZeitprogrammMoAlle"):
+            schedule += tile(key, HALF, icon_tap_action={"action": "perform-action", "perform_action": "button.press",
+                                                          "target": {"entity_id": ids.get(key)}, "confirmation": True},
+                             tap_action={"action": "perform-action", "perform_action": "button.press",
+                                         "target": {"entity_id": ids.get(key)}, "confirmation": True})
     diag_rows = [{"entity": ids[k], "name": name} for k, name in t["diag"].items() if k in ids]
     diagnostics = [heading(t["diagnostics"]), {"type": "entities", "entities": diag_rows, "grid_options": FULL}] if diag_rows else []
     settings = [{"type": "grid", "cards": cards} for cards in (store, cooling, boost, schedule, diagnostics) if len(cards) > 1]

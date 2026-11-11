@@ -1,7 +1,8 @@
-"""Filter change warning and compressor state."""
+"""Filter change warning, compressor, fault, and on/off states of the unit (bypass, geothermal exchanger, PV input, ...)."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -11,6 +12,19 @@ from .registers import FAULT_POINTS, active_faults, fault_key
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
 FILTER_WARN_HOURS = 30 * 24
+
+# simple on/off values of the unit: key, translation key, device class, icon, diagnostic
+STATES: list[tuple[str, str, BinarySensorDeviceClass | None, str | None, bool]] = [
+    ("Bypass", "bypass", BinarySensorDeviceClass.OPENING, "mdi:valve", False),
+    ("Erdwaerme", "geothermal", BinarySensorDeviceClass.RUNNING, "mdi:earth", False),
+    ("Magnetventil", "solenoid_valve", BinarySensorDeviceClass.OPENING, "mdi:valve", True),
+    ("PVFreigabe", "pv_enabled", None, "mdi:solar-power", False),
+    ("PVSignalHeizstab", "pv_signal_heater", None, "mdi:solar-power-variant", False),
+    ("PVSignalWaermepumpe", "pv_signal_heat_pump", None, "mdi:solar-power-variant", False),
+    ("BedienpanelGesperrt", "panel_locked", None, "mdi:lock-outline", True),
+]
+# values of the hot-water module: only when it is there
+T300_KEYS = {"PVFreigabe", "PVSignalHeizstab", "PVSignalWaermepumpe"}
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -25,7 +39,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonScheduleActive(coordinator))
     if any(fault_key(p) in data for p in FAULT_POINTS):
         entities.append(ProxonFault(coordinator))
+    entities += [
+        ProxonState(coordinator, key, tk, dc, icon, diag)
+        for key, tk, dc, icon, diag in STATES
+        if key in data and (key not in T300_KEYS or "T300Betriebsart" in data)
+    ]
     async_add_entities(entities)
+
+
+class ProxonState(ProxonEntity, BinarySensorEntity):
+    def __init__(self, coordinator, key: str, tk: str, device_class, icon: str | None, diag: bool) -> None:
+        super().__init__(coordinator, key, tk)
+        self._attr_device_class = device_class
+        self._attr_icon = icon
+        if diag:
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    @property
+    def is_on(self) -> bool | None:
+        return None if self.raw_value is None else bool(self.raw_value)
 
 
 class ProxonFilterWarning(ProxonEntity, BinarySensorEntity):

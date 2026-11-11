@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberEntityDescription, NumberMode
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -39,6 +39,12 @@ NUMBERS: list[ProxonNumberDescription] = [
         native_unit_of_measurement=PERCENTAGE, mode=NumberMode.SLIDER, icon="mdi:water-percent",
     ),
     _temp("SollWassertemperatur", "water_target", 20, 55),
+    # how long a boost ventilation runs (the unit ends it by itself)
+    ProxonNumberDescription(
+        key="IntensivlueftungsDauer", translation_key="boost_duration", native_min_value=1, native_max_value=1440, native_step=1,
+        native_unit_of_measurement=UnitOfTime.MINUTES, mode=NumberMode.BOX, icon="mdi:timer-cog-outline",
+        entity_category=EntityCategory.CONFIG,
+    ),
     _temp("Soll-E-Heizstab-Temperatur", "boost_temperature", 20, 70),
 ]
 

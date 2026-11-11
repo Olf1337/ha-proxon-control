@@ -2,8 +2,8 @@ blueprint:
   name: Proxon – Intensivlüftung bei hoher Luftfeuchte
   description: >-
     Schaltet die Intensivlüftung der Proxon-Anlage ein, wenn die Luftfeuchte (z. B. im Bad nach dem Duschen oder in der Küche)
-    eine Weile über der Grenze liegt. Die Anlage beendet die Intensivlüftung nach ihrer eingestellten Dauer selbst.
-    (Boost ventilation on high humidity.)
+    eine Weile über der Grenze liegt. Die Anlage beendet die Intensivlüftung nach ihrer eingestellten Dauer selbst; ist es dann
+    noch zu feucht, startet sie auf Wunsch gleich noch einmal. (Boost ventilation on high humidity.)
   domain: automation
   author: Olf1337
   source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/humidity_boost.yaml
@@ -32,6 +32,12 @@ blueprint:
         minutes: 2
       selector:
         duration:
+    repeat:
+      name: Wiederholen, solange es zu feucht ist
+      description: Endet die Intensivlüftung und liegt die Luftfeuchte noch über der Grenze, wird sie erneut gestartet.
+      default: true
+      selector:
+        boolean:
     boost_switch:
       name: Intensivlüftung
       description: Schalter „Intensivlüftung“ der Proxon-Anlage.
@@ -41,16 +47,37 @@ blueprint:
             - domain: switch
               integration: proxon_control
 
+variables:
+  repeat_enabled: !input repeat
+
 triggers:
   - trigger: numeric_state
     entity_id: !input humidity_sensor
     above: !input threshold
     for: !input delay
+    id: humid
+  - trigger: state
+    entity_id: !input boost_switch
+    from: "on"
+    to: "off"
+    id: ended
 
 conditions:
   - condition: state
     entity_id: !input boost_switch
     state: "off"
+  - condition: or
+    conditions:
+      - condition: trigger
+        id: humid
+      - condition: and
+        conditions:
+          - condition: template
+            # only when the boost ended by itself (not switched off by hand)
+            value_template: "{{ repeat_enabled and trigger.to_state.context.user_id is none }}"
+          - condition: numeric_state
+            entity_id: !input humidity_sensor
+            above: !input threshold
 
 actions:
   - action: switch.turn_on

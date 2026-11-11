@@ -24,6 +24,14 @@ RAW_DEFAULT = {
     "NBE1OffsetTemperatur": 2, "NBE1MittelTemperatur": 20, "NBE1PTC": 1, "NBE1Temperatur": 210, "NBE1Status": 1,
     "NBE4OffsetTemperatur": -1, "NBE4MittelTemperatur": 20, "NBE4PTC": 1, "NBE4Temperatur": 190, "NBE4Status": 0,
 }
+# values added in 0.9.0 (filter lifetime, hot water bottom, current operation, diagnostics, hot-water module)
+RAW_DEFAULT.update({
+    "FilterStandzeit": 6, "Legionellenfunktion": 0, "BedienpanelGesperrt": 0, "PVFreigabe": 1, "AktuellerBetrieb": 1,
+    "WarmwasserUntenTemperatur": 1300, "PVSignalHeizstab": 0, "PVSignalWaermepumpe": 0, "Bypass": 0, "Erdwaerme": 0, "Magnetventil": 0,
+    "Schieberposition": 0, "VentilHeizung": 40, "VentilVorwaerme": 0, "VentilKuehlung": 0, "StatusKompressor": 1, "StatusVentilatoren": 3,
+    "DruckVerdampfer": 2850, "T12VorKondensator": 3500, "T13Kompressor": 6000, "T14Sauggas": 1200, "T300Saugleitung": 1100,
+    "T300LuefterDrehzahl": 900, "FirmwareT300": 35,
+})
 # unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on
 RAW_DEFAULT.update({"UhrSommerzeit": 0, "UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26,
                     "ZeitprogrammAktiv": 1})

@@ -1,4 +1,4 @@
-"""Notices under Settings → Repairs: filter change due soon, and a fault of the unit.
+"""Notices under Settings → Repairs: filter change due soon, a fault of the unit, and a unit clock that is off.
 
 They appear and disappear by themselves with the unit's values; there is nothing to "fix" in Home Assistant.
 """
@@ -13,15 +13,17 @@ from .registers import active_faults
 
 # same limit as the binary sensor "Filter change soon" (30 days)
 FILTER_WARN_HOURS = 30 * 24
+# the unit's clock can only be set at the unit (or in the app); the weekly schedule runs on it
+CLOCK_WARN_MINUTES = 10
 
 
-def _issue_ids(entry: ConfigEntry) -> tuple[str, str]:
-    return f"filter_change_{entry.entry_id}", f"unit_fault_{entry.entry_id}"
+def _issue_ids(entry: ConfigEntry) -> tuple[str, str, str]:
+    return f"filter_change_{entry.entry_id}", f"unit_fault_{entry.entry_id}", f"clock_drift_{entry.entry_id}"
 
 
 @callback
 def update_issues(hass: HomeAssistant, entry: ConfigEntry, data: dict | None) -> None:
-    filter_id, fault_id = _issue_ids(entry)
+    filter_id, fault_id, clock_id = _issue_ids(entry)
     data = data or {}
     hours = data.get("FilterRestStunden")
     if isinstance(hours, (int, float)) and hours <= FILTER_WARN_HOURS:
@@ -40,6 +42,15 @@ def update_issues(hass: HomeAssistant, entry: ConfigEntry, data: dict | None) ->
         )
     else:
         ir.async_delete_issue(hass, DOMAIN, fault_id)
+    drift = data.get("UhrAbweichung")
+    if isinstance(drift, (int, float)) and abs(drift) >= CLOCK_WARN_MINUTES:
+        ir.async_create_issue(
+            hass, DOMAIN, clock_id, is_fixable=False, is_persistent=False, severity=ir.IssueSeverity.WARNING,
+            translation_key="clock_drift",
+            translation_placeholders={"minutes": str(abs(int(drift))), "direction": "+" if drift > 0 else "-"},
+        )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, clock_id)
 
 
 @callback

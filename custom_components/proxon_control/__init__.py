@@ -5,8 +5,8 @@ import re
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import area_registry as ar, config_validation as cv, device_registry as dr, entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .api import BridgeApi, HybridApi, connect
@@ -23,8 +23,12 @@ from .const import (
     DEFAULT_MODE,
     DEFAULT_PORT,
     DOMAIN,
+    MANUFACTURER,
+    MODEL,
 )
 from .coordinator import ProxonCoordinator
+from .entity import room_identifier, room_name
+from .registers import ROOM_COUNT
 from .comfort_manager import ComfortManager
 from .energy_manager import EnergyManager
 from .holiday import HolidayMode
@@ -42,6 +46,8 @@ PLATFORMS = [
     Platform.FAN,
     Platform.WATER_HEATER,
     Platform.IMAGE,
+    Platform.TIME,
+    Platform.BUTTON,
 ]
 
 type ProxonConfigEntry = ConfigEntry[ProxonCoordinator]
@@ -80,6 +86,20 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
             reg.async_remove(ent.entity_id)
 
 
+@callback
+def _put_new_rooms_into_areas(hass: HomeAssistant, entry: ConfigEntry, coordinator: ProxonCoordinator, known: set[str]) -> None:
+    """A room device that was just created goes into the area of the same name, if there is one (e.g. room "Bad" -> area "Bad").
+    Only once, when the device is new: an area chosen or removed by hand later stays as it is."""
+    devices, areas = dr.async_get(hass), ar.async_get(hass)
+    by_identifier = {i: d for d in dr.async_entries_for_config_entry(devices, entry.entry_id) for i in d.identifiers}
+    for n in range(ROOM_COUNT):
+        device = by_identifier.get(room_identifier(coordinator, n))
+        if device is None or device.id in known or device.area_id:
+            continue
+        if area := areas.async_get_area_by_name(room_name(n, coordinator.data)):
+            devices.async_update_device(device.id, area_id=area.id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bool:
     coordinator = ProxonCoordinator(hass, entry, make_api(hass, {**entry.data, **entry.options}))
     coordinator.holiday = HolidayMode(hass, coordinator, entry.entry_id)
@@ -94,7 +114,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     update_issues(hass, entry, coordinator.data)
     entry.async_on_unload(coordinator.async_add_listener(lambda: update_issues(hass, entry, coordinator.data)))
     _remove_legacy_room_entities(hass, entry)
+    devices = dr.async_get(hass)
+    known = {d.id for d in dr.async_entries_for_config_entry(devices, entry.entry_id)}
+    # the appliance first: the room and schedule devices are linked to it
+    coordinator.device_id = devices.async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, entry.unique_id or entry.entry_id)}, manufacturer=MANUFACTURER, model=MODEL,
+        name="Proxon",
+    ).id
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _put_new_rooms_into_areas(hass, entry, coordinator, known)
     # hot water as a store for solar surplus / cheap electricity
     coordinator.energy.async_start()
     entry.async_on_unload(coordinator.energy.async_stop)

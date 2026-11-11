@@ -11,7 +11,10 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import AuthError, BridgeApi, DirectApi, ProxonError, WriteNotAccepted
-from .registers import SCHEDULE_KEYS
+from homeassistant.util import dt as dt_util
+
+from .registers import SCHEDULE_KEYS, active_faults, allowed_during_fault
+from .schedule import clock_drift
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +35,10 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
         self.energy = None  # EnergyManager, set up by __init__
         self.comfort = None  # ComfortManager (night cooling, hot-water boost), set up by __init__
         self._schedule_read_at: float | None = None
+        # the last write the unit didn't take (shown by the sensor "Last write error")
+        self.last_write_error: dict | None = None
+        self.write_errors = 0
+        self.device_id: str | None = None  # the appliance's device (rooms and schedule days are linked to it)
 
     async def _async_update_data(self) -> dict[str, float]:
         try:
@@ -43,6 +50,9 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
                 except ProxonError as err:
                     _LOGGER.warning("Reading the weekly schedule failed: %s", err)
             data = {**data, **self._schedule}
+            # how far the unit's clock is off (it can't be set over the network; the weekly schedule runs on it)
+            if (drift := clock_drift(data, dt_util.now())) is not None:
+                data["UhrAbweichung"] = float(drift)
             if not self._rooms_logged:
                 self._rooms_logged = True
                 # shows which rooms the unit reports (helps when rooms are missing or too many)
@@ -59,10 +69,19 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
     async def async_write(self, key: str, value: float) -> None:
         """Write a value and read it back from the unit. What the unit really reports is what is shown afterwards;
-        if it did not take over the value, the change is reported as failed."""
+        if it did not take over the value, the change is reported as failed. While the unit reports a fault, only harmless
+        changes are written (switching off, ventilation level, room temperatures)."""
+        faults = active_faults(self.data or {})
+        if faults and not allowed_during_fault(key, value):
+            self._write_failed(key, value, "fault")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="write_blocked_fault",
+                translation_placeholders={"name": key, "words": ", ".join(f"{k} = 0x{v:04X}" for k, v in faults.items())},
+            )
         try:
             got = await self.hass.async_add_executor_job(self.api.write, key, value)
         except WriteNotAccepted as err:
+            self._write_failed(key, value, "not_accepted", err.got)
             if err.values:  # show what the unit really holds
                 self._remember_schedule(err.values)
                 self.async_set_updated_data({**(self.data or {}), **err.values})
@@ -72,10 +91,16 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
                 translation_placeholders={"name": err.key or key, "wanted": f"{err.wanted:g}", "actual": "?" if err.got is None else f"{err.got:g}"},
             ) from err
         except ProxonError as err:
+            self._write_failed(key, value, "no_connection")
             raise HomeAssistantError(f"Proxon: {err}") from err
         self._remember_schedule(got)
         self.async_set_updated_data({**(self.data or {}), **got})
         await self.async_request_refresh()
+
+    def _write_failed(self, key: str, value: float, reason: str, got: float | None = None) -> None:
+        self.write_errors += 1
+        self.last_write_error = {"time": dt_util.utcnow(), "name": key, "wanted": value, "got": got, "reason": reason}
+        self.async_update_listeners()
 
     def _remember_schedule(self, values: dict) -> None:
         self._schedule.update({k: v for k, v in values.items() if k in SCHEDULE_KEYS})

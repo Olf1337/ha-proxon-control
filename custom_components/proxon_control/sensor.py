@@ -9,7 +9,9 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfTemperature, UnitOfTime
+from homeassistant.const import (
+    PERCENTAGE, REVOLUTIONS_PER_MINUTE, EntityCategory, UnitOfPressure, UnitOfTemperature, UnitOfTime,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -17,8 +19,8 @@ from homeassistant.util import dt as dt_util
 from . import ProxonConfigEntry
 from .api import PATH_KEY
 from .const import PPM
-from .entity import ProxonEnergyEntity, ProxonEntity, room_name
-from .registers import ROOM_COUNT, room_connected
+from .entity import ProxonEnergyEntity, ProxonEntity, room_device
+from .registers import OPERATION_KEYS, ROOM_COUNT, filter_months, heat_recovery, room_connected
 from .comfort import (
     B_ALREADY_ON, B_BLOCKED, B_HEATING, B_IDLE, B_OFF, B_PAUSED,
     C_BLOCKED, C_COOLING, C_IDLE, C_NOT_SUMMER, C_OFF, C_PROTECTING, C_WAITING,
@@ -52,6 +54,13 @@ def _rpm(key: str, tk: str) -> ProxonSensorDescription:
     )
 
 
+def _raw(key: str, tk: str, icon: str, enabled: bool = True) -> ProxonSensorDescription:
+    """A raw diagnostic value of the unit (positions, status words)."""
+    return ProxonSensorDescription(
+        key=key, translation_key=tk, icon=icon, entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=enabled,
+    )
+
+
 SENSORS: list[ProxonSensorDescription] = [
     *[_temp(f"NBE{i}Temperatur", "room_temperature", i) for i in range(ROOM_COUNT)],
     _temp("T3Frischluft", "outdoor_air"),
@@ -62,6 +71,40 @@ SENSORS: list[ProxonSensorDescription] = [
     _temp("T300VorVerdampfer", "t300_pre_evaporator", diag=True),
     _temp("T300Verdampfer", "t300_evaporator", diag=True),
     _temp("T300Kompressor", "t300_compressor", diag=True),
+    _temp("WarmwasserUntenTemperatur", "water_bottom"),
+    ProxonSensorDescription(
+        key="WarmwasserLadezustand", translation_key="water_charge", native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT, icon="mdi:water-boiler",
+    ),
+    ProxonSensorDescription(
+        key="AktuellerBetrieb", translation_key="operation", device_class=SensorDeviceClass.ENUM,
+        options=list(OPERATION_KEYS.values()), icon="mdi:heat-pump-outline",
+    ),
+    # diagnostics of the heat pump / air paths
+    _temp("T12VorKondensator", "t12_pre_condenser", diag=True),
+    _temp("T13Kompressor", "t13_compressor", diag=True),
+    _temp("T14Sauggas", "t14_suction_gas", diag=True),
+    _temp("T300Saugleitung", "t300_suction", diag=True),
+    _rpm("T300LuefterDrehzahl", "t300_fan_rpm"),
+    ProxonSensorDescription(
+        key="DruckVerdampfer", translation_key="evaporator_pressure", native_unit_of_measurement=UnitOfPressure.BAR,
+        device_class=SensorDeviceClass.PRESSURE, state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _raw("Schieberposition", "damper_position", "mdi:valve"),
+    _raw("VentilHeizung", "valve_heating", "mdi:valve"),
+    _raw("VentilVorwaerme", "valve_preheat", "mdi:valve"),
+    _raw("VentilKuehlung", "valve_cooling", "mdi:valve"),
+    _raw("StatusKompressor", "compressor_status", "mdi:heat-pump", enabled=False),
+    _raw("StatusVentilatoren", "fan_status", "mdi:fan", enabled=False),
+    ProxonSensorDescription(
+        key="FilterStandzeit", translation_key="filter_lifetime", native_unit_of_measurement=UnitOfTime.MONTHS,
+        icon="mdi:air-filter", entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    ProxonSensorDescription(
+        key="UhrAbweichung", translation_key="clock_drift", native_unit_of_measurement=UnitOfTime.MINUTES,
+        state_class=SensorStateClass.MEASUREMENT, icon="mdi:clock-alert-outline", entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     _rpm("DrehzahlZuluft", "rpm_intake"),
     _rpm("DrehzahlAbluft", "rpm_exhaust"),
     _rpm("DrehzahlKompressor", "rpm_compressor"),
@@ -92,6 +135,7 @@ SENSORS: list[ProxonSensorDescription] = [
         device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, entity_category=EntityCategory.DIAGNOSTIC,
     ),
     ProxonSensorDescription(key="FirmwareVersion", translation_key="firmware", entity_category=EntityCategory.DIAGNOSTIC),
+    ProxonSensorDescription(key="FirmwareT300", translation_key="firmware_t300", entity_category=EntityCategory.DIAGNOSTIC),
     ProxonSensorDescription(
         key="Kuehlbetrieb4Wegeventil", translation_key="valve", device_class=SensorDeviceClass.ENUM,
         options=["heating", "cooling"], entity_category=EntityCategory.DIAGNOSTIC,
@@ -112,7 +156,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
             continue
         if d.room is not None and not room_connected(data, d.room):
             continue
+        # the hot-water module's own values only when it is there (it answers 0 otherwise)
+        if d.key in ("FirmwareT300", "T300LuefterDrehzahl") and "T300Betriebsart" not in data:
+            continue
         entities.append(ProxonSensor(coordinator, d))
+    if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
+        entities.append(ProxonHeatRecovery(coordinator))
+    entities.append(ProxonLastWriteError(coordinator))
     # weekly ventilation schedule: one sensor per day, and the unit's clock (the schedule follows it)
     if read_day(data, 0) is not None:
         entities += [ProxonScheduleDay(coordinator, day) for day in range(7)]
@@ -136,8 +186,8 @@ class ProxonSensor(ProxonEntity, SensorEntity):
     entity_description: ProxonSensorDescription
 
     def __init__(self, coordinator, description: ProxonSensorDescription) -> None:
-        placeholders = {"room": room_name(description.room, coordinator.data)} if description.room is not None else None
-        super().__init__(coordinator, description.key, description.translation_key or description.key, placeholders)
+        device = room_device(coordinator, description.room) if description.room is not None else None
+        super().__init__(coordinator, description.key, description.translation_key or description.key, device=device)
         self.entity_description = description
 
     @property
@@ -147,9 +197,78 @@ class ProxonSensor(ProxonEntity, SensorEntity):
             return None
         if self._key == "Kuehlbetrieb4Wegeventil":
             return "cooling" if v else "heating"
-        if self._key in ("FirmwareVersion", "IstLuefterstufe", "IntensivlueftungsRestDauer"):
+        if self._key == "AktuellerBetrieb":
+            return OPERATION_KEYS.get(int(v))
+        if self._key in ("FirmwareVersion", "FirmwareT300", "IstLuefterstufe", "IntensivlueftungsRestDauer", "UhrAbweichung",
+                         "FilterStandzeit", "WarmwasserLadezustand"):
             return int(v)
         return v
+
+    @property
+    def extra_state_attributes(self) -> dict | None:
+        data = self.coordinator.data or {}
+        if self._key == "FilterRestStunden":
+            return {"filter_lifetime_months": filter_months(data)}
+        if self._key == "AktuellerBetrieb":
+            return {"raw": self.raw_value}
+        return None
+
+
+class ProxonHeatRecovery(ProxonEntity, SensorEntity):
+    """Efficiency of the heat exchanger (%), from outdoor, supply and extract air. Only measurable while the heat pump is off,
+    the bypass closed and outdoor and extract air at least 5 K apart; in between the last measured value is kept."""
+
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:heat-wave"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "Waermerueckgewinnung", "heat_recovery")
+        self._last: float | None = None
+        self._measured_at = None
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success
+
+    @property
+    def native_value(self) -> float | None:
+        value = heat_recovery(self.coordinator.data or {})
+        if value is not None:
+            if value != self._last or self._measured_at is None:
+                self._measured_at = dt_util.utcnow()
+            self._last = value
+        return None if self._last is None else int(self._last)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"measuring_now": heat_recovery(self.coordinator.data or {}) is not None, "measured_at": self._measured_at}
+
+
+class ProxonLastWriteError(ProxonEntity, SensorEntity):
+    """When the unit last refused or didn't take a change, which value, and why (fault, not taken over, no connection)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:alert-circle-outline"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "LetzterSchreibfehler", "last_write_error")
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self):
+        err = self.coordinator.last_write_error
+        return None if err is None else err["time"]
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        err = self.coordinator.last_write_error or {}
+        return {"value": err.get("name"), "wanted": err.get("wanted"), "got": err.get("got"), "reason": err.get("reason"),
+                "count": self.coordinator.write_errors}
 
 
 class ProxonScheduleDay(ProxonEntity, SensorEntity):

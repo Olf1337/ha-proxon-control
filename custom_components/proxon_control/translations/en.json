@@ -70,7 +70,7 @@
   "entity": {
     "sensor": {
       "room_temperature": {
-        "name": "{room} temperature"
+        "name": "Temperature"
       },
       "outdoor_air": {
         "name": "Fresh air temperature (outside)"
@@ -206,6 +206,71 @@
           "paused": "Pause (protection)",
           "blocked": "Paused (holiday mode)"
         }
+      },
+      "water_bottom": {
+        "name": "Hot water bottom"
+      },
+      "water_charge": {
+        "name": "Hot water charge"
+      },
+      "t12_pre_condenser": {
+        "name": "T12 before condenser"
+      },
+      "t13_compressor": {
+        "name": "T13 compressor"
+      },
+      "t14_suction_gas": {
+        "name": "T14 suction gas"
+      },
+      "t300_suction": {
+        "name": "Hot-water heat pump suction line"
+      },
+      "t300_fan_rpm": {
+        "name": "Hot-water heat pump fan"
+      },
+      "evaporator_pressure": {
+        "name": "Evaporator pressure (P14)"
+      },
+      "damper_position": {
+        "name": "Damper position"
+      },
+      "valve_heating": {
+        "name": "Heating valve"
+      },
+      "valve_preheat": {
+        "name": "Preheating valve"
+      },
+      "valve_cooling": {
+        "name": "Cooling valve"
+      },
+      "compressor_status": {
+        "name": "Compressor status"
+      },
+      "fan_status": {
+        "name": "Fan status"
+      },
+      "filter_lifetime": {
+        "name": "Filter lifetime"
+      },
+      "clock_drift": {
+        "name": "Clock deviation"
+      },
+      "firmware_t300": {
+        "name": "Hot-water module firmware"
+      },
+      "heat_recovery": {
+        "name": "Heat recovery"
+      },
+      "last_write_error": {
+        "name": "Last write error"
+      },
+      "operation": {
+        "name": "Current operation",
+        "state": {
+          "ventilation": "Ventilating",
+          "heating": "Heating",
+          "cooling": "Cooling"
+        }
       }
     },
     "select": {
@@ -216,7 +281,18 @@
           "winter": "Winter",
           "summer": "Summer",
           "off": "Off",
-          "holiday": "Holiday"
+          "holiday": "Holiday",
+          "stove": "Stove mode"
+        }
+      },
+      "phase_level": {
+        "name": "Phase {phase} ventilation level",
+        "state": {
+          "off": "Off",
+          "1": "Level 1",
+          "2": "Level 2",
+          "3": "Level 3",
+          "4": "Level 4"
         }
       }
     },
@@ -253,6 +329,9 @@
       },
       "boost_limit": {
         "name": "Hot-water boost below"
+      },
+      "boost_duration": {
+        "name": "Boost ventilation duration"
       }
     },
     "switch": {
@@ -339,6 +418,9 @@
             }
           }
         }
+      },
+      "legionella": {
+        "name": "Legionella protection"
       }
     },
     "binary_sensor": {
@@ -353,6 +435,27 @@
       },
       "fault": {
         "name": "Fault"
+      },
+      "bypass": {
+        "name": "Bypass"
+      },
+      "geothermal": {
+        "name": "Geothermal heat exchanger"
+      },
+      "solenoid_valve": {
+        "name": "Solenoid valve"
+      },
+      "pv_enabled": {
+        "name": "PV input enabled"
+      },
+      "pv_signal_heater": {
+        "name": "PV signal immersion heater"
+      },
+      "pv_signal_heat_pump": {
+        "name": "PV signal heat pump"
+      },
+      "panel_locked": {
+        "name": "Control panel locked"
       }
     },
     "climate": {
@@ -391,6 +494,22 @@
       },
       "picture_house": {
         "name": "Picture house"
+      }
+    },
+    "time": {
+      "phase_start": {
+        "name": "Phase {phase} start"
+      },
+      "phase_end": {
+        "name": "Phase {phase} end"
+      }
+    },
+    "button": {
+      "copy_monday_weekdays": {
+        "name": "Schedule: Monday → Tuesday to Friday"
+      },
+      "copy_monday_all": {
+        "name": "Schedule: Monday → all days"
       }
     }
   },
@@ -439,6 +558,9 @@
     },
     "holiday_not_ready": {
       "message": "Holiday mode: not all current values have been read from the unit yet. Try again in a moment."
+    },
+    "write_blocked_fault": {
+      "message": "The unit reports a fault ({words}), so \"{name}\" was not changed. During a fault only switching off, the ventilation level and room temperatures can be changed."
     }
   },
   "options": {
@@ -562,6 +684,10 @@
     "unit_fault": {
       "title": "Proxon: the unit reports a fault",
       "description": "The unit reports a fault ({words}). Check the display of the unit or the Proxon app. This notice disappears by itself once the fault is gone."
+    },
+    "clock_drift": {
+      "title": "Proxon: The unit's clock is wrong",
+      "description": "The unit's clock is {direction}{minutes} minutes off Home Assistant's time. The weekly ventilation schedule runs on this clock. Please set the clock at the unit's control panel or in the Proxon app – it can't be set over the network. A common cause: the switch to summer/winter time is turned off at the unit. This notice disappears by itself once the clock is right."
     }
   }
 }

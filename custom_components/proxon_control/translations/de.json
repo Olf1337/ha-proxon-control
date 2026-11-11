@@ -70,7 +70,7 @@
   "entity": {
     "sensor": {
       "room_temperature": {
-        "name": "{room} Temperatur"
+        "name": "Temperatur"
       },
       "outdoor_air": {
         "name": "Frischlufttemperatur (außen)"
@@ -206,6 +206,71 @@
           "paused": "Pause (Schutz)",
           "blocked": "Pausiert (Urlaubsmodus)"
         }
+      },
+      "water_bottom": {
+        "name": "Warmwasser unten"
+      },
+      "water_charge": {
+        "name": "Warmwasser-Ladezustand"
+      },
+      "t12_pre_condenser": {
+        "name": "T12 vor Kondensator"
+      },
+      "t13_compressor": {
+        "name": "T13 Kompressor"
+      },
+      "t14_suction_gas": {
+        "name": "T14 Sauggas"
+      },
+      "t300_suction": {
+        "name": "Warmwasser-Wärmepumpe Saugleitung"
+      },
+      "t300_fan_rpm": {
+        "name": "Warmwasser-Wärmepumpe Ventilator"
+      },
+      "evaporator_pressure": {
+        "name": "Druck Verdampfer (P14)"
+      },
+      "damper_position": {
+        "name": "Schieberposition"
+      },
+      "valve_heating": {
+        "name": "Ventil Heizung"
+      },
+      "valve_preheat": {
+        "name": "Ventil Vorwärmung"
+      },
+      "valve_cooling": {
+        "name": "Ventil Kühlung"
+      },
+      "compressor_status": {
+        "name": "Status Kompressor"
+      },
+      "fan_status": {
+        "name": "Status Ventilatoren"
+      },
+      "filter_lifetime": {
+        "name": "Filter-Standzeit"
+      },
+      "clock_drift": {
+        "name": "Uhrabweichung"
+      },
+      "firmware_t300": {
+        "name": "Firmware Warmwasser-Modul"
+      },
+      "heat_recovery": {
+        "name": "Wärmerückgewinnung"
+      },
+      "last_write_error": {
+        "name": "Letzter Schreibfehler"
+      },
+      "operation": {
+        "name": "Aktueller Betrieb",
+        "state": {
+          "ventilation": "Lüften",
+          "heating": "Heizen",
+          "cooling": "Kühlen"
+        }
       }
     },
     "select": {
@@ -216,7 +281,18 @@
           "winter": "Winterbetrieb",
           "summer": "Sommerbetrieb",
           "off": "Aus",
-          "holiday": "Urlaubsbetrieb"
+          "holiday": "Urlaubsbetrieb",
+          "stove": "Ofenbetrieb"
+        }
+      },
+      "phase_level": {
+        "name": "Phase {phase} Lüftungsstufe",
+        "state": {
+          "off": "Aus",
+          "1": "Stufe 1",
+          "2": "Stufe 2",
+          "3": "Stufe 3",
+          "4": "Stufe 4"
         }
       }
     },
@@ -253,6 +329,9 @@
       },
       "boost_limit": {
         "name": "Warmwasser-Boost unter"
+      },
+      "boost_duration": {
+        "name": "Dauer Intensivlüftung"
       }
     },
     "switch": {
@@ -339,6 +418,9 @@
             }
           }
         }
+      },
+      "legionella": {
+        "name": "Legionellenschaltung"
       }
     },
     "binary_sensor": {
@@ -353,6 +435,27 @@
       },
       "fault": {
         "name": "Störung"
+      },
+      "bypass": {
+        "name": "Bypass"
+      },
+      "geothermal": {
+        "name": "Erdwärmetauscher"
+      },
+      "solenoid_valve": {
+        "name": "Magnetventil"
+      },
+      "pv_enabled": {
+        "name": "PV-Eingang freigegeben"
+      },
+      "pv_signal_heater": {
+        "name": "PV-Signal Heizstab"
+      },
+      "pv_signal_heat_pump": {
+        "name": "PV-Signal Wärmepumpe"
+      },
+      "panel_locked": {
+        "name": "Bedienpanel gesperrt"
       }
     },
     "climate": {
@@ -391,6 +494,22 @@
       },
       "picture_house": {
         "name": "Bild Haus"
+      }
+    },
+    "time": {
+      "phase_start": {
+        "name": "Phase {phase} Beginn"
+      },
+      "phase_end": {
+        "name": "Phase {phase} Ende"
+      }
+    },
+    "button": {
+      "copy_monday_weekdays": {
+        "name": "Zeitprogramm: Montag → Dienstag bis Freitag"
+      },
+      "copy_monday_all": {
+        "name": "Zeitprogramm: Montag → alle Tage"
       }
     }
   },
@@ -439,6 +558,9 @@
     },
     "holiday_not_ready": {
       "message": "Urlaubsmodus: Es sind noch nicht alle aktuellen Werte von der Anlage gelesen. Bitte gleich noch einmal versuchen."
+    },
+    "write_blocked_fault": {
+      "message": "Die Anlage meldet eine Störung ({words}), deshalb wurde „{name}“ nicht geändert. Während einer Störung sind nur Ausschalten, die Lüftungsstufe und Raumtemperaturen möglich."
     }
   },
   "options": {
@@ -562,6 +684,10 @@
     "unit_fault": {
       "title": "Proxon: Die Anlage meldet eine Störung",
       "description": "Die Anlage meldet eine Störung ({words}). Bitte das Display der Anlage oder die Proxon-App prüfen. Der Hinweis verschwindet von selbst, sobald die Störung behoben ist."
+    },
+    "clock_drift": {
+      "title": "Proxon: Die Uhr der Anlage geht falsch",
+      "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung richtet sich nach dieser Uhr. Bitte die Uhr am Bedienpanel der Anlage oder in der Proxon-App stellen – über das Netz lässt sie sich nicht stellen. Häufige Ursache: Die Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
     }
   }
 }

@@ -79,6 +79,14 @@ def unit_clock(values: dict) -> datetime | None:
         return None
 
 
+def clock_drift(values: dict, now: datetime) -> int | None:
+    """How many minutes the unit's clock is ahead (+) or behind (-) of `now` (local time). The unit's clock has whole minutes."""
+    clock = unit_clock(values)
+    if clock is None:
+        return None
+    return round((clock - now.replace(tzinfo=None, second=0, microsecond=0)).total_seconds() / 60)
+
+
 def validate_day(phases: list[Phase]) -> None:
     for i, p in enumerate(phases):
         if not p.active:
@@ -109,8 +117,13 @@ def plan_day(day: int, old: list[Phase], new: list[Phase], now: datetime | None)
     times: list[tuple[str, int]] = []
     levels: list[tuple[str, int]] = []
     for p, (o, n) in enumerate(zip(old, new)):
-        if o == n or (not o.active and not n.active):
-            # nothing to do (times of a phase that stays off are left as they are)
+        if o == n:
+            continue
+        if not o.active and not n.active:
+            # a phase that stays off: its times can be prepared freely (they only count once it is switched on)
+            for f, (a, b) in enumerate(zip(o.fields()[:4], n.fields()[:4])):
+                if a != b:
+                    times.append((schedule_key(day, p, f), b))
             continue
         times_change = (o.start, o.end) != (n.start, n.end)
         running = (

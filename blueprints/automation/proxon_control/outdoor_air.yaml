@@ -1,0 +1,87 @@
+blueprint:
+  name: Proxon – Weniger Außenluft bei Pollen, Rauch oder Feinstaub
+  description: >-
+    Senkt die Lüftung der Proxon-Anlage auf Stufe 1, solange die Außenluft schlecht ist (z. B. Pollenflug, Feinstaub, Rauch von
+    Nachbars Ofen – jeder Sensor mit einer Zahl, etwa PM2.5, Luftqualitätsindex oder Pollenbelastung), und stellt danach die gewählte
+    Stufe wieder ein. Hinweis: In der Betriebsart „ECO Komfort“ und während der Intensivlüftung wählt die Anlage die Stufe selbst –
+    dann wird nichts geändert. (Less outdoor air during pollen, smoke or fine dust.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/outdoor_air.yaml
+  homeassistant:
+    min_version: "2026.3.0"
+  input:
+    air_sensor:
+      name: Sensor für die Außenluft
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+    threshold:
+      name: Schlecht ab
+      description: Ab diesem Wert wird gedrosselt (Einheit wie beim Sensor, z. B. 35 µg/m³ PM2.5).
+      default: 35
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 0.5
+          mode: box
+    delay:
+      name: Wie lange über bzw. unter der Grenze
+      default:
+        minutes: 10
+      selector:
+        duration:
+    level:
+      name: Lüftungsstufe
+      description: Zahl „Lüftungsstufe“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: proxon_control
+    normal_level:
+      name: Danach wieder Stufe
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 4
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input air_sensor
+    above: !input threshold
+    for: !input delay
+    id: bad
+  - trigger: numeric_state
+    entity_id: !input air_sensor
+    below: !input threshold
+    for: !input delay
+    id: good
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: bad
+        sequence:
+          - action: number.set_value
+            continue_on_error: true
+            target:
+              entity_id: !input level
+            data:
+              value: 1
+      - conditions:
+          - condition: trigger
+            id: good
+        sequence:
+          - action: number.set_value
+            continue_on_error: true
+            target:
+              entity_id: !input level
+            data:
+              value: !input normal_level
+
+mode: queued

@@ -18,10 +18,17 @@ ROOM_COUNT = 21
 FALLBACK_ROOMS = range(1, 5)
 
 # operating modes (Betriebsart)
-MODE_OFF, MODE_SUMMER, MODE_WINTER, MODE_COMFORT, MODE_HOLIDAY = 0, 1, 2, 3, 5
-MODE_KEYS = {MODE_OFF: "off", MODE_SUMMER: "summer", MODE_WINTER: "winter", MODE_COMFORT: "eco_comfort", MODE_HOLIDAY: "holiday"}
-# the original's mode menu offers these (holiday is only shown)
-MODE_CHOICES = [MODE_COMFORT, MODE_WINTER, MODE_SUMMER, MODE_OFF]
+MODE_OFF, MODE_SUMMER, MODE_WINTER, MODE_COMFORT, MODE_STOVE, MODE_HOLIDAY = 0, 1, 2, 3, 4, 5
+MODE_KEYS = {
+    MODE_OFF: "off", MODE_SUMMER: "summer", MODE_WINTER: "winter", MODE_COMFORT: "eco_comfort", MODE_STOVE: "stove",
+    MODE_HOLIDAY: "holiday",
+}
+# the original's mode menu offers these (holiday is only shown). Stove mode ("Ofenbetrieb": the unit keeps a slight
+# overpressure so a fireplace doesn't draw smoke into the room) as documented by the ha-lan-proxon project (MIT).
+MODE_CHOICES = [MODE_COMFORT, MODE_WINTER, MODE_SUMMER, MODE_STOVE, MODE_OFF]
+
+# what the unit is doing right now (data point "Akt. Betriebsart")
+OPERATION_KEYS = {0: "ventilation", 1: "heating", 2: "cooling"}
 
 # clock of the unit: summer time flag, minute, hour, ISO weekday (1 = Monday), day, month, year (two digits)
 CLOCK_KEYS = ("UhrSommerzeit", "UhrMinute", "UhrStunde", "UhrWochentag", "UhrTag", "UhrMonat", "UhrJahr")
@@ -59,8 +66,17 @@ def active_faults(values: dict) -> dict[str, int]:
     return out
 
 
-FILTER_INTERVAL_MONTHS = 6
+FILTER_INTERVAL_MONTHS = 6  # used when the unit doesn't report its filter lifetime
+FILTER_LIFETIME_RANGE = (3, 8)  # months the unit's filter lifetime can be set to
 HOURS_PER_MONTH = 24 * 30
+
+
+def filter_months(values: dict) -> int:
+    """The filter lifetime set at the unit (3-8 months), else the usual 6 months."""
+    v = values.get("FilterStandzeit")
+    if isinstance(v, (int, float)) and FILTER_LIFETIME_RANGE[0] <= v <= FILTER_LIFETIME_RANGE[1]:
+        return int(v)
+    return FILTER_INTERVAL_MONTHS
 
 
 @dataclass(frozen=True)
@@ -69,7 +85,7 @@ class Reg:
     set_point: bool  # True: set point list, False: data point list
     read: tuple[int, int]
     write: tuple[int, int] | None = None
-    conv: str = "raw"  # raw | div10 | div100 | bool | signed | x2 | u16x2 | text
+    conv: str = "raw"  # raw | div10 | div100 | div1000 | bool | signed | x2 | u16x2 | text | water | t300
     length: int = 1  # number of consecutive addresses (text: 16-bit words, two characters each)
 
 
@@ -88,7 +104,7 @@ def _registers() -> list[Reg]:
         Reg("Betriebsstundenzaehler", True, (4, 0), None, "u16x2"),
         Reg("HasCO2", True, (0, 38), None, "bool"),
         Reg("Intensivlueftung", True, (0, 185), (0, 380), "bool"),
-        Reg("IntensivlueftungsDauer", True, (0, 186)),
+        Reg("IntensivlueftungsDauer", True, (0, 186), (0, 382)),
         Reg("IntensivlueftungsRestDauer", True, (0, 133)),
         Reg("NBE0MittelTemperatur", True, (0, 70), (0, 150), "div100"),
         Reg("NBE0PTC", True, (0, 187), (0, 384), "bool"),
@@ -119,6 +135,31 @@ def _registers() -> list[Reg]:
         # weekly ventilation schedule switched on at the unit (read only)
         Reg("ZeitprogrammAktiv", True, (5, 106), None, "bool"),
         *[Reg(fault_key(p), False, p) for p in FAULT_POINTS],
+        # Addresses below as documented by the ha-lan-proxon project (MIT), verified there on a real unit.
+        Reg("FilterStandzeit", True, (0, 460)),  # filter lifetime set at the unit, months (3-8)
+        Reg("Legionellenfunktion", True, (7, 26), (1, 25), "bool"),  # hot-water module: regular heating against legionella
+        Reg("BedienpanelGesperrt", True, (0, 403), None, "bool"),  # the stored value is a code: only "locked or not" is kept
+        Reg("PVFreigabe", True, (7, 11), None, "bool"),  # PV input of the hot-water module enabled
+        Reg("AktuellerBetrieb", False, (0, 26)),  # 0 ventilation, 1 heating, 2 cooling
+        Reg("WarmwasserUntenTemperatur", False, (3, 13), None, "water"),
+        Reg("PVSignalHeizstab", False, (3, 99), None, "bool"),
+        Reg("PVSignalWaermepumpe", False, (3, 100), None, "bool"),
+        Reg("Bypass", False, (1, 72), None, "bool"),
+        Reg("Erdwaerme", False, (1, 70), None, "bool"),
+        Reg("Magnetventil", False, (1, 71), None, "bool"),
+        Reg("Schieberposition", False, (1, 9)),
+        Reg("VentilHeizung", False, (1, 54)),
+        Reg("VentilVorwaerme", False, (1, 55)),
+        Reg("VentilKuehlung", False, (1, 53)),
+        Reg("StatusKompressor", False, (1, 12)),
+        Reg("StatusVentilatoren", False, (1, 2)),
+        Reg("DruckVerdampfer", False, (1, 56), None, "div1000"),  # P14, bar
+        Reg("T12VorKondensator", False, (1, 28), None, "div100"),
+        Reg("T13Kompressor", False, (1, 30), None, "div100"),
+        Reg("T14Sauggas", False, (1, 57), None, "div100"),
+        Reg("T300Saugleitung", False, (3, 16), None, "t300"),
+        Reg("T300LuefterDrehzahl", False, (3, 62)),
+        Reg("FirmwareT300", False, (3, 81)),
     ]
     # room names are stored in the unit: ten 16-bit words per room (set point object 6, addresses 10n .. 10n+9)
     r.append(Reg("NBE0name", True, (6, 0), None, "text", 10))
@@ -170,6 +211,8 @@ def decode(conv: str, raw: float) -> float | None:
         return raw / 10
     if conv == "div100":
         return raw / 100
+    if conv == "div1000":
+        return raw / 1000
     if conv == "bool":
         return 1.0 if raw else 0.0
     if conv == "x2":
@@ -283,9 +326,54 @@ def read_all(client) -> dict[str, float | str]:
     if "NBEverbunden0" in out and "NBEverbunden1" in out:
         for n in range(1, ROOM_COUNT):
             out[f"NBE{n}Verbunden"] = 1.0 if n in rooms else 0.0
+    if (charge := water_charge(out)) is not None:
+        out["WarmwasserLadezustand"] = charge
     if "LaufzeitFilter" in out:
-        out["FilterRestStunden"] = max(0.0, FILTER_INTERVAL_MONTHS * HOURS_PER_MONTH - out["LaufzeitFilter"])
+        out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - out["LaufzeitFilter"])
     return out
+
+
+COLD_WATER = 12.0  # °C of the water flowing into the tank, as assumed for the charge
+
+
+def water_charge(values: dict) -> float | None:
+    """How full the hot-water tank is (0-100 %): the middle and bottom sensors measured against cold water and the target.
+    An estimate - the tank has no sensor at the top."""
+    mid, bottom, target = values.get("WarmwasserIstTemperatur"), values.get("WarmwasserUntenTemperatur"), values.get("SollWassertemperatur")
+    if not all(isinstance(v, (int, float)) for v in (mid, bottom)):
+        return None
+    target = float(target) if isinstance(target, (int, float)) and target > COLD_WATER + 5 else 50.0
+    share = ((mid - COLD_WATER) + (bottom - COLD_WATER)) / (2 * (target - COLD_WATER))
+    return float(round(min(1.0, max(0.0, share)) * 100))
+
+
+MIN_RECOVERY_SPREAD = 5.0  # K between extract and outdoor air needed for a meaningful efficiency
+
+
+def heat_recovery(values: dict) -> float | None:
+    """Efficiency of the heat exchanger in %: how much of the difference between outdoor and extract air the supply air
+    gains. Only meaningful while the heat pump is off and the bypass closed (otherwise the supply air is heated / bypassed)."""
+    t_out, t_sup, t_ext = values.get("T3Frischluft"), values.get("T1Zuluft"), values.get("T7Abluft")
+    if not all(isinstance(v, (int, float)) for v in (t_out, t_sup, t_ext)):
+        return None
+    if values.get("DrehzahlKompressor") or values.get("Bypass") or int(values.get("Betriebsart", 0) or 0) == MODE_OFF:
+        return None
+    spread = t_ext - t_out
+    if abs(spread) < MIN_RECOVERY_SPREAD:
+        return None
+    return float(round(min(1.0, max(0.0, (t_sup - t_out) / spread)) * 100))
+
+
+# While the unit reports a fault, only harmless changes are written: switching something off, the unit off, the ventilation
+# level and room temperatures. (Same idea as the write guard of the ha-lan-proxon project.)
+_OFF_KEYS = {"Intensivlueftung", "E-Heizstab", "GlobalKuehlungFreigabe", "Legionellenfunktion", "T300Betriebsart", "Betriebsart"}
+_HARMLESS_KEYS = {"Luefterstufe", "NBE0MittelTemperatur"}
+
+
+def allowed_during_fault(key: str, value: float) -> bool:
+    if key in _HARMLESS_KEYS or (key.startswith("NBE") and key.endswith("OffsetTemperatur")):
+        return True
+    return (key in _OFF_KEYS or (key.startswith("NBE") and key.endswith("PTC"))) and not value
 
 
 def write_value(client, key: str, value: float) -> None:
@@ -331,6 +419,7 @@ def read_keys(client, keys: list[str]) -> dict[str, float | str]:
 # (its operating mode up to a minute and a half). For these the read-back waits longer, and the same value is sent again
 # twice in between (writing the same value again does no harm).
 SLOW_WRITE_SECONDS: dict[str, float] = {
+    "Legionellenfunktion": 60,
     "SollWassertemperatur": 60,
     "E-Heizstab": 60,
     "Soll-E-Heizstab-Temperatur": 60,

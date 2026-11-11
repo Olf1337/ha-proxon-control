@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity, room_name
+from .entity import ProxonEntity, room_device
 from .registers import MODE_OFF, ROOM_COUNT, room_base, room_connected, room_target, room_write
 
 # ranges of the original app: living room 10-30 °C; other rooms 14-26 °C and at most 3 °C around the room's own base value
@@ -45,7 +45,8 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
     _attr_precision = 0.1
 
     def __init__(self, coordinator, room: int) -> None:
-        super().__init__(coordinator, f"NBE{room}Thermostat", "room_thermostat", {"room": room_name(room, coordinator.data)})
+        super().__init__(coordinator, f"NBE{room}Thermostat", "room_thermostat", device=room_device(coordinator, room))
+        self._attr_name = None  # the thermostat is the room's main entity: it carries the room device's name
         self._room = room
         # the living room's target is stored in hundredths of a degree (half degrees possible);
         # the other rooms store a whole-degree offset to their own base value

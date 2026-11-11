@@ -1,10 +1,11 @@
-"""Shared base for all Proxon entities (one device per appliance)."""
+"""Shared base for all Proxon entities: the appliance is one device, every room panel and every weekday of the ventilation
+schedule a device of its own linked to it (so rooms can be put into their areas)."""
 from __future__ import annotations
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_DEVICE_ID, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL
+from .const import CONF_DEVICE_ID, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL, ROOM_MODEL
 from .coordinator import ProxonCoordinator
 from .registers import room_name_from_unit
 
@@ -17,18 +18,65 @@ def room_name(i: int, data: dict | None = None) -> str:
     return DEFAULT_ROOM_NAMES[i] if i < len(DEFAULT_ROOM_NAMES) else f"Raum {i + 1}"
 
 
+def base_id(coordinator: ProxonCoordinator) -> str:
+    entry = coordinator.config_entry
+    return entry.unique_id or entry.entry_id
+
+
+# Home Assistant 2026.10 links a device to its parent by the parent's device id (via_device_id); older versions by its identifier
+VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
+
+
+def _via(coordinator: ProxonCoordinator) -> dict:
+    if VIA_DEVICE_ID and coordinator.device_id:
+        return {"via_device_id": coordinator.device_id}
+    return {"via_device": (DOMAIN, base_id(coordinator))}
+
+
+def room_identifier(coordinator: ProxonCoordinator, room: int) -> tuple[str, str]:
+    return (DOMAIN, f"{base_id(coordinator)}_room{room}")
+
+
+def room_device(coordinator: ProxonCoordinator, room: int) -> DeviceInfo:
+    """A room panel as a device of its own (can be put into the room's area)."""
+    return DeviceInfo(
+        identifiers={room_identifier(coordinator, room)},
+        manufacturer=MANUFACTURER,
+        model=ROOM_MODEL,
+        name=f"Proxon {room_name(room, coordinator.data)}",
+        **_via(coordinator),
+    )
+
+
+def schedule_device(coordinator: ProxonCoordinator, day: int, day_name: str, title: str) -> DeviceInfo:
+    """One weekday of the ventilation schedule as a device (its phases' times and levels)."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{base_id(coordinator)}_schedule{day}")},
+        manufacturer=MANUFACTURER,
+        model=MODEL,
+        name=f"Proxon {title} {day_name}",
+        **_via(coordinator),
+    )
+
+
 class ProxonEntity(CoordinatorEntity[ProxonCoordinator]):
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: ProxonCoordinator, key: str, translation_key: str, placeholders: dict[str, str] | None = None) -> None:
+    def __init__(
+        self, coordinator: ProxonCoordinator, key: str, translation_key: str, placeholders: dict[str, str] | None = None,
+        *, device: DeviceInfo | None = None,
+    ) -> None:
         super().__init__(coordinator)
         entry = coordinator.config_entry
-        base = entry.unique_id or entry.entry_id
+        base = base_id(coordinator)
         self._key = key
         self._attr_unique_id = f"{base}_{key}"
         self._attr_translation_key = translation_key
         if placeholders:
             self._attr_translation_placeholders = placeholders
+        if device is not None:
+            self._attr_device_info = device
+            return
         version = (coordinator.data or {}).get("FirmwareVersion")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, base)},

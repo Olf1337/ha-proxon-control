@@ -1,0 +1,77 @@
+blueprint:
+  name: Proxon – Lüftung Stufe 1, wenn niemand zu Hause ist
+  description: >-
+    Senkt die Lüftung der Proxon-Anlage auf Stufe 1, wenn eine Weile niemand zu Hause ist, und stellt beim Heimkommen die gewählte
+    Stufe wieder ein. Für längere Abwesenheit (Urlaub) gibt es den Blueprint „Urlaubsmodus, wenn niemand zu Hause ist“.
+    Hinweis: In der Betriebsart „ECO Komfort“ und während der Intensivlüftung wählt die Anlage die Stufe selbst – dann wird nichts
+    geändert. (Ventilation level 1 while nobody is home.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/nobody_home.yaml
+  homeassistant:
+    min_version: "2026.3.0"
+  input:
+    home_zone:
+      name: Zuhause-Zone
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: zone
+    delay:
+      name: Abwesend seit mindestens
+      default:
+        minutes: 30
+      selector:
+        duration:
+    level:
+      name: Lüftungsstufe
+      description: Zahl „Lüftungsstufe“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: proxon_control
+    normal_level:
+      name: Beim Heimkommen wieder Stufe
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 4
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input home_zone
+    below: 1
+    for: !input delay
+    id: away
+  - trigger: numeric_state
+    entity_id: !input home_zone
+    above: 0
+    id: home
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: away
+        sequence:
+          - action: number.set_value
+            continue_on_error: true
+            target:
+              entity_id: !input level
+            data:
+              value: 1
+      - conditions:
+          - condition: trigger
+            id: home
+        sequence:
+          - action: number.set_value
+            continue_on_error: true
+            target:
+              entity_id: !input level
+            data:
+              value: !input normal_level
+
+mode: queued

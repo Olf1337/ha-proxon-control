@@ -13,6 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from .const import DOMAIN
 from .coordinator import ProxonCoordinator
 from .dashboard import build
+from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
@@ -49,9 +50,15 @@ def _minutes(value: time | None) -> int | None:
     return None if value is None else value.hour * 60 + value.minute
 
 
-def _day_name(hass: HomeAssistant, day: int) -> str:
+def day_name(hass: HomeAssistant, day: int) -> str:
     lang = "de" if (hass.config.language or "").startswith("de") else "en"
     return DAY_NAMES[lang][day]
+
+
+def schedule_day_device(hass: HomeAssistant, coordinator: ProxonCoordinator, day: int):
+    """The device of one weekday of the ventilation schedule ("Proxon Zeitprogramm Montag")."""
+    german = (hass.config.language or "").startswith("de")
+    return schedule_device(coordinator, day, day_name(hass, day), "Zeitprogramm" if german else "schedule")
 
 
 def _entry(hass: HomeAssistant, entry_id: str | None):
@@ -69,7 +76,7 @@ def _coordinator(hass: HomeAssistant, entry_id: str | None) -> ProxonCoordinator
 
 def _fail(hass: HomeAssistant, day: int, err: ScheduleError) -> ServiceValidationError:
     return ServiceValidationError(
-        translation_domain=DOMAIN, translation_key=err.key, translation_placeholders={"day": _day_name(hass, day), **err.placeholders}
+        translation_domain=DOMAIN, translation_key=err.key, translation_placeholders={"day": day_name(hass, day), **err.placeholders}
     )
 
 
@@ -85,35 +92,47 @@ async def _write(coordinator: ProxonCoordinator, writes: list[tuple[str, int]]) 
         await coordinator.async_write(key, value)
 
 
+async def async_set_phase(
+    hass: HomeAssistant, coordinator: ProxonCoordinator, day: int, phase: int, start: int | None, end: int | None, level: int | None,
+) -> None:
+    """Change one phase (0-2) of a day: start/end in minutes after midnight, None = keep; level None = keep. Checked against
+    the unit's rules first (a translated error says why a change isn't possible)."""
+    old = _phases(hass, coordinator, day)
+    new = set_phase(old, phase, start, end, old[phase].level if level is None else level)
+    try:
+        writes = plan_day(day, old, new, unit_clock(coordinator.data or {}))
+    except ScheduleError as err:
+        raise _fail(hass, day, err) from err
+    await _write(coordinator, writes)
+
+
+async def async_copy_day(hass: HomeAssistant, coordinator: ProxonCoordinator, source: int, targets: list[int]) -> None:
+    """Copy one day's phases to other days. Every day is checked first: nothing is written unless all can take the copy."""
+    phases = _phases(hass, coordinator, source)
+    now = unit_clock(coordinator.data or {})
+    plans: list[list[tuple[str, int]]] = []
+    for day in dict.fromkeys(targets):
+        if day == source:
+            continue
+        try:
+            plans.append(plan_day(day, _phases(hass, coordinator, day), phases, now))
+        except ScheduleError as err:
+            raise _fail(hass, day, err) from err
+    for writes in plans:
+        await _write(coordinator, writes)
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     async def set_schedule_phase(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY))
-        day = DAYS.index(call.data["day"])
-        old = _phases(hass, coordinator, day)
-        new = set_phase(old, call.data["phase"] - 1, _minutes(call.data.get("start")), _minutes(call.data.get("end")), call.data["level"])
-        try:
-            writes = plan_day(day, old, new, unit_clock(coordinator.data or {}))
-        except ScheduleError as err:
-            raise _fail(hass, day, err) from err
-        await _write(coordinator, writes)
+        await async_set_phase(
+            hass, coordinator, DAYS.index(call.data["day"]), call.data["phase"] - 1,
+            _minutes(call.data.get("start")), _minutes(call.data.get("end")), call.data["level"],
+        )
 
     async def copy_schedule_day(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY))
-        source = DAYS.index(call.data["source_day"])
-        phases = _phases(hass, coordinator, source)
-        now = unit_clock(coordinator.data or {})
-        # check every day first: nothing is written unless all target days can take the copy
-        plans: list[list[tuple[str, int]]] = []
-        for name in dict.fromkeys(call.data["target_days"]):
-            day = DAYS.index(name)
-            if day == source:
-                continue
-            try:
-                plans.append(plan_day(day, _phases(hass, coordinator, day), phases, now))
-            except ScheduleError as err:
-                raise _fail(hass, day, err) from err
-        for writes in plans:
-            await _write(coordinator, writes)
+        await async_copy_day(hass, coordinator, DAYS.index(call.data["source_day"]), [DAYS.index(d) for d in call.data["target_days"]])
 
     async def create_dashboard(call: ServiceCall) -> ServiceResponse:
         """The ready-made dashboard, with this unit's real entity IDs. Returned as the dashboard itself (starting with

@@ -1,0 +1,89 @@
+blueprint:
+  name: Proxon – Ofenbetrieb, solange der Kaminofen brennt
+  description: >-
+    Schaltet die Proxon-Anlage in den Ofenbetrieb, sobald der Kaminofen brennt (die Anlage hält dann einen leichten Überdruck,
+    damit der Ofen keinen Rauch in den Raum zieht), und danach wieder in die gewählte Betriebsart. Als „Ofen brennt“ eignet sich
+    ein Schalter, ein Tür-/Temperatur-Sensor oder ein Schwellenwert-Helfer auf einem Temperaturfühler am Ofenrohr.
+    Zurückgeschaltet wird nur, wenn die Anlage noch im Ofenbetrieb ist (wer zwischendurch selbst umgestellt hat, behält seine Wahl).
+    (Stove mode while the fireplace is burning.)
+  domain: automation
+  author: Olf1337
+  source_url: https://github.com/Olf1337/ha-proxon-control/blob/main/blueprints/automation/proxon_control/stove_mode.yaml
+  homeassistant:
+    min_version: "2026.3.0"
+  input:
+    stove:
+      name: Ofen brennt
+      description: Ein-/Aus-Zustand des Ofens (z. B. Binärsensor, Schwellenwert-Helfer oder Schalter).
+      selector:
+        entity:
+          filter:
+            - domain: [binary_sensor, input_boolean, switch]
+    off_delay:
+      name: Zurückschalten, wenn der Ofen so lange aus ist
+      default:
+        minutes: 30
+      selector:
+        duration:
+    mode_select:
+      name: Betriebsart
+      description: Auswahl „Betriebsart“ der Proxon-Anlage.
+      selector:
+        entity:
+          filter:
+            - domain: select
+              integration: proxon_control
+    return_mode:
+      name: Danach zurück zu
+      default: eco_comfort
+      selector:
+        select:
+          options:
+            - label: ECO Komfort
+              value: eco_comfort
+            - label: Winter
+              value: winter
+            - label: Sommer
+              value: summer
+
+triggers:
+  - trigger: state
+    entity_id: !input stove
+    to: "on"
+    id: burning
+  - trigger: state
+    entity_id: !input stove
+    to: "off"
+    for: !input off_delay
+    id: out
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: burning
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input mode_select
+                state: stove
+        sequence:
+          - action: select.select_option
+            target:
+              entity_id: !input mode_select
+            data:
+              option: stove
+      - conditions:
+          - condition: trigger
+            id: out
+          - condition: state
+            entity_id: !input mode_select
+            state: stove
+        sequence:
+          - action: select.select_option
+            target:
+              entity_id: !input mode_select
+            data:
+              option: !input return_mode
+
+mode: queued
