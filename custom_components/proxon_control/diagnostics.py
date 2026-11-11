@@ -1,6 +1,7 @@
 """Diagnostics download (Settings → Devices & services → Proxon Control → ⋮ → Download diagnostics).
 
-Holds the raw values of the last query, so problems on other units or firmware versions can be looked at.
+Holds the raw values of the last query, so problems on other units or firmware versions can be looked at. The values
+"Pruefwert_DP0_n" are data points from Proxon's Modbus list whose meaning over the network is still being checked.
 Device ID, password, address of the bridge add-on and the room names are removed.
 """
 from __future__ import annotations

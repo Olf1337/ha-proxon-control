@@ -27,8 +27,12 @@ MODE_KEYS = {
 # overpressure so a fireplace doesn't draw smoke into the room) as documented by the ha-lan-proxon project (MIT).
 MODE_CHOICES = [MODE_COMFORT, MODE_WINTER, MODE_SUMMER, MODE_STOVE, MODE_OFF]
 
-# what the unit is doing right now (data point "Akt. Betriebsart")
+# what the unit is doing right now: worked out from the compressor and the 4-way valve (see operation())
 OPERATION_KEYS = {0: "ventilation", 1: "heating", 2: "cooling"}
+
+# Data points named in Proxon's Modbus register list (FWT 2.0) whose meaning over the network isn't confirmed yet: read only
+# into the diagnostics download, so a real unit's values can show what they hold (power, air volume, COP, fault flag).
+PROBE_POINTS = (19, 20, 23, 25, 26, 27, 29, 32, 34, 47)
 
 # clock of the unit: summer time flag, minute, hour, ISO weekday (1 = Monday), day, month, year (two digits)
 CLOCK_KEYS = ("UhrSommerzeit", "UhrMinute", "UhrStunde", "UhrWochentag", "UhrTag", "UhrMonat", "UhrJahr")
@@ -140,7 +144,7 @@ def _registers() -> list[Reg]:
         Reg("Legionellenfunktion", True, (7, 26), (1, 25), "bool"),  # hot-water module: regular heating against legionella
         Reg("BedienpanelGesperrt", True, (0, 403), None, "bool"),  # the stored value is a code: only "locked or not" is kept
         Reg("PVFreigabe", True, (7, 11), None, "bool"),  # PV input of the hot-water module enabled
-        Reg("AktuellerBetrieb", False, (0, 26)),  # 0 ventilation, 1 heating, 2 cooling
+        *[Reg(f"Pruefwert_DP0_{n}", False, (0, n)) for n in PROBE_POINTS],
         Reg("WarmwasserUntenTemperatur", False, (3, 13), None, "water"),
         Reg("PVSignalHeizstab", False, (3, 99), None, "bool"),
         Reg("PVSignalWaermepumpe", False, (3, 100), None, "bool"),
@@ -326,11 +330,25 @@ def read_all(client) -> dict[str, float | str]:
     if "NBEverbunden0" in out and "NBEverbunden1" in out:
         for n in range(1, ROOM_COUNT):
             out[f"NBE{n}Verbunden"] = 1.0 if n in rooms else 0.0
+    if (op := operation(out)) is not None:
+        out["AktuellerBetrieb"] = op
     if (charge := water_charge(out)) is not None:
         out["WarmwasserLadezustand"] = charge
     if "LaufzeitFilter" in out:
         out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - out["LaufzeitFilter"])
     return out
+
+
+def operation(values: dict) -> float | None:
+    """0 ventilating, 1 heating, 2 cooling - from the compressor and the 4-way valve, like the status line of the original app.
+    (The data point ha-lan-proxon documents for this turned out to stay 0 on a real unit while the compressor ran.)"""
+    rpm = values.get("DrehzahlKompressor")
+    mode = values.get("Betriebsart")
+    if not isinstance(rpm, (int, float)) or (isinstance(mode, (int, float)) and int(mode) == MODE_OFF):
+        return None
+    if rpm > 0:
+        return 2.0 if values.get("Kuehlbetrieb4Wegeventil") else 1.0
+    return 0.0
 
 
 COLD_WATER = 12.0  # °C of the water flowing into the tank, as assumed for the charge

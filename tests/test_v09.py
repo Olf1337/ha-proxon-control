@@ -62,6 +62,21 @@ def test_heat_recovery() -> None:
     assert R.heat_recovery({**v, "T3Frischluft": 19.0}) is None  # outdoor and extract air too close
 
 
+def test_operation_from_compressor_and_valve() -> None:
+    assert R.operation({"DrehzahlKompressor": 3000.0, "Kuehlbetrieb4Wegeventil": 0.0, "Betriebsart": 2.0}) == 1.0
+    assert R.operation({"DrehzahlKompressor": 3000.0, "Kuehlbetrieb4Wegeventil": 1.0, "Betriebsart": 1.0}) == 2.0
+    assert R.operation({"DrehzahlKompressor": 0.0, "Betriebsart": 3.0}) == 0.0
+    assert R.operation({"DrehzahlKompressor": 0.0, "Betriebsart": 0.0}) is None  # unit off
+
+
+async def test_probe_values_are_in_the_diagnostics(hass: HomeAssistant, device) -> None:
+    from custom_components.proxon_control.diagnostics import async_get_config_entry_diagnostics
+
+    entry = await setup(hass)
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+    assert all(f"Pruefwert_DP0_{n}" in diag["values"] for n in R.PROBE_POINTS)
+
+
 def test_clock_drift() -> None:
     clock = {"UhrMinute": 0, "UhrStunde": 10, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26}
     assert clock_drift(clock, datetime(2026, 11, 9, 10, 0, 40)) == 0
@@ -82,7 +97,7 @@ async def test_new_values(hass: HomeAssistant, device) -> None:
     await setup(hass)
     assert state(hass, "sensor", "WarmwasserUntenTemperatur").state == "30.0"
     assert state(hass, "sensor", "WarmwasserLadezustand").state == "95"  # middle 36 °C, bottom 30 °C, target 34 °C
-    assert state(hass, "sensor", "AktuellerBetrieb").state == "heating"
+    assert state(hass, "sensor", "AktuellerBetrieb").state == "cooling"  # compressor runs, 4-way valve on cooling
     assert state(hass, "sensor", "DruckVerdampfer").state == "2.85"
     assert state(hass, "sensor", "FirmwareT300").state == "35"
     assert state(hass, "sensor", "FilterStandzeit").state == "6"

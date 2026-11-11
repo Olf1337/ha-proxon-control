@@ -209,8 +209,6 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         data = self.coordinator.data or {}
         if self._key == "FilterRestStunden":
             return {"filter_lifetime_months": filter_months(data)}
-        if self._key == "AktuellerBetrieb":
-            return {"raw": self.raw_value}
         return None
 
 

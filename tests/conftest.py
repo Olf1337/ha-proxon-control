@@ -26,7 +26,7 @@ RAW_DEFAULT = {
 }
 # values added in 0.9.0 (filter lifetime, hot water bottom, current operation, diagnostics, hot-water module)
 RAW_DEFAULT.update({
-    "FilterStandzeit": 6, "Legionellenfunktion": 0, "BedienpanelGesperrt": 0, "PVFreigabe": 1, "AktuellerBetrieb": 1,
+    "FilterStandzeit": 6, "Legionellenfunktion": 0, "BedienpanelGesperrt": 0, "PVFreigabe": 1,
     "WarmwasserUntenTemperatur": 1300, "PVSignalHeizstab": 0, "PVSignalWaermepumpe": 0, "Bypass": 0, "Erdwaerme": 0, "Magnetventil": 0,
     "Schieberposition": 0, "VentilHeizung": 40, "VentilVorwaerme": 0, "VentilKuehlung": 0, "StatusKompressor": 1, "StatusVentilatoren": 3,
     "DruckVerdampfer": 2850, "T12VorKondensator": 3500, "T13Kompressor": 6000, "T14Sauggas": 1200, "T300Saugleitung": 1100,

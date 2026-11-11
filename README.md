@@ -40,7 +40,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.9.0)
+# Proxon Control – Integration für Home Assistant (Version 0.9.1)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -66,6 +66,14 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
 
+## Neu in Version 0.9.1
+
+* **„Aktueller Betrieb“ korrigiert:** Die in 0.9.0 gelesene Adresse blieb an einer echten Anlage auf „Lüften“, obwohl der Kompressor lief.
+  Der Wert ergibt sich jetzt aus Kompressor und 4-Wege-Ventil und stimmt damit immer.
+* **Prüfwerte in der Diagnose-Datei:** Einige Werte aus Proxons Modbus-Liste (Leistungsaufnahme, Luftmenge, Arbeitszahl, Störungs-Sammelmeldung)
+  werden zusätzlich gelesen und nur in die Diagnose-Datei geschrieben (`Pruefwert_DP0_…`). Damit lässt sich an einer echten Anlage klären, welche
+  Adresse was enthält, bevor daraus Sensoren werden.
+
 ## Neu in Version 0.9.0
 
 **Neue Einstellungen und Werte** (Adressen wie im Projekt [ha-lan-proxon](https://github.com/Fummy1990/ha-lan-proxon) dokumentiert):
@@ -75,7 +83,7 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 * **Filter-Restlaufzeit nach der Standzeit, die an der Anlage eingestellt ist** (3–8 Monate). Bisher wurde fest mit 6 Monaten gerechnet –
   wer eine kürzere Standzeit eingestellt hat, bekam den Hinweis „Filterwechsel bald nötig“ zu spät.
 * **Warmwasser unten** (zweiter Fühler im Speicher) und daraus der **Warmwasser-Ladezustand** in % (geschätzt).
-* **Aktueller Betrieb** (Lüften / Heizen / Kühlen) direkt aus der Anlage.
+* **Aktueller Betrieb** (Lüften / Heizen / Kühlen), aus Kompressor und 4-Wege-Ventil (wie die Statuszeile der App).
 * **Wärmerückgewinnung** in %: wie viel Wärme der Wärmetauscher aus der Abluft zurückholt. Messbar nur, wenn die Wärmepumpe aus und der Bypass
   zu ist und außen und innen mindestens 5 °C Unterschied herrschen; dazwischen bleibt der letzte Messwert stehen. Sinkt der Wert über die Zeit,
   sind oft Filter oder Wärmetauscher verschmutzt.
