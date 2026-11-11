@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity
-from .registers import FAULT_POINTS, active_faults, fault_key, t300_fault_texts
+from .registers import FAULT_POINTS, active_faults, fault_key, heating_channels, t300_fault_texts
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
 FILTER_WARN_HOURS = 30 * 24
@@ -39,12 +39,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonScheduleActive(coordinator))
     if any(fault_key(p) in data for p in FAULT_POINTS):
         entities.append(ProxonFault(coordinator))
+    if "HeizmodulRelais" in data:
+        entities.append(ProxonHeatingElements(coordinator))
     entities += [
         ProxonState(coordinator, key, tk, dc, icon, diag)
         for key, tk, dc, icon, diag in STATES
         if key in data and (key not in T300_KEYS or "T300Betriebsart" in data)
     ]
     async_add_entities(entities)
+
+
+class ProxonHeatingElements(ProxonEntity, BinarySensorEntity):
+    """Whether the electric heating elements of the rooms heat right now (relays K1-K10 of the heating module). Which relay
+    belongs to which room depends on the wiring; the switched-on relays are an attribute."""
+
+    _attr_device_class = BinarySensorDeviceClass.HEAT
+    _attr_icon = "mdi:radiator"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "HeizmodulRelais", "heating_elements")
+
+    @property
+    def is_on(self) -> bool | None:
+        return None if self.raw_value is None else bool(heating_channels(self.coordinator.data or {}))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"active_channels": heating_channels(self.coordinator.data or {})}
 
 
 class ProxonState(ProxonEntity, BinarySensorEntity):

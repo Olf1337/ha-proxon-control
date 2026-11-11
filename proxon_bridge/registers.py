@@ -196,6 +196,9 @@ def _registers() -> list[Reg]:
         Reg("LeistungGesamt", False, (0, 25), None, "div10"),
         Reg("LeistungKompressor", False, (0, 20), None, "div10"),
         Reg("LeistungLueftung", False, (0, 19), None, "div10"),
+        Reg("KompressorLeistung", False, (1, 21), None, "div100"),  # % of the compressor's power (Modbus 3x0171)
+        Reg("HeizmodulRelais", False, (2, 4)),  # relays K1-K10 of the room heating module, one bit each (Modbus 3x0574)
+        Reg("GeraeteTyp", True, (0, 18)),  # 0 heating only, 1 heating and cooling (Modbus 4x0018)
         # operating hour counters of the unit (set point object 4 = Modbus 467 + n, counting in 2-hour steps like the others)
         *[Reg(k, True, (4, n), None, "u16x2") for k, n in HOUR_COUNTERS.items()],
         # hot-water module: relays, and its own runtime counters in seconds (low word, high word; Modbus list 3x0847...)
@@ -247,6 +250,9 @@ def _room_registers(n: int) -> list[Reg]:
         Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
         Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
         Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
+        # how the room stands against its target, as the panel's LED shows it: 6 too cold, 5 at target, 4 warmer
+        # (Modbus list "NBE LEDsetpointlevel"; meaning found on a real unit by the ha-modbus-proxon project)
+        Reg(f"NBE{n}LED", False, (2, 16 + 3 * n)),
     ]
 
 
@@ -596,6 +602,36 @@ def room_target(values: dict, i: int) -> float | None:
 def room_base(values: dict, i: int) -> float | None:
     """Value the ±3 °C limit of a room is measured from (its own base value)."""
     return values.get(f"NBE{i}MittelTemperatur")
+
+
+LED_DEMAND = {6: "too_cold", 5: "at_target", 4: "warmer"}
+
+
+def room_demand(values: dict, i: int) -> str | None:
+    """Too cold / at target / warmer: from the room panel's LED level, for the central panel (no LED level) from its
+    temperature against its target."""
+    led = values.get(f"NBE{i}LED")
+    if isinstance(led, (int, float)) and int(led) in LED_DEMAND:
+        return LED_DEMAND[int(led)]
+    temp, target = values.get(f"NBE{i}Temperatur"), room_target(values, i)
+    if not isinstance(temp, (int, float)) or not isinstance(target, (int, float)):
+        return None
+    if temp < target - 0.3:
+        return "too_cold"
+    return "warmer" if temp > target + 0.3 else "at_target"
+
+
+def room_heating(values: dict, i: int) -> bool:
+    """The room's electric heating element is heating: released and the room too cold (as the original app shows it)."""
+    return bool(values.get(f"NBE{i}PTC")) and room_demand(values, i) == "too_cold"
+
+
+def heating_channels(values: dict) -> list[str]:
+    """Relays K1-K10 of the room heating module that are switched on right now."""
+    word = values.get("HeizmodulRelais")
+    if not isinstance(word, (int, float)):
+        return []
+    return [f"K{b + 1}" for b in range(10) if int(word) >> b & 1]
 
 
 def room_write(values: dict, i: int, target: float) -> tuple[str, float]:

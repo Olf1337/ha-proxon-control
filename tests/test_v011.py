@@ -140,3 +140,37 @@ async def test_t300_fault_in_sensor_and_notice(hass: HomeAssistant, device) -> N
     assert fault.state == "on" and fault.attributes["hot_water_module"] == ["Change filter"]
     issue = ir.async_get(hass).async_get_issue(DOMAIN, f"unit_fault_{entry.entry_id}")
     assert "hot-water module: Change filter" in issue.translation_placeholders["words"]
+
+
+# ---------------- 0.12: room heat demand, heating elements, device type, compressor power ----------------
+def test_room_demand_and_heating() -> None:
+    v = {"NBE1LED": 6.0, "NBE1PTC": 1.0, "NBE2LED": 6.0, "NBE2PTC": 0.0, "NBE3LED": 5.0, "NBE3PTC": 1.0}
+    assert R.room_demand(v, 1) == "too_cold" and R.room_heating(v, 1)
+    assert R.room_demand(v, 2) == "too_cold" and not R.room_heating(v, 2)  # element not released
+    assert R.room_demand(v, 3) == "at_target" and not R.room_heating(v, 3)
+    # central panel: no LED level, temperature against target
+    assert R.room_demand({"NBE0Temperatur": 20.0, "NBE0MittelTemperatur": 22.0}, 0) == "too_cold"
+    assert R.room_demand({"NBE0Temperatur": 22.1, "NBE0MittelTemperatur": 22.0}, 0) == "at_target"
+    assert R.heating_channels({"HeizmodulRelais": float(0b1000000101)}) == ["K1", "K3", "K10"]
+
+
+async def test_room_heat_demand_in_the_thermostat(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    bedroom = hass.states.get(eid(hass, "climate", "NBE1Thermostat"))  # LED 6, element released
+    assert bedroom.attributes["heat_demand"] == "too_cold" and bedroom.attributes["heating_element_heats"] is True
+    assert bedroom.attributes["hvac_action"] == "heating"
+    bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))  # LED 5
+    assert bath.attributes["heat_demand"] == "at_target" and bath.attributes["heating_element_heats"] is False
+    elements = state(hass, "binary_sensor", "HeizmodulRelais")
+    assert elements.state == "on" and elements.attributes["active_channels"] == ["K3", "K10"]
+    assert state(hass, "sensor", "KompressorLeistung").state == "65.0"
+    assert state(hass, "sensor", "GeraeteTyp").state == "heating_cooling"
+
+
+async def test_no_cooling_switch_on_heating_only_units(hass: HomeAssistant, device) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    device.raw[raw_key("GeraeteTyp")] = 0
+    await setup(hass)
+    assert er.async_get(hass).async_get_entity_id("switch", DOMAIN, "abc123_GlobalKuehlungFreigabe") is None
+    assert state(hass, "sensor", "GeraeteTyp").state == "heating_only"

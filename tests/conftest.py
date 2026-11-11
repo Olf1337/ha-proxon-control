@@ -37,6 +37,8 @@ RAW_DEFAULT.update({
     "T300RelaisKompressor": 1, "T300RelaisHeizstab": 0,
     "NachtabsenkungStartH": 22, "NachtabsenkungStartM": 0, "NachtabsenkungEndeH": 6, "NachtabsenkungEndeM": 0,
     "NachtabsenkungTemperatur": 1900, "NachtabsenkungAktiv": 0,
+    "KompressorLeistung": 6500, "HeizmodulRelais": 0b1000000100, "GeraeteTyp": 1,
+    "NBE1LED": 6, "NBE4LED": 5,
 })
 # unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on
 RAW_DEFAULT.update({"UhrSommerzeit": 0, "UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26,

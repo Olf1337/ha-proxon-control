@@ -345,6 +345,16 @@
           "other_mode": "Andere Betriebsart",
           "blocked": "Gesperrt"
         }
+      },
+      "compressor_power_percent": {
+        "name": "Kompressor-Leistung"
+      },
+      "device_type": {
+        "name": "Gerätetyp",
+        "state": {
+          "heating_only": "Nur Heizen",
+          "heating_cooling": "Heizen und Kühlen"
+        }
       }
     },
     "select": {
@@ -545,6 +555,9 @@
       },
       "panel_locked": {
         "name": "Bedienpanel gesperrt"
+      },
+      "heating_elements": {
+        "name": "Wärmeelemente heizen"
       }
     },
     "climate": {
@@ -553,6 +566,19 @@
         "state": {
           "auto": "Automatik (Wärmepumpe)",
           "heat": "Mit Wärmeelement"
+        },
+        "state_attributes": {
+          "heat_demand": {
+            "name": "Wärmebedarf",
+            "state": {
+              "too_cold": "Zu kalt",
+              "at_target": "Sollwert erreicht",
+              "warmer": "Wärmer als Soll"
+            }
+          },
+          "heating_element_heats": {
+            "name": "Wärmeelement heizt"
+          }
         }
       }
     },

@@ -24,7 +24,12 @@ SWITCHES: list[tuple[str, str, str, int | None]] = [
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}
-    entities: list[SwitchEntity] = [ProxonSwitch(coordinator, key, tk, icon, room) for key, tk, icon, room in SWITCHES if key in data]
+    entities: list[SwitchEntity] = [
+        ProxonSwitch(coordinator, key, tk, icon, room)
+        for key, tk, icon, room in SWITCHES
+        # no cooling switch on units that can only heat (device type reported by the unit)
+        if key in data and not (key == "GlobalKuehlungFreigabe" and data.get("GeraeteTyp") == 0)
+    ]
     entities.append(ProxonHolidaySwitch(coordinator))
     comfort = coordinator.comfort
     if comfort.cooling.supported:

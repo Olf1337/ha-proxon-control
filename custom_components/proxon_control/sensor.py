@@ -76,6 +76,14 @@ SENSORS: list[ProxonSensorDescription] = [
     _temp("T300Verdampfer", "t300_evaporator", diag=True),
     _temp("T300Kompressor", "t300_compressor", diag=True),
     _temp("WarmwasserUntenTemperatur", "water_bottom"),
+    ProxonSensorDescription(
+        key="KompressorLeistung", translation_key="compressor_power_percent", native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0, icon="mdi:heat-pump",
+    ),
+    ProxonSensorDescription(
+        key="GeraeteTyp", translation_key="device_type", device_class=SensorDeviceClass.ENUM,
+        options=["heating_only", "heating_cooling"], entity_category=EntityCategory.DIAGNOSTIC, icon="mdi:information-outline",
+    ),
     *[
         ProxonSensorDescription(
             key=key, translation_key=tk, native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER,
@@ -240,6 +248,8 @@ class ProxonSensor(ProxonEntity, SensorEntity):
             return "cooling" if v else "heating"
         if self._key == "AktuellerBetrieb":
             return OPERATION_KEYS.get(int(v))
+        if self._key == "GeraeteTyp":
+            return {0: "heating_only", 1: "heating_cooling"}.get(int(v))
         if self._key in ("FirmwareVersion", "FirmwareT300", "IstLuefterstufe", "IntensivlueftungsRestDauer", "UhrAbweichung",
                          "FilterStandzeit", "WarmwasserLadezustand") or self._key.endswith("StartsHeute"):
             return int(v)

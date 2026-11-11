@@ -16,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity, room_device
-from .registers import MODE_OFF, ROOM_COUNT, room_base, room_connected, room_target, room_write
+from .registers import MODE_OFF, ROOM_COUNT, room_base, room_connected, room_demand, room_heating, room_target, room_write
 
 # ranges of the original app: living room 10-30 °C; other rooms 14-26 °C and at most 3 °C around the room's own base value
 LIVING_ROOM_RANGE = (10.0, 30.0)
@@ -97,12 +97,19 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
         mode = data.get("Betriebsart")
         if mode is not None and int(mode) == MODE_OFF:
             return HVACAction.OFF
+        if room_heating(data, self._room):
+            return HVACAction.HEATING  # the room's heating element heats (released and the room too cold)
         rpm = data.get("DrehzahlKompressor")
         if rpm is None:
             return None
         if rpm > 0:
             return HVACAction.COOLING if data.get("Kuehlbetrieb4Wegeventil") else HVACAction.HEATING
         return HVACAction.FAN  # only ventilating
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        # too_cold / at_target / warmer, as the room panel's LED shows it
+        return {"heat_demand": room_demand(self._data, self._room), "heating_element_heats": room_heating(self._data, self._room)}
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         if (target := kwargs.get(ATTR_TEMPERATURE)) is None:

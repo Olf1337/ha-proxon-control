@@ -18,7 +18,7 @@ from . import ProxonConfigEntry
 from .const import CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME
 from .entity import ProxonEntity, room_name
 from .pictures import Room, house_svg, tank_svg, unit_svg
-from .registers import ROOM_COUNT, active_faults, room_connected, room_target
+from .registers import ROOM_COUNT, active_faults, room_connected, room_heating, room_target
 
 TEMPERATURES_EVERY = 60  # seconds: changed temperatures are shown at most this often
 
@@ -79,7 +79,7 @@ class ProxonPicture(ProxonEntity, ImageEntity):
                    energy_status, boost_status, limit, theme, lang)
             return tank_svg(data, lang, limit, theme, energy_status, boost_status), sig
         rooms = [
-            Room(room_name(i, data), _f(data.get(f"NBE{i}Temperatur")), room_target(data, i), bool(data.get(f"NBE{i}PTC")))
+            Room(room_name(i, data), _f(data.get(f"NBE{i}Temperatur")), room_target(data, i), room_heating(data, i))
             for i in range(ROOM_COUNT)
             if room_connected(data, i) and room_target(data, i) is not None
         ]

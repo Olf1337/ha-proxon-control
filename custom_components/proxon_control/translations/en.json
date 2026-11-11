@@ -345,6 +345,16 @@
           "other_mode": "Other operating mode",
           "blocked": "Blocked"
         }
+      },
+      "compressor_power_percent": {
+        "name": "Compressor power"
+      },
+      "device_type": {
+        "name": "Device type",
+        "state": {
+          "heating_only": "Heating only",
+          "heating_cooling": "Heating and cooling"
+        }
       }
     },
     "select": {
@@ -545,6 +555,9 @@
       },
       "panel_locked": {
         "name": "Control panel locked"
+      },
+      "heating_elements": {
+        "name": "Heating elements heating"
       }
     },
     "climate": {
@@ -553,6 +566,19 @@
         "state": {
           "auto": "Auto (heat pump)",
           "heat": "With heating element"
+        },
+        "state_attributes": {
+          "heat_demand": {
+            "name": "Heat demand",
+            "state": {
+              "too_cold": "Too cold",
+              "at_target": "At target",
+              "warmer": "Warmer than target"
+            }
+          },
+          "heating_element_heats": {
+            "name": "Heating element heats"
+          }
         }
       }
     },
