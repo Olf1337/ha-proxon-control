@@ -32,6 +32,11 @@ RAW_DEFAULT.update({
     "DruckVerdampfer": 2850, "T12VorKondensator": 3500, "T13Kompressor": 6000, "T14Sauggas": 1200, "T300Saugleitung": 1100,
     "T300LuefterDrehzahl": 900, "FirmwareT300": 35,
     "LeistungGesamt": 5318, "LeistungKompressor": 4709, "LeistungLueftung": 609,
+    "StundenVorwaerme": 10, "StundenKompressorKuehlen": 300, "StundenKompressorHeizen": 9000, "StundenAbtauen": 200,
+    "StundenStufe1": 5000, "StundenStufe2": 20000, "StundenStufe3": 15000, "StundenStufe4": 100,
+    "T300RelaisKompressor": 1, "T300RelaisHeizstab": 0,
+    "NachtabsenkungStartH": 22, "NachtabsenkungStartM": 0, "NachtabsenkungEndeH": 6, "NachtabsenkungEndeM": 0,
+    "NachtabsenkungTemperatur": 1900, "NachtabsenkungAktiv": 0,
 })
 # unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on
 RAW_DEFAULT.update({"UhrSommerzeit": 0, "UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26,
@@ -50,6 +55,8 @@ class FakeDevice:
     def __init__(self) -> None:
         # set points and data points are separate address spaces on the device
         self.raw = {(R.BY_KEY[k].set_point, *R.BY_KEY[k].read): v for k, v in RAW_DEFAULT.items()}
+        # runtime counters of the hot-water module in seconds, two words (low, high): 10000 h compressor, 1000 h heater
+        self.raw.update({(False, 3, 47): 20736, (False, 3, 48): 549, (False, 3, 51): -4480, (False, 3, 52): 54})
         # room names are stored in the unit as text (two characters per 16-bit word)
         for n, name in {0: "Wohnzimmer", 1: "Schlafzimmer", 4: "Bad"}.items():
             self.set_name(n, name)

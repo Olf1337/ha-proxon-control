@@ -175,3 +175,87 @@ def decide_boost(now: datetime, s: BoostSettings, st: BoostState, *, water: floa
     if st.last_stop is not None and now - st.last_stop < MIN_PAUSE:
         return None, B_PAUSED
     return "on", B_HEATING
+
+
+# ---------------- automatic summer / winter ----------------
+# Switches between the operating modes "Summer" and "Winter" by the average outdoor temperature (fresh air T3) of the last
+# two days: below "winter below" -> Winter, above "summer above" -> Summer, in between nothing changes. Only while the unit
+# is in Summer or Winter (ECO Comfort, Off, stove mode and holiday stay untouched), at most every MIN_SWITCH.
+SEASON_WINDOW = timedelta(hours=48)
+SEASON_MIN_DATA = timedelta(hours=12)  # enough values for an average
+SEASON_SAMPLE = timedelta(minutes=30)
+SEASON_MIN_SWITCH = timedelta(hours=12)
+MODE_WINTER = 2
+
+S_OFF = "off"
+S_COLLECTING = "collecting"  # not enough outdoor temperatures yet
+S_SUMMER = "summer"
+S_WINTER = "winter"
+S_MANUAL = "other_mode"  # the unit is in ECO Comfort / Off / stove mode: left alone
+S_BLOCKED = "blocked"  # holiday mode, values missing
+
+
+@dataclass
+class SeasonSettings:
+    on: bool = False
+    winter_below: float = 14.0
+    summer_above: float = 17.0
+
+
+@dataclass
+class SeasonState:
+    samples: list[tuple[datetime, float]] = field(default_factory=list)
+    last_switch: datetime | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "samples": [[t.isoformat(), v] for t, v in self.samples],
+            "last_switch": self.last_switch.isoformat() if self.last_switch else None,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> SeasonState:
+        samples = []
+        for item in d.get("samples") or []:
+            try:
+                samples.append((datetime.fromisoformat(item[0]), float(item[1])))
+            except (TypeError, ValueError, IndexError):
+                continue
+        ls = d.get("last_switch")
+        return cls(samples=samples, last_switch=datetime.fromisoformat(ls) if ls else None)
+
+
+def season_average(st: SeasonState, now: datetime) -> float | None:
+    """Average outdoor temperature of the last two days, once at least 12 hours are known."""
+    st.samples = [(t, v) for t, v in st.samples if now - t <= SEASON_WINDOW]
+    if not st.samples or now - st.samples[0][0] < SEASON_MIN_DATA:
+        return None
+    return round(sum(v for _, v in st.samples) / len(st.samples), 1)
+
+
+def decide_season(
+    now: datetime, s: SeasonSettings, st: SeasonState, *, mode: int | None, outside: float | None, holiday: bool,
+) -> tuple[int | None, str, dict]:
+    """Returns (mode to write or None, status, details). Outdoor temperatures are collected even while switched off."""
+    if outside is not None and (not st.samples or now - st.samples[-1][0] >= SEASON_SAMPLE):
+        st.samples.append((now, float(outside)))
+    avg = season_average(st, now)
+    details = {"average_outdoor": avg, "hours_known": round((now - st.samples[0][0]).total_seconds() / 3600, 1) if st.samples else 0}
+    if not s.on:
+        return None, S_OFF, details
+    if holiday or mode is None:
+        return None, S_BLOCKED, details
+    if mode not in (MODE_SUMMER, MODE_WINTER):
+        return None, S_MANUAL, details
+    current = S_SUMMER if mode == MODE_SUMMER else S_WINTER
+    if avg is None:
+        return None, S_COLLECTING, details
+    if st.last_switch is not None and now - st.last_switch < SEASON_MIN_SWITCH:
+        return None, current, details
+    if mode == MODE_WINTER and avg > s.summer_above:
+        st.last_switch = now
+        return MODE_SUMMER, S_SUMMER, details
+    if mode == MODE_SUMMER and avg < s.winter_below:
+        st.last_switch = now
+        return MODE_WINTER, S_WINTER, details
+    return None, current, details

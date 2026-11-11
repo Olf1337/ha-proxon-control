@@ -1,4 +1,4 @@
-"""Summer night cooling and hot-water boost in Home Assistant: settings and state on disk, a check every minute, writing to the unit.
+"""Summer night cooling, hot-water boost and automatic summer/winter in Home Assistant: settings and state on disk, a check every minute, writing to the unit.
 
 The decision rules are in comfort.py. Both features use only the unit's own values.
 """
@@ -66,6 +66,8 @@ class ComfortManager:
         self.cooling = Feature(self, C.CoolSettings(), C.CoolState(), ("T3Frischluft", "T7Abluft", "Luefterstufe", "Betriebsart"))
         self.boost = Feature(self, C.BoostSettings(), C.BoostState(), ("E-Heizstab", "WarmwasserIstTemperatur"))
         self.boost.status = C.B_OFF
+        self.season = Feature(self, C.SeasonSettings(), C.SeasonState(), ("T3Frischluft", "Betriebsart"))
+        self.season.status = C.S_OFF
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.comfort")
         self._lock = asyncio.Lock()
         self._pending = False
@@ -76,6 +78,7 @@ class ComfortManager:
         for feature, cls_s, cls_st, key in (
             (self.cooling, C.CoolSettings, C.CoolState, "cooling"),
             (self.boost, C.BoostSettings, C.BoostState, "boost"),
+            (self.season, C.SeasonSettings, C.SeasonState, "season"),
         ):
             part = data.get(key) or {}
             s = part.get("settings") or {}
@@ -86,6 +89,7 @@ class ComfortManager:
         await self._store.async_save({
             "cooling": {"settings": vars(self.cooling.settings), "state": self.cooling.state.to_dict()},
             "boost": {"settings": vars(self.boost.settings), "state": self.boost.state.to_dict()},
+            "season": {"settings": vars(self.season.settings), "state": self.season.state.to_dict()},
         })
 
     @callback
@@ -166,10 +170,25 @@ class ComfortManager:
                     self.boost.state.active, self.boost.state.since, self.boost.state.last_stop = False, None, now
                     changed = True
                     await self._write("E-Heizstab", 0, "hot-water boost: immersion heater off")
+            if self.season.supported:
+                mode = num("Betriebsart")
+                samples_before = len(self.season.state.samples)
+                write, status, details = C.decide_season(
+                    now, self.season.settings, self.season.state, mode=None if mode is None else int(mode),
+                    outside=num("T3Frischluft"), holiday=self._holiday(),
+                )
+                self.season.status, self.season.details = status, details
+                if write is not None:
+                    changed = True
+                    await self.async_save()  # saved first: after a restart it knows when it last switched
+                    await self._write("Betriebsart", write, f"automatic summer/winter: mode {'Summer' if write == C.MODE_SUMMER else 'Winter'}")
+                elif len(self.season.state.samples) != samples_before:
+                    changed = True  # a new outdoor temperature: keep it across restarts
             if changed:
                 await self.async_save()
             self.cooling.notify()
             self.boost.notify()
+            self.season.notify()
 
     async def _write(self, key: str, value: float, what: str) -> None:
         _LOGGER.info("Proxon %s", what)

@@ -11,9 +11,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import AuthError, BridgeApi, DirectApi, ProxonError, WriteNotAccepted
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .registers import SCHEDULE_KEYS, active_faults, allowed_during_fault
+from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
 
@@ -39,6 +41,12 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
         self.last_write_error: dict | None = None
         self.write_errors = 0
         self.device_id: str | None = None  # the appliance's device (rooms and schedule days are linked to it)
+        # how often / how long compressor and immersion heater ran today (kept across restarts)
+        self.runtime = RuntimeTracker()
+        self._runtime_store: Store[dict] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.runtime")
+
+    async def async_load_runtime(self) -> None:
+        self.runtime.load(await self._runtime_store.async_load() or {})
 
     async def _async_update_data(self) -> dict[str, float]:
         try:
@@ -53,6 +61,9 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, float]]):
             # how far the unit's clock is off (it can't be set over the network; the weekly schedule runs on it)
             if (drift := clock_drift(data, dt_util.now())) is not None:
                 data["UhrAbweichung"] = float(drift)
+            interval = self.update_interval.total_seconds() if self.update_interval else 0
+            data.update(self.runtime.update(data, dt_util.now(), max(MAX_GAP_SECONDS, 3 * interval)))
+            self._runtime_store.async_delay_save(self.runtime.dump, 120)
             if not self._rooms_logged:
                 self._rooms_logged = True
                 # shows which rooms the unit reports (helps when rooms are missing or too many)

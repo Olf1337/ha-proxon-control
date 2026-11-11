@@ -39,6 +39,7 @@ NUMBERS: list[ProxonNumberDescription] = [
         native_unit_of_measurement=PERCENTAGE, mode=NumberMode.SLIDER, icon="mdi:water-percent",
     ),
     _temp("SollWassertemperatur", "water_target", 20, 55),
+    _temp("NachtabsenkungTemperatur", "night_setback_temperature", 10, 30, 0.5),
     # how long a boost ventilation runs (the unit ends it by itself)
     ProxonNumberDescription(
         key="IntensivlueftungsDauer", translation_key="boost_duration", native_min_value=1, native_max_value=1440, native_step=1,
@@ -65,6 +66,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonEnergyNumber(coordinator, d, comfort.cooling) for d in COOLING_NUMBERS]
     if comfort.boost.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.boost) for d in BOOST_NUMBERS]
+    if comfort.season.supported:
+        entities += [ProxonEnergyNumber(coordinator, d, comfort.season) for d in SEASON_NUMBERS]
     async_add_entities(entities)
 
 
@@ -130,6 +133,20 @@ BOOST_NUMBERS: list[ProxonEnergyNumberDescription] = [
 ]
 
 
+SEASON_NUMBERS: list[ProxonEnergyNumberDescription] = [
+    ProxonEnergyNumberDescription(
+        key="SaisonWinterUnter", translation_key="season_winter_below", setting="winter_below", native_min_value=0, native_max_value=25,
+        native_step=0.5, native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE,
+        mode=NumberMode.BOX, icon="mdi:snowflake-thermometer", entity_category=EntityCategory.CONFIG,
+    ),
+    ProxonEnergyNumberDescription(
+        key="SaisonSommerUeber", translation_key="season_summer_above", setting="summer_above", native_min_value=5, native_max_value=30,
+        native_step=0.5, native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE,
+        mode=NumberMode.BOX, icon="mdi:sun-thermometer", entity_category=EntityCategory.CONFIG,
+    ),
+]
+
+
 class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
     """Limits of the hot-water energy manager: solar surplus from, electricity price up to, and the store temperature."""
 
@@ -145,4 +162,10 @@ class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         setting = self.entity_description.setting
+        s = self.manager.settings
+        # automatic summer/winter: "summer above" has to stay above "winter below" (the gap keeps it from switching back and forth)
+        if setting == "winter_below" and value >= getattr(s, "summer_above", value + 1):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="season_limits")
+        if setting == "summer_above" and value <= getattr(s, "winter_below", value - 1):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="season_limits")
         await self.manager.async_set(**{setting: int(value) if setting == "level" else float(value)})

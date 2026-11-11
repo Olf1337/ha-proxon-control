@@ -286,6 +286,65 @@
       },
       "energy_compressor": {
         "name": "Compressor energy consumption"
+      },
+      "hours_vorwaerme": {
+        "name": "Operating hours preheating"
+      },
+      "hours_kompressorkuehlen": {
+        "name": "Operating hours compressor cooling"
+      },
+      "hours_kompressorheizen": {
+        "name": "Operating hours compressor heating"
+      },
+      "hours_abtauen": {
+        "name": "Operating hours defrosting"
+      },
+      "hours_stufe1": {
+        "name": "Operating hours ventilation level 1"
+      },
+      "hours_stufe2": {
+        "name": "Operating hours ventilation level 2"
+      },
+      "hours_stufe3": {
+        "name": "Operating hours ventilation level 3"
+      },
+      "hours_stufe4": {
+        "name": "Operating hours ventilation level 4"
+      },
+      "hours_t300stundenkompressor": {
+        "name": "Operating hours hot-water compressor"
+      },
+      "hours_t300stundenheizstab": {
+        "name": "Operating hours immersion heater"
+      },
+      "starts_today_compressor": {
+        "name": "Compressor starts today"
+      },
+      "starts_today_hot_water_compressor": {
+        "name": "Hot-water compressor starts today"
+      },
+      "starts_today_heater": {
+        "name": "Immersion heater starts today"
+      },
+      "runtime_today_compressor": {
+        "name": "Compressor runtime today"
+      },
+      "runtime_today_hot_water_compressor": {
+        "name": "Hot-water compressor runtime today"
+      },
+      "runtime_today_heater": {
+        "name": "Immersion heater runtime today"
+      },
+      "season_status": {
+        "name": "Summer/winter automatic",
+        "state": {
+          "off": "Off",
+          "collecting": "Collecting outdoor temperatures",
+          "summer": "Summer",
+          "winter": "Winter",
+          "other_mode": "Other operating mode",
+          "blocked": "Blocked"
+        }
       }
     },
     "select": {
@@ -347,6 +406,15 @@
       },
       "boost_duration": {
         "name": "Boost ventilation duration"
+      },
+      "season_winter_below": {
+        "name": "Winter below (outdoor average)"
+      },
+      "season_summer_above": {
+        "name": "Summer above (outdoor average)"
+      },
+      "night_setback_temperature": {
+        "name": "Night temperature"
       }
     },
     "switch": {
@@ -436,6 +504,12 @@
       },
       "legionella": {
         "name": "Legionella protection"
+      },
+      "season_auto": {
+        "name": "Automatic summer/winter switching"
+      },
+      "night_setback": {
+        "name": "Night setback"
       }
     },
     "binary_sensor": {
@@ -517,6 +591,12 @@
       },
       "phase_end": {
         "name": "Phase {phase} end"
+      },
+      "night_setback_start": {
+        "name": "Night setback start"
+      },
+      "night_setback_end": {
+        "name": "Night setback end"
       }
     },
     "button": {
@@ -576,6 +656,9 @@
     },
     "write_blocked_fault": {
       "message": "The unit reports a fault ({words}), so \"{name}\" was not changed. During a fault only switching off, the ventilation level and room temperatures can be changed."
+    },
+    "season_limits": {
+      "message": "\"Summer above\" has to be higher than \"winter below\" – the gap keeps it from switching back and forth."
     }
   },
   "options": {
@@ -703,6 +786,10 @@
     "clock_drift": {
       "title": "Proxon: The unit's clock is wrong",
       "description": "The unit's clock is {direction}{minutes} minutes off Home Assistant's time. The weekly ventilation schedule runs on this clock. Please set the clock at the unit's control panel or in the Proxon app – it can't be set over the network. A common cause: the switch to summer/winter time is turned off at the unit. This notice disappears by itself once the clock is right."
+    },
+    "compressor_cycling": {
+      "title": "Proxon: The compressor starts very often",
+      "description": "The compressor has started {starts} times today. An inverter heat pump normally runs long and steadily; switching on and off very often (short-cycling) wears the compressor. Possible causes: dirty filters, too little air flow, settings of the unit. Please keep an eye on it and ask the service if it continues. This notice disappears by itself the next day."
     }
   }
 }

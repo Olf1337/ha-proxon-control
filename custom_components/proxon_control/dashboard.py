@@ -20,6 +20,7 @@ TEXT = {
         "overview": "Übersicht", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus",
         "functions": "Funktionen", "store": "Warmwasser-Speicher (Solar / Strompreis)", "cooling": "Sommer-Nachtkühlung",
         "boost": "Warmwasser-Boost", "schedule": "Wochenprogramm Lüftung", "diagnostics": "Diagnose",
+        "season": "Sommer/Winter-Automatik", "night": "Nachtabsenkung", "runtime": "Laufzeit heute",
         "names": {
             "Lueftung": "Lüftung", "Betriebsart": "Betriebsart", "Warmwasser": "Warmwasser", "Stoerung": "Störung",
             "FilterRestStunden_warning": "Filterwechsel", "SolarWarmwasser": "Solar-Warmwasser", "PreisWarmwasser": "Günstiger Strom",
@@ -31,6 +32,10 @@ TEXT = {
             "WarmwasserLadezustand": "Ladezustand", "Legionellenfunktion": "Legionellenschaltung", "AktuellerBetrieb": "Betrieb",
             "Waermerueckgewinnung": "Wärmerückgewinnung", "IntensivlueftungsDauer": "Dauer Intensivlüftung",
             "LeistungGesamt": "Leistung", "EnergieGesamt": "Verbrauch",
+            "SaisonAutomatik": "Sommer/Winter automatisch", "SaisonWinterUnter": "Winter unter", "SaisonSommerUeber": "Sommer über",
+            "NachtabsenkungAktiv": "Nachtabsenkung", "NachtabsenkungTemperatur": "Nachttemperatur", "NachtabsenkungStart": "Beginn",
+            "NachtabsenkungEnde": "Ende", "KompressorStartsHeute": "Kompressor-Starts", "KompressorLaufzeitHeute": "Kompressor",
+            "WarmwasserKompressorLaufzeitHeute": "Warmwasser-Kompressor", "HeizstabLaufzeitHeute": "Heizstab",
             "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
@@ -43,6 +48,7 @@ TEXT = {
         "overview": "Overview", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House",
         "functions": "Functions", "store": "Hot-water store (solar / price)", "cooling": "Summer night cooling",
         "boost": "Hot-water boost", "schedule": "Weekly ventilation schedule", "diagnostics": "Diagnostics",
+        "season": "Summer/winter automatic", "night": "Night setback", "runtime": "Runtime today",
         "names": {
             "Lueftung": "Ventilation", "Betriebsart": "Operating mode", "Warmwasser": "Hot water", "Stoerung": "Fault",
             "FilterRestStunden_warning": "Filter change", "SolarWarmwasser": "Solar hot water", "PreisWarmwasser": "Cheap power",
@@ -54,6 +60,10 @@ TEXT = {
             "WarmwasserLadezustand": "Charge", "Legionellenfunktion": "Legionella protection", "AktuellerBetrieb": "Operation",
             "Waermerueckgewinnung": "Heat recovery", "IntensivlueftungsDauer": "Boost duration",
             "LeistungGesamt": "Power", "EnergieGesamt": "Consumption",
+            "SaisonAutomatik": "Automatic summer/winter", "SaisonWinterUnter": "Winter below", "SaisonSommerUeber": "Summer above",
+            "NachtabsenkungAktiv": "Night setback", "NachtabsenkungTemperatur": "Night temperature", "NachtabsenkungStart": "Start",
+            "NachtabsenkungEnde": "End", "KompressorStartsHeute": "Compressor starts", "KompressorLaufzeitHeute": "Compressor",
+            "WarmwasserKompressorLaufzeitHeute": "Hot-water compressor", "HeizstabLaufzeitHeute": "Immersion heater",
             "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
@@ -67,7 +77,7 @@ TEXT = {
 FULL = {"columns": "full"}
 HALF = {"columns": 6}
 # functions that report what they are doing (status attribute, shown on the tile next to on/off)
-WITH_STATUS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost")
+WITH_STATUS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik")
 
 
 def _ids(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, str]:
@@ -138,7 +148,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     house_areas = [_area(ids[k], target, house_size) for k, target in zip(rooms, house_targets(len(rooms)))]
     house = picture("BildHaus", house_areas)
     functions = [heading(t["functions"])]
-    for key in ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "Urlaubsmodus", "Intensivlueftung"):
+    for key in ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik", "Urlaubsmodus", "Intensivlueftung"):
         extra: dict = {"state_content": ["state", "status"]} if key in WITH_STATUS else {}
         if key == "Urlaubsmodus":
             extra["icon_tap_action"] = {"action": "toggle", "confirmation": {"text": t["holiday_confirm"]}}
@@ -160,6 +170,12 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     boost = [heading(t["boost"]), *tile("WarmwasserBoost", FULL, state_content=["state", "status"]), *number("BoostGrenze"),
              *number("Soll-E-Heizstab-Temperatur"), *number("SollWassertemperatur"), *tile("Legionellenfunktion", FULL),
              *number("IntensivlueftungsDauer")]
+    season = [heading(t["season"]), *tile("SaisonAutomatik", FULL, state_content=["state", "status"]), *number("SaisonWinterUnter"),
+              *number("SaisonSommerUeber")]
+    night = [heading(t["night"]), *tile("NachtabsenkungAktiv", FULL), *number("NachtabsenkungTemperatur"),
+             *tile("NachtabsenkungStart", HALF), *tile("NachtabsenkungEnde", HALF)]
+    runtime = [heading(t["runtime"]), *tile("KompressorStartsHeute", HALF), *tile("KompressorLaufzeitHeute", HALF),
+               *tile("WarmwasserKompressorLaufzeitHeute", HALF), *tile("HeizstabLaufzeitHeute", HALF)]
     rows = [("ZeitprogrammAktiv", t["schedule_on"]), *[(f"Zeitprogramm{d}", t["days"][d]) for d in range(7)]]
     schedule_rows = [{"entity": ids[k], "name": name} for k, name in rows if k in ids]
     schedule = [heading(t["schedule"]), {"type": "entities", "entities": schedule_rows, "grid_options": FULL}] if schedule_rows else []
@@ -171,7 +187,8 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                                          "target": {"entity_id": ids.get(key)}, "confirmation": True})
     diag_rows = [{"entity": ids[k], "name": name} for k, name in t["diag"].items() if k in ids]
     diagnostics = [heading(t["diagnostics"]), {"type": "entities", "entities": diag_rows, "grid_options": FULL}] if diag_rows else []
-    settings = [{"type": "grid", "cards": cards} for cards in (store, cooling, boost, schedule, diagnostics) if len(cards) > 1]
+    settings = [{"type": "grid", "cards": cards} for cards in (store, cooling, boost, season, night, schedule, runtime, diagnostics)
+                if len(cards) > 1]
 
     views = [{"title": t["overview"], "path": "proxon", "icon": "mdi:hvac", "type": "sections", "max_columns": 3,
               "sections": overview}]

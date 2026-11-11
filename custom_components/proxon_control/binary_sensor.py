@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity
-from .registers import FAULT_POINTS, active_faults, fault_key
+from .registers import FAULT_POINTS, active_faults, fault_key, t300_fault_texts
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
 FILTER_WARN_HOURS = 30 * 24
@@ -117,4 +117,7 @@ class ProxonFault(ProxonEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data or {}
-        return {fault_key(p): f"0x{int(data[fault_key(p)]) & 0xFFFF:04X}" for p in FAULT_POINTS if isinstance(data.get(fault_key(p)), (int, float))}
+        attrs: dict = {fault_key(p): f"0x{int(data[fault_key(p)]) & 0xFFFF:04X}" for p in FAULT_POINTS if isinstance(data.get(fault_key(p)), (int, float))}
+        # the hot-water module names its faults (Proxon's Modbus list); the main unit's fault words have no names
+        attrs["hot_water_module"] = t300_fault_texts(data, self.hass.config.language if self.hass else None)
+        return attrs

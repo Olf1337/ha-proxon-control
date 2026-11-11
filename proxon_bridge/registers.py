@@ -35,6 +35,51 @@ OPERATION_KEYS = {0: "ventilation", 1: "heating", 2: "cooling"}
 # real unit and now values of their own: the power figures. The COP figures of the list stay 0 there.)
 PROBE_POINTS = (26, 47)
 
+# operating hour counters (set point object 4), Modbus list S03-S13
+HOUR_COUNTERS = {
+    "StundenVorwaerme": 3, "StundenKompressorKuehlen": 6, "StundenKompressorHeizen": 7, "StundenAbtauen": 8,
+    "StundenStufe1": 9, "StundenStufe2": 10, "StundenStufe3": 11, "StundenStufe4": 12,
+}
+
+# fault list of the hot-water module (data point 3:61), bit 15 first as in Proxon's Modbus list
+T300_FAULT_BITS = {
+    15: "modbus", 14: "filter", 13: "compressor", 12: "sensor_t9", 11: "sensor_t11", 10: "sensor_t13", 9: "sensor_t21",
+    8: "sensor_t20", 7: "sensor_t6", 6: "sensor_t5", 5: "sensor_p19", 4: "sensor_p14", 3: "compressor_temperature", 2: "fan",
+    1: "low_pressure", 0: "pressure_switch",
+}
+
+
+T300_FAULT_TEXT = {
+    "de": {
+        "modbus": "Verbindung zur Hauptanlage", "filter": "Filter wechseln", "compressor": "Kompressor", "sensor_t9": "Fühler T9 (extern)",
+        "sensor_t11": "Fühler T11 (Sauggas)", "sensor_t13": "Fühler T13 (Kompressor)", "sensor_t21": "Fühler T21 (Speicher Mitte)",
+        "sensor_t20": "Fühler T20 (Speicher unten)", "sensor_t6": "Fühler T6 (Verdampfer)", "sensor_t5": "Fühler T5 (vor Verdampfer)",
+        "sensor_p19": "Drucksensor P19 (Abtauen)", "sensor_p14": "Drucksensor P14 (Niederdruck)",
+        "compressor_temperature": "Kompressor zu heiß", "fan": "Ventilator", "low_pressure": "Niederdruck", "pressure_switch": "Pressostat",
+    },
+    "en": {
+        "modbus": "Connection to the main unit", "filter": "Change filter", "compressor": "Compressor", "sensor_t9": "Sensor T9 (external)",
+        "sensor_t11": "Sensor T11 (suction gas)", "sensor_t13": "Sensor T13 (compressor)", "sensor_t21": "Sensor T21 (tank middle)",
+        "sensor_t20": "Sensor T20 (tank bottom)", "sensor_t6": "Sensor T6 (evaporator)", "sensor_t5": "Sensor T5 (before evaporator)",
+        "sensor_p19": "Pressure sensor P19 (defrost)", "sensor_p14": "Pressure sensor P14 (low pressure)",
+        "compressor_temperature": "Compressor too hot", "fan": "Fan", "low_pressure": "Low pressure", "pressure_switch": "Pressure switch",
+    },
+}
+
+
+def t300_fault_texts(values: dict, language: str | None) -> list[str]:
+    texts = T300_FAULT_TEXT["de" if (language or "").startswith("de") else "en"]
+    return [texts[name] for name in t300_faults(values)]
+
+
+def t300_faults(values: dict) -> list[str]:
+    """What the hot-water module reports as faulty (keys of T300_FAULT_BITS)."""
+    word = values.get("Fehlerwort3_61")
+    if not isinstance(word, (int, float)):
+        return []
+    word = int(word) & 0xFFFF
+    return [name for bit, name in T300_FAULT_BITS.items() if word >> bit & 1]
+
 # clock of the unit: summer time flag, minute, hour, ISO weekday (1 = Monday), day, month, year (two digits)
 CLOCK_KEYS = ("UhrSommerzeit", "UhrMinute", "UhrStunde", "UhrWochentag", "UhrTag", "UhrMonat", "UhrJahr")
 
@@ -151,6 +196,21 @@ def _registers() -> list[Reg]:
         Reg("LeistungGesamt", False, (0, 25), None, "div10"),
         Reg("LeistungKompressor", False, (0, 20), None, "div10"),
         Reg("LeistungLueftung", False, (0, 19), None, "div10"),
+        # operating hour counters of the unit (set point object 4 = Modbus 467 + n, counting in 2-hour steps like the others)
+        *[Reg(k, True, (4, n), None, "u16x2") for k, n in HOUR_COUNTERS.items()],
+        # hot-water module: relays, and its own runtime counters in seconds (low word, high word; Modbus list 3x0847...)
+        Reg("T300RelaisKompressor", False, (3, 24), None, "bool"),
+        Reg("T300RelaisHeizstab", False, (3, 26), None, "bool"),
+        Reg("T300StundenKompressor", False, (3, 47), None, "u32h", 2),
+        Reg("T300StundenHeizstab", False, (3, 51), None, "u32h", 2),
+        # night setback of the room temperature: its own time program at the unit (Modbus 614-619 = set point object 5, 107-112;
+        # written like the weekly schedule to object 0, address 2 x Modbus + 10)
+        Reg("NachtabsenkungStartH", True, (5, 107), (0, 1238)),
+        Reg("NachtabsenkungStartM", True, (5, 108), (0, 1240)),
+        Reg("NachtabsenkungEndeH", True, (5, 109), (0, 1242)),
+        Reg("NachtabsenkungEndeM", True, (5, 110), (0, 1244)),
+        Reg("NachtabsenkungTemperatur", True, (5, 111), (0, 1246), "div100"),
+        Reg("NachtabsenkungAktiv", True, (5, 112), (0, 1248), "bool"),
         Reg("WarmwasserUntenTemperatur", False, (3, 13), None, "water"),
         Reg("PVSignalHeizstab", False, (3, 99), None, "bool"),
         Reg("PVSignalWaermepumpe", False, (3, 100), None, "bool"),
@@ -302,6 +362,10 @@ def parse_values(regs: list[Reg], reply: dict) -> dict[str, float | str]:
         if g.conv == "text":
             out[g.key] = decode_text(nums)
             continue
+        if g.conv == "u32h":  # seconds in two 16-bit words (low, high) -> hours
+            low, high = (int(n) & 0xFFFF for n in nums)
+            out[g.key] = round(((high << 16) | low) / 3600, 1)
+            continue
         d = decode(g.conv, nums[0])
         if d is not None:
             out[g.key] = d
@@ -390,7 +454,8 @@ def heat_recovery(values: dict) -> float | None:
 
 # While the unit reports a fault, only harmless changes are written: switching something off, the unit off, the ventilation
 # level and room temperatures. (Same idea as the write guard of the ha-lan-proxon project.)
-_OFF_KEYS = {"Intensivlueftung", "E-Heizstab", "GlobalKuehlungFreigabe", "Legionellenfunktion", "T300Betriebsart", "Betriebsart"}
+_OFF_KEYS = {"Intensivlueftung", "E-Heizstab", "GlobalKuehlungFreigabe", "Legionellenfunktion", "T300Betriebsart", "Betriebsart",
+             "NachtabsenkungAktiv"}
 _HARMLESS_KEYS = {"Luefterstufe", "NBE0MittelTemperatur"}
 
 
@@ -449,7 +514,11 @@ SLOW_WRITE_SECONDS: dict[str, float] = {
     "Soll-E-Heizstab-Temperatur": 60,
     "T300Betriebsart": 90,
 }
-# the unit takes a few seconds to take over schedule fields
+# the unit takes a few seconds to take over schedule fields (also those of the night setback)
+SLOW_WRITE_SECONDS.update({k: 10 for k in (
+    "NachtabsenkungStartH", "NachtabsenkungStartM", "NachtabsenkungEndeH", "NachtabsenkungEndeM", "NachtabsenkungTemperatur",
+    "NachtabsenkungAktiv",
+)})
 SLOW_WRITE_SECONDS.update({
     f"ZP{d}_{p}_{name}": 10
     for d in range(7) for p in range(SCHEDULE_PHASES) for name in SCHEDULE_FIELDS

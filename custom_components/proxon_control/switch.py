@@ -17,6 +17,7 @@ SWITCHES: list[tuple[str, str, str, int | None]] = [
     ("T300Betriebsart", "water_heat_pump", "mdi:water-boiler", None),
     ("E-Heizstab", "immersion_heater", "mdi:heating-coil", None),
     ("Legionellenfunktion", "legionella", "mdi:bacteria-outline", None),
+    ("NachtabsenkungAktiv", "night_setback", "mdi:weather-night", None),
 ]
 
 
@@ -30,6 +31,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonEnergySwitch(coordinator, "on", "Nachtkuehlung", "night_cooling", "mdi:weather-night", comfort.cooling))
     if comfort.boost.supported:
         entities.append(ProxonEnergySwitch(coordinator, "on", "WarmwasserBoost", "hot_water_boost", "mdi:heating-coil", comfort.boost))
+    if comfort.season.supported:
+        entities.append(ProxonEnergySwitch(coordinator, "on", "SaisonAutomatik", "season_auto", "mdi:sun-snowflake-variant", comfort.season))
     if coordinator.energy.supported:
         entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water", "mdi:solar-power-variant"),
                      ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water", "mdi:cash-clock")]

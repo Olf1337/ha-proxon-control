@@ -23,10 +23,11 @@ from . import ProxonConfigEntry
 from .api import PATH_KEY
 from .const import PPM
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
-from .registers import OPERATION_KEYS, ROOM_COUNT, filter_months, heat_recovery, room_connected
+from .registers import HOUR_COUNTERS, OPERATION_KEYS, ROOM_COUNT, filter_months, heat_recovery, room_connected
 from .comfort import (
     B_ALREADY_ON, B_BLOCKED, B_HEATING, B_IDLE, B_OFF, B_PAUSED,
     C_BLOCKED, C_COOLING, C_IDLE, C_NOT_SUMMER, C_OFF, C_PROTECTING, C_WAITING,
+    S_BLOCKED, S_COLLECTING, S_MANUAL, S_OFF, S_SUMMER, S_WINTER,
 )
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
@@ -107,6 +108,31 @@ SENSORS: list[ProxonSensorDescription] = [
     _raw("VentilKuehlung", "valve_cooling", "mdi:valve"),
     _raw("StatusKompressor", "compressor_status", "mdi:heat-pump", enabled=False),
     _raw("StatusVentilatoren", "fan_status", "mdi:fan", enabled=False),
+    # operating hours of the unit's parts (lifetime counters of the unit)
+    *[
+        ProxonSensorDescription(
+            key=key, translation_key=f"hours_{key.removeprefix('Stunden').lower()}", native_unit_of_measurement=UnitOfTime.HOURS,
+            device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        for key in (*HOUR_COUNTERS, "T300StundenKompressor", "T300StundenHeizstab")
+    ],
+    # today (counted in Home Assistant, yesterday as attribute)
+    *[
+        ProxonSensorDescription(
+            key=f"{name}StartsHeute", translation_key=f"starts_today_{tk}", state_class=SensorStateClass.TOTAL_INCREASING,
+            icon="mdi:restart",
+        )
+        for name, tk in (("Kompressor", "compressor"), ("WarmwasserKompressor", "hot_water_compressor"), ("Heizstab", "heater"))
+    ],
+    *[
+        ProxonSensorDescription(
+            key=f"{name}LaufzeitHeute", translation_key=f"runtime_today_{tk}", native_unit_of_measurement=UnitOfTime.HOURS,
+            device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, suggested_display_precision=1,
+            icon="mdi:timer-outline",
+        )
+        for name, tk in (("Kompressor", "compressor"), ("WarmwasserKompressor", "hot_water_compressor"), ("Heizstab", "heater"))
+    ],
     ProxonSensorDescription(
         key="FilterStandzeit", translation_key="filter_lifetime", native_unit_of_measurement=UnitOfTime.MONTHS,
         icon="mdi:air-filter", entity_category=EntityCategory.DIAGNOSTIC,
@@ -167,7 +193,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         if d.room is not None and not room_connected(data, d.room):
             continue
         # the hot-water module's own values only when it is there (it answers 0 otherwise)
-        if d.key in ("FirmwareT300", "T300LuefterDrehzahl") and "T300Betriebsart" not in data:
+        if (d.key in ("FirmwareT300", "T300LuefterDrehzahl") or d.key.startswith(("T300Stunden", "WarmwasserKompressor", "Heizstab"))) \
+                and "T300Betriebsart" not in data:
             continue
         entities.append(ProxonSensor(coordinator, d))
     entities += [ProxonEnergy(coordinator, key, power, tk) for key, power, tk in ENERGY if power in data]
@@ -188,6 +215,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if comfort.boost.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status", "mdi:heating-coil",
                                             [B_OFF, B_IDLE, B_HEATING, B_ALREADY_ON, B_PAUSED, B_BLOCKED]))
+    if comfort.season.supported:
+        entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status", "mdi:sun-snowflake-variant",
+                                            [S_OFF, S_COLLECTING, S_SUMMER, S_WINTER, S_MANUAL, S_BLOCKED]))
     if "Antwortzeit" in data:
         entities += [ProxonResponseTime(coordinator), ProxonConnectionPath(coordinator)]
     async_add_entities(entities)
@@ -211,7 +241,7 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         if self._key == "AktuellerBetrieb":
             return OPERATION_KEYS.get(int(v))
         if self._key in ("FirmwareVersion", "FirmwareT300", "IstLuefterstufe", "IntensivlueftungsRestDauer", "UhrAbweichung",
-                         "FilterStandzeit", "WarmwasserLadezustand"):
+                         "FilterStandzeit", "WarmwasserLadezustand") or self._key.endswith("StartsHeute"):
             return int(v)
         return v
 
@@ -220,6 +250,8 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         data = self.coordinator.data or {}
         if self._key == "FilterRestStunden":
             return {"filter_lifetime_months": filter_months(data)}
+        if self._key.endswith("Heute"):
+            return {"yesterday": data.get(self._key.removesuffix("Heute") + "Gestern")}
         return None
 
 

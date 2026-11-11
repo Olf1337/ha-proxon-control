@@ -108,6 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     await coordinator.energy.async_load()
     coordinator.comfort = ComfortManager(hass, coordinator, entry)
     await coordinator.comfort.async_load()
+    await coordinator.async_load_runtime()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     # notices under Settings -> Repairs (filter change soon, fault of the unit)

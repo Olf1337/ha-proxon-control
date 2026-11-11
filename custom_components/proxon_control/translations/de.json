@@ -286,6 +286,65 @@
       },
       "energy_compressor": {
         "name": "Energieverbrauch Kompressor"
+      },
+      "hours_vorwaerme": {
+        "name": "Betriebsstunden Vorwärmung"
+      },
+      "hours_kompressorkuehlen": {
+        "name": "Betriebsstunden Kompressor Kühlen"
+      },
+      "hours_kompressorheizen": {
+        "name": "Betriebsstunden Kompressor Heizen"
+      },
+      "hours_abtauen": {
+        "name": "Betriebsstunden Abtauen"
+      },
+      "hours_stufe1": {
+        "name": "Betriebsstunden Lüftungsstufe 1"
+      },
+      "hours_stufe2": {
+        "name": "Betriebsstunden Lüftungsstufe 2"
+      },
+      "hours_stufe3": {
+        "name": "Betriebsstunden Lüftungsstufe 3"
+      },
+      "hours_stufe4": {
+        "name": "Betriebsstunden Lüftungsstufe 4"
+      },
+      "hours_t300stundenkompressor": {
+        "name": "Betriebsstunden Warmwasser-Kompressor"
+      },
+      "hours_t300stundenheizstab": {
+        "name": "Betriebsstunden Heizstab"
+      },
+      "starts_today_compressor": {
+        "name": "Kompressor-Starts heute"
+      },
+      "starts_today_hot_water_compressor": {
+        "name": "Warmwasser-Kompressor-Starts heute"
+      },
+      "starts_today_heater": {
+        "name": "Heizstab-Starts heute"
+      },
+      "runtime_today_compressor": {
+        "name": "Kompressor-Laufzeit heute"
+      },
+      "runtime_today_hot_water_compressor": {
+        "name": "Warmwasser-Kompressor-Laufzeit heute"
+      },
+      "runtime_today_heater": {
+        "name": "Heizstab-Laufzeit heute"
+      },
+      "season_status": {
+        "name": "Sommer/Winter-Automatik",
+        "state": {
+          "off": "Aus",
+          "collecting": "Sammelt Außentemperaturen",
+          "summer": "Sommer",
+          "winter": "Winter",
+          "other_mode": "Andere Betriebsart",
+          "blocked": "Gesperrt"
+        }
       }
     },
     "select": {
@@ -347,6 +406,15 @@
       },
       "boost_duration": {
         "name": "Dauer Intensivlüftung"
+      },
+      "season_winter_below": {
+        "name": "Winter unter (Außen-Mittel)"
+      },
+      "season_summer_above": {
+        "name": "Sommer über (Außen-Mittel)"
+      },
+      "night_setback_temperature": {
+        "name": "Nachttemperatur"
       }
     },
     "switch": {
@@ -436,6 +504,12 @@
       },
       "legionella": {
         "name": "Legionellenschaltung"
+      },
+      "season_auto": {
+        "name": "Automatische Sommer/Winter-Umschaltung"
+      },
+      "night_setback": {
+        "name": "Nachtabsenkung"
       }
     },
     "binary_sensor": {
@@ -517,6 +591,12 @@
       },
       "phase_end": {
         "name": "Phase {phase} Ende"
+      },
+      "night_setback_start": {
+        "name": "Nachtabsenkung Beginn"
+      },
+      "night_setback_end": {
+        "name": "Nachtabsenkung Ende"
       }
     },
     "button": {
@@ -576,6 +656,9 @@
     },
     "write_blocked_fault": {
       "message": "Die Anlage meldet eine Störung ({words}), deshalb wurde „{name}“ nicht geändert. Während einer Störung sind nur Ausschalten, die Lüftungsstufe und Raumtemperaturen möglich."
+    },
+    "season_limits": {
+      "message": "„Sommer über“ muss höher sein als „Winter unter“ – der Abstand verhindert, dass ständig hin- und hergeschaltet wird."
     }
   },
   "options": {
@@ -703,6 +786,10 @@
     "clock_drift": {
       "title": "Proxon: Die Uhr der Anlage geht falsch",
       "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung richtet sich nach dieser Uhr. Bitte die Uhr am Bedienpanel der Anlage oder in der Proxon-App stellen – über das Netz lässt sie sich nicht stellen. Häufige Ursache: Die Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
+    },
+    "compressor_cycling": {
+      "title": "Proxon: Der Kompressor startet sehr oft",
+      "description": "Der Kompressor ist heute schon {starts}-mal angelaufen. Eine Inverter-Wärmepumpe läuft normalerweise lang und gleichmäßig; sehr häufiges Ein- und Ausschalten (Takten) verschleißt den Kompressor. Mögliche Ursachen: verschmutzte Filter, zu geringe Luftmenge, Einstellungen der Anlage. Bitte beobachten und gegebenenfalls den Service fragen. Der Hinweis verschwindet am nächsten Tag von selbst."
     }
   }
 }
