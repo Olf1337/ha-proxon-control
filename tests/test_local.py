@@ -150,7 +150,7 @@ def test_reads_the_same_values_as_through_the_cloud(unit: FakeUnit) -> None:
     cloud = R.read_all(CloudClient(unit.device))
     assert {k: v for k, v in local.items() if k != "Antwortzeit"} == {k: v for k, v in cloud.items() if k != "Antwortzeit"}
     assert local["T3Frischluft"] == 17.5 and local["NBE1name"] == "Schlafzimmer"
-    assert 0 < local["Antwortzeit"] < 1000  # measured on the wire
+    assert 0 <= local["Antwortzeit"] < 1000  # measured on the wire (on a fast machine below 0.05 ms, shown as 0.0)
     assert unit.emails == ["user-abc123@phc.proxon.de"] and unit.sessions == 1 and unit.closes == 1
     assert {q for q, _ in unit.queries} == {L.QUERY_SP_LIST, L.QUERY_DP_LIST}
     assert max(n for _, n in unit.queries) <= L.MAX_POINTS_PER_QUERY  # long lists split up
