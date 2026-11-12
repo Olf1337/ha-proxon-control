@@ -52,7 +52,17 @@ from .comfort import (
 from .const import PPM
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
-from .registers import HOUR_COUNTERS, OPERATION_KEYS, ROOM_COUNT, element_state, filter_months, heat_recovery, room_connected
+from .registers import (
+    HOUR_COUNTERS,
+    OPERATION_KEYS,
+    ROOM_COUNT,
+    element_state,
+    filter_months,
+    heat_recovery,
+    ptc_thresholds,
+    room_connected,
+    room_target,
+)
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
 
 
@@ -163,6 +173,13 @@ SENSORS: list[ProxonSensorDescription] = [
             icon="mdi:timer-outline",
         )
         for name, tk in (("Kompressor", "compressor"), ("WarmwasserKompressor", "hot_water_compressor"), ("Heizstab", "heater"))
+    ],
+    *[
+        ProxonSensorDescription(
+            key=key, translation_key=tk, native_unit_of_measurement="K", suggested_display_precision=1,
+            icon="mdi:thermometer-chevron-down", entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        for key, tk in (("PTCEinschaltSchwelle", "ptc_on_threshold"), ("PTCAusschaltSchwelle", "ptc_off_threshold"))
     ],
     ProxonSensorDescription(
         key="FilterStandzeit", translation_key="filter_lifetime", native_unit_of_measurement=UnitOfTime.MONTHS,
@@ -363,6 +380,14 @@ class ProxonHeatingElement(ProxonEntity, SensorEntity):
     @property
     def icon(self) -> str:
         return {"heating": "mdi:radiator", "ready": "mdi:radiator-disabled"}.get(self.native_value or "", "mdi:radiator-off")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self.coordinator.data or {}
+        temp, target = data.get(f"NBE{self._room}Temperatur"), room_target(data, self._room)
+        below = round(target - temp, 1) if isinstance(temp, (int, float)) and isinstance(target, (int, float)) else None
+        # "thresholds": as the unit decides (its switch-on/off thresholds), "panel": by the room panel's LED level
+        return {"below_target": below, "decided_by": "thresholds" if ptc_thresholds(data) else "panel"}
 
 
 class ProxonHeatRecovery(ProxonEntity, SensorEntity):

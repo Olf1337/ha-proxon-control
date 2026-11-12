@@ -200,6 +200,9 @@ def _registers() -> list[Reg]:
         Reg("KompressorLeistung", False, (1, 21), None, "div100"),  # % of the compressor's power (Modbus 3x0171)
         Reg("HeizmodulRelais", False, (2, 4)),  # relays K1-K10 of the room heating module, one bit each (Modbus 3x0574)
         Reg("GeraeteTyp", True, (0, 18)),  # 0 heating only, 1 heating and cooling (Modbus 4x0018)
+        # when the rooms' heating elements switch on and off again (Modbus 4x0317 / 4x0318, tenths of a degree)
+        Reg("PTCEinschaltSchwelle", True, (0, 317), None, "div10"),
+        Reg("PTCAusschaltSchwelle", True, (0, 318), None, "div10"),
         # operating hour counters of the unit (set point object 4 = Modbus 467 + n, counting in 2-hour steps like the others)
         *[Reg(k, True, (4, n), None, "u16x2") for k, n in HOUR_COUNTERS.items()],
         # hot-water module: relays, and its own runtime counters in seconds (low word, high word; Modbus list 3x0847...)
@@ -648,8 +651,52 @@ def room_demand(values: dict, i: int) -> str | None:
 
 
 def room_heating(values: dict, i: int) -> bool:
-    """The room's electric heating element is heating: released and the room too cold (as the original app shows it)."""
-    return bool(values.get(f"NBE{i}PTC")) and room_demand(values, i) == "too_cold"
+    """The room's electric heating element is heating: released and the room too cold. "Too cold" as the unit decides it
+    (its switch-on / switch-off thresholds, worked out by HeatingTracker), else as the room panel's LED shows it."""
+    if not values.get(f"NBE{i}PTC"):
+        return False
+    if f"NBE{i}Heizt" in values:
+        return bool(values[f"NBE{i}Heizt"])
+    return room_demand(values, i) == "too_cold"
+
+
+MAX_PTC_THRESHOLD = 5.0  # K: larger values are not a difference to the target (then the LED level is used)
+
+
+def ptc_thresholds(values: dict) -> tuple[float, float] | None:
+    """The unit's switch-on and switch-off thresholds of the heating elements (K below the room's target), when plausible."""
+    on, off = values.get("PTCEinschaltSchwelle"), values.get("PTCAusschaltSchwelle")
+    if not isinstance(on, (int, float)) or not isinstance(off, (int, float)):
+        return None
+    if not 0 < on <= MAX_PTC_THRESHOLD or not 0 <= off <= on:
+        return None
+    return float(on), float(off)
+
+
+class HeatingTracker:
+    """Whether each room's heating element heats, as the unit switches it: on when the room is the switch-on threshold below
+    its target, off again once it is no more than the switch-off threshold below (the gap keeps it from flickering)."""
+
+    def __init__(self) -> None:
+        self.heating: dict[int, bool] = {}
+
+    def update(self, values: dict) -> dict[str, float]:
+        limits = ptc_thresholds(values)
+        if limits is None:
+            self.heating.clear()
+            return {}
+        on, off = limits
+        out: dict[str, float] = {}
+        for i in range(ROOM_COUNT):
+            temp, target = values.get(f"NBE{i}Temperatur"), room_target(values, i)
+            if f"NBE{i}PTC" not in values or not isinstance(temp, (int, float)) or not isinstance(target, (int, float)):
+                continue
+            deficit = round(target - temp, 2)  # the unit measures in tenths: no floating-point leftovers
+            was = self.heating.get(i, False) and bool(values.get(f"NBE{i}PTC"))
+            now = bool(values.get(f"NBE{i}PTC")) and (deficit > off if was else deficit >= on)
+            self.heating[i] = now
+            out[f"NBE{i}Heizt"] = 1.0 if now else 0.0
+        return out
 
 
 def element_state(values: dict, i: int) -> str | None:

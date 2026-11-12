@@ -363,6 +363,12 @@
           "ready": "Bereit",
           "heating": "Heizt"
         }
+      },
+      "ptc_on_threshold": {
+        "name": "Wärmeelemente Einschaltschwelle"
+      },
+      "ptc_off_threshold": {
+        "name": "Wärmeelemente Ausschaltschwelle"
       }
     },
     "select": {

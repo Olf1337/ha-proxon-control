@@ -279,3 +279,31 @@ async def test_heating_element_sensor(hass: HomeAssistant, device) -> None:
     assert bedroom.device_id == er.async_get(hass).async_get(eid(hass, "climate", "NBE1Thermostat")).device_id
     await call(hass, "climate", "set_hvac_mode", entity_id=eid(hass, "climate", "NBE1Thermostat"), hvac_mode="auto")
     assert state(hass, "sensor", "NBE1Waermeelement").state == "off"
+
+
+# ---------------- 0.12.3: heating by the unit's thresholds ----------------
+def test_heating_tracker_switches_like_the_unit() -> None:
+    tr = R.HeatingTracker()
+    base = {"PTCEinschaltSchwelle": 1.0, "PTCAusschaltSchwelle": 0.3, "NBE1PTC": 1.0, "NBE1MittelTemperatur": 21.0,
+            "NBE1OffsetTemperatur": 0.0}
+    assert tr.update({**base, "NBE1Temperatur": 20.5}) == {"NBE1Heizt": 0.0}  # 0.5 K too cold: not yet
+    assert tr.update({**base, "NBE1Temperatur": 20.0}) == {"NBE1Heizt": 1.0}  # 1 K: on
+    assert tr.update({**base, "NBE1Temperatur": 20.6}) == {"NBE1Heizt": 1.0}  # 0.4 K: stays on
+    assert tr.update({**base, "NBE1Temperatur": 20.7}) == {"NBE1Heizt": 0.0}  # 0.3 K: off
+    assert tr.update({**base, "NBE1Temperatur": 20.0, "NBE1PTC": 0.0}) == {"NBE1Heizt": 0.0}  # not released
+    assert tr.update({**base, "PTCEinschaltSchwelle": 21.0, "NBE1Temperatur": 20.0}) == {}  # not a difference: LED decides
+    v = {**base, "NBE1Temperatur": 20.0, "NBE1LED": 5.0}
+    assert R.room_heating({**v, "NBE1Heizt": 1.0}, 1) and not R.room_heating(v, 1)
+
+
+async def test_heating_element_by_thresholds(hass: HomeAssistant, device) -> None:
+    device.raw[raw_key("PTCEinschaltSchwelle")] = 10  # 1.0 K
+    device.raw[raw_key("PTCAusschaltSchwelle")] = 3  # 0.3 K
+    await setup(hass)
+    # bedroom: target 22 °C (base 20 + offset 2), 21.0 °C -> 1 K too cold: heats
+    bedroom = state(hass, "sensor", "NBE1Waermeelement")
+    assert bedroom.state == "heating" and bedroom.attributes["decided_by"] == "thresholds"
+    assert bedroom.attributes["below_target"] == 1.0
+    assert state(hass, "sensor", "PTCEinschaltSchwelle").state == "1.0"
+    bath = state(hass, "sensor", "NBE4Waermeelement")  # base 20 + offset -1 = 19, 19.0 °C: at target
+    assert bath.state == "ready" and bath.attributes["below_target"] == 0.0

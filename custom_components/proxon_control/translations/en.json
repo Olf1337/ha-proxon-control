@@ -363,6 +363,12 @@
           "ready": "Ready",
           "heating": "Heating"
         }
+      },
+      "ptc_on_threshold": {
+        "name": "Heating elements switch-on threshold"
+      },
+      "ptc_off_threshold": {
+        "name": "Heating elements switch-off threshold"
       }
     },
     "select": {

@@ -38,6 +38,7 @@ RAW_DEFAULT.update({
     "NachtabsenkungStartH": 22, "NachtabsenkungStartM": 0, "NachtabsenkungEndeH": 6, "NachtabsenkungEndeM": 0,
     "NachtabsenkungTemperatur": 1900, "NachtabsenkungAktiv": 0,
     "KompressorLeistung": 6500, "HeizmodulRelais": 0b1000000100, "GeraeteTyp": 1,
+    "PTCEinschaltSchwelle": 0, "PTCAusschaltSchwelle": 0,  # 0: not set - the LED level decides (tests of the thresholds set them)
     "NBE1LED": 6, "NBE4LED": 5,
 })
 # unit clock: Monday 9 November 2026, 10:00; weekly schedule switched on

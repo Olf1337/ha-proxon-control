@@ -15,7 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from .api import AuthError, BridgeApi, DirectApi, HybridApi, ProxonError, WriteNotAccepted
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
-from .registers import SCHEDULE_KEYS, active_faults, allowed_during_fault
+from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
 
@@ -53,6 +53,8 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.device_id: str | None = None  # the appliance's device (rooms and schedule days are linked to it)
         # how often / how long compressor and immersion heater ran today (kept across restarts)
         self.runtime = RuntimeTracker()
+        # which rooms' heating elements heat, by the unit's thresholds (needs the previous state: switch-on/off gap)
+        self.heating = HeatingTracker()
         self._runtime_store: Store[dict] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.runtime")
 
     async def async_load_runtime(self) -> None:
@@ -71,6 +73,7 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # how far the unit's clock is off (it can't be set over the network; the weekly schedule runs on it)
             if (drift := clock_drift(data, dt_util.now())) is not None:
                 data["UhrAbweichung"] = float(drift)
+            data.update(self.heating.update(data))
             interval = self.update_interval.total_seconds() if self.update_interval else 0
             data.update(self.runtime.update(data, dt_util.now(), max(MAX_GAP_SECONDS, 3 * interval)))
             self._runtime_store.async_delay_save(self.runtime.dump, 120)
