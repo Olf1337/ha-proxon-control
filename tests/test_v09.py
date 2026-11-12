@@ -145,6 +145,25 @@ async def test_heat_recovery_keeps_the_last_measurement(hass: HomeAssistant, dev
     assert s.state == "82" and s.attributes["measuring_now"] is False
 
 
+async def test_heat_recovery_survives_a_restart(hass: HomeAssistant, device) -> None:
+    """After a restart the last measurement is shown again, even while the heat pump runs (nothing measurable then)."""
+    from homeassistant.core import State
+    from pytest_homeassistant_custom_component.common import mock_restore_cache_with_extra_data
+
+    entry = await setup(hass)
+    sensor = eid(hass, "sensor", "Waermerueckgewinnung")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    measured = "2026-11-01T10:00:00+00:00"
+    mock_restore_cache_with_extra_data(hass, [(
+        State(sensor, "79", {"measured_at": measured}),
+        {"native_value": 79, "native_unit_of_measurement": "%"},
+    )])
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    s = hass.states.get(sensor)
+    assert s.state == "79" and s.attributes["measuring_now"] is False
+    assert s.attributes["measured_at"].isoformat() == measured
+
 # ---------------- clock ----------------
 async def test_clock_deviation_notice(hass: HomeAssistant, device) -> None:
     entry = await setup(hass)

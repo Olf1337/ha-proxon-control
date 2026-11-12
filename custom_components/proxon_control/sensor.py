@@ -392,7 +392,7 @@ class ProxonHeatingElement(ProxonEntity, SensorEntity):
         return {"below_target": below, "decided_by": "thresholds" if ptc_thresholds(data) else "panel"}
 
 
-class ProxonHeatRecovery(ProxonEntity, SensorEntity):
+class ProxonHeatRecovery(ProxonEntity, RestoreSensor):
     """Efficiency of the heat exchanger (%), from outdoor, supply and extract air. Only measurable while the heat pump is off,
     the bypass closed and outdoor and extract air at least 5 K apart; in between the last measured value is kept."""
 
@@ -404,6 +404,19 @@ class ProxonHeatRecovery(ProxonEntity, SensorEntity):
         super().__init__(coordinator, "Waermerueckgewinnung", "heat_recovery")
         self._last: float | None = None
         self._measured_at: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Take over the last measurement from before a restart: while the heat pump runs (most of the winter) nothing
+        can be measured, and the sensor would stay empty until it pauses."""
+        await super().async_added_to_hass()
+        if self._last is not None:
+            return
+        if (last := await self.async_get_last_sensor_data()) is not None and isinstance(last.native_value, (int, float)):
+            self._last = float(last.native_value)
+            state = await self.async_get_last_state()
+            when = state.attributes.get("measured_at") if state else None
+            self._measured_at = dt_util.parse_datetime(when) if isinstance(when, str) else None
+            self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
