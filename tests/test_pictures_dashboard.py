@@ -6,13 +6,15 @@ from unittest.mock import patch
 import xml.dom.minidom
 
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.yaml import dump, parse_yaml
 
 from custom_components.proxon_control import image as image_module
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.pictures import (
-    HOUSE_W,
+    LABELS,
     Room,
+    guess_floor,
     house_layout,
     house_svg,
     house_targets,
@@ -76,23 +78,71 @@ def test_pictures_follow_light_and_dark() -> None:
     assert '<rect width="800"' not in auto and 'fill="#eef1f4"' not in auto  # transparent: no background, the card's colour shows
 
 
+def test_tank_in_section() -> None:
+    """The T300 cut open: the two sensors, the charge, the rod glows while its relay is on, the fan turns while the compressor runs."""
+    data = {**DATA, "WarmwasserUntenTemperatur": 30.0, "WarmwasserLadezustand": 64.0, "T300RelaisKompressor": 1.0,
+            "T300RelaisHeizstab": 0.0, "E-Heizstab": 1.0}
+    svg = valid(tank_svg(data, "de"))
+    assert "Mitte" in svg and "Unten" in svg and "30,0°" in svg and "Ladezustand 64 %" in svg
+    assert "Wärmepumpe an" in svg and 'class="spin"' in svg
+    assert "Heizstab an" in svg and 'class="glow"' not in svg  # released, but its relay is off: it doesn't heat
+    heating = valid(tank_svg({**data, "T300RelaisHeizstab": 1.0}, "de"))
+    assert 'class="glow"' in heating and "heizt" in heating
+    plain = valid(tank_svg(DATA, "de"))  # no bottom sensor, no relays reported
+    assert "Unten" not in plain and "Wärmepumpe" not in plain and 'class="spin"' not in plain
+
+
 def test_house_picture_lays_out_any_number_of_rooms() -> None:
     rooms = [Room(f"Raum {i}", t, 22.0, i == 2) for i, t in enumerate((20.0, 21.5, 22.0, 22.5, 23.5, 24.0))]
     svg = valid(house_svg(rooms, 7.6, "de"))
     assert svg.count('class="flame"') == 1 and "Raum 5" in svg
-    assert "#dcebfb" in svg and "#ddf3e9" in svg and "#fde4d8" in svg  # too cold, fine, too warm
-    assert "zu kalt" in svg and "antippen zum Einstellen" in svg
+    assert 'class="r-cold sep"' in svg and 'class="r-fine sep"' in svg and 'class="r-warm sep"' in svg  # too cold, fine, too warm
+    assert "zu kalt" in svg and "antippen zum Einstellen" in svg and "Lüftungsanlage" in svg and "Innen 22,3°" in svg
+    assert "Obergeschoss" not in svg  # one floor: no floor names
     big = valid(house_svg([Room(f"R{i}", 21.0, 21.0, False) for i in range(14)], None, "en"))
     assert "R13" in big
     assert valid(house_svg([Room("Küche & <Bad>", None, None, False)], None, "de"))  # names are escaped, missing values shown as –
 
 
+def test_house_with_two_floors() -> None:
+    rooms = [Room("Wohnen", 22.0, 22.0, False, 0), Room("Küche", 21.0, 21.0, False, 0), Room("Kind", 20.0, 22.0, True, 1)]
+    svg = valid(house_svg(rooms, 5.0, "de"))
+    assert "Erdgeschoss" in svg and "Obergeschoss" in svg and "Kind" in svg
+    assert svg.count('class="flow"') >= 4  # supply air into every room, up to the upper floor, extract air back
+    still = valid(house_svg(rooms, 5.0, "de", running=False))
+    assert 'class="flow"' not in still  # ventilation off: the air stands still
+
+
+def test_room_labels_never_overlap() -> None:
+    """However many rooms on however many floors: the labels (also the tap areas) don't cover each other."""
+    for n in range(1, 22):
+        for upper in {0, n // 3, n // 2, n}:
+            floors = [1 if i < upper else 0 for i in range(n)]
+            lay = house_layout(floors)
+            boxes = lay.labels
+            assert len(boxes) == n
+            for k, (x, y, w, h) in enumerate(boxes):
+                assert 0 <= x and x + w <= lay.width and 0 <= y and y + h <= lay.height  # inside the picture
+                for x2, y2, w2, h2 in boxes[k + 1:]:
+                    assert x + w <= x2 or x2 + w2 <= x or y + h <= y2 or y2 + h2 <= y, (n, upper)
+    assert house_layout([0, 0, 0]).style == LABELS[0][0]  # few rooms: the full labels with the target
+
+
+def test_floor_guess() -> None:
+    names = ("Schlafzimmer", "Kinderzimmer 2", "Bad oben", "Eltern", "Bedroom", "Wohnzimmer", "Küche", "Gäste-WC", "Bad", "Büro")
+    assert [guess_floor(n) for n in names] == [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+
+
 def test_tap_areas_match_the_drawing() -> None:
-    height, boxes = house_layout(6)
-    for (x, y, w, h), (cx, cy, pw, ph) in zip(boxes, house_targets(6)):
-        assert abs(cx / 100 * HOUSE_W - (x + w / 2)) < 0.5 and abs(cy / 100 * height - (y + h / 2)) < 0.5
-        assert abs(pw / 100 * HOUSE_W - w) < 0.5 and abs(ph / 100 * height - h) < 0.5
-    assert len(house_targets(14)) == 14
+    floors = [0, 1, 0, 1, 1, 0]
+    lay = house_layout(floors)
+    svg = house_svg([Room(f"R{i}", 21.0, 21.0, False, f) for i, f in enumerate(floors)], None, "de")
+    assert f'viewBox="0 0 {lay.width} {lay.height}"' in svg
+    for (x, y, w, h), (cx, cy, pw, ph) in zip(lay.labels, house_targets(floors)):
+        assert abs(cx / 100 * lay.width - (x + w / 2)) < 0.5 and abs(cy / 100 * lay.height - (y + h / 2)) < 0.5
+        assert abs(pw / 100 * lay.width - w) < 0.5 and abs(ph / 100 * lay.height - h) < 0.5
+        assert f'<rect x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}"' in svg  # the label is drawn right there
+    assert len(house_targets([0] * 14)) == 14
     assert unit_targets()["unit"][:2] == (50.0, 50.0)
     assert 0 < tank_targets()["tank"][0] < 100
 
@@ -166,11 +216,15 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
     assert list(dashboard) == ["views"]  # the answer is the dashboard itself: paste it as it is
     assert parse_yaml(dump(dashboard)) == dashboard
-    overview, settings = dashboard["views"]
-    assert overview["type"] == settings["type"] == "sections"
-    left, right = overview["sections"]
-    assert left["column_span"] == 2  # unit and house: wide
-    pictures = {c["image_entity"]: c for s in overview["sections"] for c in s["cards"] if c["type"] == "picture-elements"}
+    views = dashboard["views"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-settings"]
+    assert all(v["type"] == "sections" for v in views)
+    home, house, water, settings = views
+
+    def cards(view: dict) -> list[dict]:
+        return [c for s in view["sections"] for c in s["cards"]]
+
+    pictures = {c["image_entity"]: c for v in views for c in cards(v) if c["type"] == "picture-elements"}
     assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser", "BildHaus")}
     # tapping: the unit opens the ventilation, the tank the hot water, every room its thermostat
     targets = {k: [e["entity"] for e in c["elements"]] for k, c in pictures.items()}
@@ -178,17 +232,91 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert targets[eid(hass, "image", "BildWarmwasser")] == [eid(hass, "water_heater", "Warmwasser")]
     assert targets[eid(hass, "image", "BildHaus")] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1, 4)]
     assert all(e["type"] == "image" and e["tap_action"]["action"] == "more-info" for c in pictures.values() for e in c["elements"])
+    # home: without a photo the drawn house leads (wide), then every room with its curve - ground floor first; a tap opens its thermostat
+    lead = home["sections"][0]
+    assert lead["column_span"] == 2 and lead["cards"][0]["image_entity"] == eid(hass, "image", "BildHaus")
+    rooms = [c for c in cards(home) if c.get("features") == [{"type": "trend-graph", "hours_to_show": 24}]]
+    assert [c["tap_action"]["entity"] for c in rooms] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 4, 1)]
+    assert [c["name"] for c in rooms] == ["Wohnzimmer", "Bad", "Schlafzimmer"]
+    assert {"Ground floor", "Upper floor"} <= {c["heading"] for c in cards(home) if c["type"] == "heading"}
     # functions: full width, short names, status next to on/off
-    tiles = {c["entity"]: c for c in right["cards"] if c["type"] == "tile"}
+    tiles = {c["entity"]: c for c in home["sections"][1]["cards"] if c["type"] == "tile"}
     solar = tiles[eid(hass, "switch", "SolarWarmwasser")]
     assert solar["name"] == "Solar hot water" and solar["state_content"] == ["state", "status"] and solar["grid_options"] == {"columns": "full"}
     holiday = tiles[eid(hass, "switch", "Urlaubsmodus")]
     assert "confirmation" in holiday["icon_tap_action"]
+    # house: the drawing and the unit wide, the heating elements by room name
+    assert [c["image_entity"] for c in house["sections"][0]["cards"]] == [eid(hass, "image", k) for k in ("BildHaus", "BildAnlage")]
+    elements = next(c for c in cards(house) if c["type"] == "entities")
+    assert [r["name"] for r in elements["entities"]] == ["Wohnzimmer", "Schlafzimmer", "Bad"]
+    # hot water: the tank, its controls, the last 24 hours
+    graph = next(c for c in cards(water) if c["type"] == "history-graph")
+    assert graph["entities"] == [eid(hass, "sensor", k) for k in ("WarmwasserIstTemperatur", "WarmwasserUntenTemperatur")]
+    heater = next(c for c in cards(water) if c.get("entity") == eid(hass, "water_heater", "Warmwasser"))
+    assert {"type": "target-temperature"} in heater["features"]
     # settings: limits with +/- buttons, the weekly schedule with day names
-    cards = [c for s in settings["sections"] for c in s["cards"]]
-    numbers = [c for c in cards if c.get("features") == [{"type": "numeric-input", "style": "buttons"}]]
+    all_settings = cards(settings)
+    numbers = [c for c in all_settings if c.get("features") == [{"type": "numeric-input", "style": "buttons"}]]
     assert {c["entity"] for c in numbers} >= {eid(hass, "number", k) for k in ("SolarSchwelle", "PreisSchwelle", "BoostGrenze", "KuehlWunsch")}
-    schedule = next(c for c in cards if c["type"] == "entities" and any(r.get("name") == "Monday" for r in c["entities"]))
+    schedule = next(c for c in all_settings if c["type"] == "entities" and any(r.get("name") == "Monday" for r in c["entities"]))
     assert [r["name"] for r in schedule["entities"]][1:] == ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    every = {c.get("entity") for c in cards} | {r["entity"] for c in cards for r in c.get("entities", [])} | set(sum(targets.values(), []))
+    every = {c.get("entity") for v in views for c in cards(v)} | {r["entity"] for v in views for c in cards(v) for r in c.get("entities", [])
+                                                                  if isinstance(r, dict)}
+    every |= {e for v in views for c in cards(v) if c["type"] == "history-graph" for e in c["entities"]} | set(sum(targets.values(), []))
+    every |= {c["tap_action"]["entity"] for c in rooms}
     assert all(e is None or hass.states.get(e) is not None for e in every)  # only entities that exist
+
+
+async def test_dashboard_with_house_photo(hass: HomeAssistant, device) -> None:
+    """With the user's own house photo the start page shows it, with the main values on it."""
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"house_photo": "/local/proxon/haus.jpg"})
+    await setup(hass, entry)
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    hero = dashboard["views"][0]["sections"][0]["cards"][0]
+    assert hero["type"] == "picture-elements" and hero["image"] == "/local/proxon/haus.jpg" and "image_entity" not in hero
+    labels = {e["entity"]: e for e in hero["elements"]}
+    assert all(e["type"] == "state-label" for e in labels.values())
+    assert labels[eid(hass, "sensor", "T3Frischluft")]["prefix"] == "Outdoor "
+    assert labels[eid(hass, "sensor", "RaumMittel")]["prefix"] == "Indoor "
+    assert labels[eid(hass, "sensor", "WarmwasserIstTemperatur")]["tap_action"]["entity"] == eid(hass, "water_heater", "Warmwasser")
+    assert eid(hass, "sensor", "AktuellerBetrieb") in labels
+    # the drawn house moves to the house tab
+    house = dashboard["views"][1]["sections"][0]["cards"][0]
+    assert house["image_entity"] == eid(hass, "image", "BildHaus")
+
+
+async def test_indoor_average(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    state = hass.states.get(eid(hass, "sensor", "RaumMittel"))
+    assert float(state.state) == round((22.5 + 21.0 + 19.0) / 3, 2) and state.attributes["rooms"] == 3
+    assert state.attributes["unit_of_measurement"] == "°C"
+
+
+async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device, hass_client) -> None:
+    entry = await setup(hass)
+    client = await hass_client()
+
+    async def house() -> str:
+        return await (await client.get(f"/api/image_proxy/{eid(hass, 'image', 'BildHaus')}")).text()
+
+    assert "Upper floor" in await house()  # guessed from the names: the bedroom lies upstairs
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    fields = {str(k): k for k in result["data_schema"].schema}
+    assert fields["upper_floor_rooms"].description["suggested_value"] == ["1"]  # the guess, to confirm or change
+    assert "house_photo" in fields
+    bad = await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "house_photo": "haus.jpg"})
+    assert bad["type"] is FlowResultType.FORM and bad["errors"] == {"house_photo": "photo_path"}
+    done = await hass.config_entries.options.async_configure(
+        bad["flow_id"], {"scan_interval": 10, "upper_floor_rooms": [], "house_photo": " /local/proxon/haus.jpg "}
+    )
+    assert done["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options == {"scan_interval": 10, "upper_floor_rooms": [], "house_photo": "/local/proxon/haus.jpg"}
+    assert "Upper floor" not in await house()  # a bungalow: everything on one floor
+    # choosing just what was guessed keeps nothing extra: the guess follows renamed rooms
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "upper_floor_rooms": ["1"]})
+    await hass.async_block_till_done()
+    assert entry.options == {"scan_interval": 10}

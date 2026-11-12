@@ -14,9 +14,11 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
 )
 import voluptuous as vol
 
@@ -26,6 +28,7 @@ from .const import (
     CONF_DEVICE_ID,
     CONF_FEED_IN_NEGATIVE,
     CONF_HOST,
+    CONF_HOUSE_PHOTO,
     CONF_LOCAL_HOST,
     CONF_MODE,
     CONF_PASSWORD,
@@ -35,6 +38,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SURPLUS_SENSOR,
     CONF_TOKEN,
+    CONF_UPPER_FLOOR,
     CONNECTION_BRIDGE,
     CONNECTION_DIRECT,
     DEFAULT_MODE,
@@ -47,7 +51,9 @@ from .const import (
     MODES,
     PICTURE_THEMES,
 )
+from .entity import house_rooms, room_name
 from .nabto import library_supported
+from .pictures import guess_floor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,6 +77,16 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 data[CONF_FEED_IN_NEGATIVE] = True
             if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
                 data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
+            rooms = self._rooms()
+            if rooms and CONF_UPPER_FLOOR in user_input:  # kept only when it differs from the guess by the room names
+                chosen = sorted(set(user_input[CONF_UPPER_FLOOR]) & set(rooms), key=int)
+                if chosen != self._guess(rooms):
+                    data[CONF_UPPER_FLOOR] = chosen
+            if photo := (user_input.get(CONF_HOUSE_PHOTO) or "").strip():
+                if not photo.startswith(("/", "http://", "https://")):
+                    errors = {CONF_HOUSE_PHOTO: "photo_path"}
+                    return self._form(user_input, errors)
+                data[CONF_HOUSE_PHOTO] = photo
             if self._login:  # kept only where it differs from the setup (an empty address: find the unit automatically)
                 setup = self.config_entry.data
                 mode, host = user_input.get(CONF_MODE, DEFAULT_MODE), (user_input.get(CONF_LOCAL_HOST) or "").strip()
@@ -79,6 +95,9 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 if host != (setup.get(CONF_LOCAL_HOST) or ""):
                     data[CONF_LOCAL_HOST] = host
             return self.async_create_entry(data=data)
+        return self._form()
+
+    def _form(self, user_input: dict[str, Any] | None = None, errors: dict[str, str] | None = None) -> ConfigFlowResult:
         connection = (
             {
                 vol.Required(CONF_MODE, default=DEFAULT_MODE): mode_selector(),
@@ -87,6 +106,14 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
             if self._login
             else {}
         )
+        rooms = self._rooms()
+        house: dict[Any, Any] = {}
+        if rooms:  # the house picture: which rooms lie upstairs
+            house[vol.Optional(CONF_UPPER_FLOOR)] = SelectSelector(SelectSelectorConfig(
+                options=[SelectOptionDict(value=i, label=name) for i, name in rooms.items()], multiple=True,
+                mode=SelectSelectorMode.LIST,
+            ))
+        house[vol.Optional(CONF_HOUSE_PHOTO)] = TextSelector()
         schema = vol.Schema(
             {
                 **connection,
@@ -101,11 +128,25 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 vol.Optional(CONF_PICTURE_THEME, default=DEFAULT_PICTURE_THEME): SelectSelector(
                     SelectSelectorConfig(options=PICTURE_THEMES, mode=SelectSelectorMode.DROPDOWN, translation_key=CONF_PICTURE_THEME)
                 ),
+                **house,
             }
         )
         current = {**self.config_entry.data, **self.config_entry.options}
         current.pop(CONF_PASSWORD, None)
-        return self.async_show_form(step_id="init", data_schema=self.add_suggested_values_to_schema(schema, current))
+        if rooms and CONF_UPPER_FLOOR not in current:
+            current[CONF_UPPER_FLOOR] = self._guess(rooms)
+        if user_input:
+            current.update(user_input)
+        return self.async_show_form(step_id="init", data_schema=self.add_suggested_values_to_schema(schema, current), errors=errors)
+
+    def _rooms(self) -> dict[str, str]:
+        """Room number -> name of the rooms in the house picture (empty while the integration isn't loaded)."""
+        coordinator = getattr(self.config_entry, "runtime_data", None)
+        data = getattr(coordinator, "data", None) or {}
+        return {str(i): room_name(i, data) for i in house_rooms(data)} if data else {}
+
+    def _guess(self, rooms: dict[str, str]) -> list[str]:
+        return [i for i, name in rooms.items() if guess_floor(name)]
 
     @property
     def _login(self) -> bool:

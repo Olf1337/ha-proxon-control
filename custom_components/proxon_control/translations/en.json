@@ -261,6 +261,9 @@
       "heat_recovery": {
         "name": "Heat recovery"
       },
+      "rooms_average": {
+        "name": "Indoor (average)"
+      },
       "last_write_error": {
         "name": "Last write error"
       },
@@ -713,7 +716,9 @@
           "surplus_sensor": "Solar surplus sensor",
           "feed_in_negative": "Feed-in is shown as negative",
           "price_sensor": "Electricity price sensor",
-          "picture_theme": "Dashboard pictures"
+          "picture_theme": "Dashboard pictures",
+          "upper_floor_rooms": "Rooms on the upper floor",
+          "house_photo": "House photo (optional)"
         },
         "data_description": {
           "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
@@ -722,9 +727,14 @@
           "surplus_sensor": "Power fed into the grid (W or kW), e.g. the grid power of your inverter or smart meter.",
           "feed_in_negative": "Turn on if your sensor shows power fed into the grid as a negative number.",
           "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool.",
-          "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark."
+          "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark.",
+          "upper_floor_rooms": "For the house picture: these rooms are drawn on the upper floor, all others on the ground floor. Preselected by the room names (bedroom, children's room …). Select none for a bungalow.",
+          "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown."
         }
       }
+    },
+    "error": {
+      "photo_path": "Please enter a path like /local/proxon/house.jpg or an address starting with http(s)://."
     }
   },
   "services": {

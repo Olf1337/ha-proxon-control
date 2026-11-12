@@ -16,9 +16,9 @@ from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
 from .const import CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME
-from .entity import ProxonEntity, room_name
-from .pictures import Room, house_svg, tank_svg, unit_svg
-from .registers import ROOM_COUNT, active_faults, room_connected, room_heating, room_target
+from .entity import ProxonEntity, house_rooms, room_floors, room_name
+from .pictures import Room, air_running, house_svg, tank_svg, unit_svg
+from .registers import active_faults, room_heating, room_target
 
 TEMPERATURES_EVERY = 60  # seconds: changed temperatures are shown at most this often
 
@@ -76,15 +76,18 @@ class ProxonPicture(ProxonEntity, ImageEntity):
             boost_status = boost.status if boost_on else None
             limit = boost.settings.limit if boost_on else None
             sig = (data.get("E-Heizstab"), data.get("T300Betriebsart"), data.get("SollWassertemperatur"), data.get("Soll-E-Heizstab-Temperatur"),
+                   data.get("T300RelaisHeizstab"), data.get("T300RelaisKompressor"), bool(data.get("T300LuefterDrehzahl")),
                    energy_status, boost_status, limit, theme, lang)
             return tank_svg(data, lang, limit, theme, energy_status, boost_status), sig
+        indices = house_rooms(data)
+        floors = room_floors(self.coordinator.entry.options, data, indices)
         rooms = [
-            Room(room_name(i, data), _f(data.get(f"NBE{i}Temperatur")), room_target(data, i), room_heating(data, i))
-            for i in range(ROOM_COUNT)
-            if room_connected(data, i) and room_target(data, i) is not None
+            Room(room_name(i, data), _f(data.get(f"NBE{i}Temperatur")), room_target(data, i), room_heating(data, i), floor)
+            for i, floor in zip(indices, floors)
         ]
-        sig = (tuple((r.name, r.target, r.heating) for r in rooms), theme, lang)
-        return house_svg(rooms, _f(data.get("T3Frischluft")), lang, theme), sig
+        running = air_running(data)
+        sig = (tuple((r.name, r.target, r.heating, r.floor) for r in rooms), running, theme, lang)
+        return house_svg(rooms, _f(data.get("T3Frischluft")), lang, theme, running), sig
 
     @callback
     def _refresh(self) -> bool:

@@ -248,6 +248,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     entities += [ProxonEnergy(coordinator, key, power, tk) for key, power, tk in ENERGY if power in data]
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
+    if "NBE0Temperatur" in data:
+        entities.append(ProxonRoomAverage(coordinator))
     entities.append(ProxonLastWriteError(coordinator))
     # every room's heating element: not released / ready / heating
     entities += [ProxonHeatingElement(coordinator, i) for i in range(ROOM_COUNT) if room_connected(data, i) and element_state(data, i) is not None]
@@ -419,6 +421,40 @@ class ProxonHeatRecovery(ProxonEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {"measuring_now": heat_recovery(self.coordinator.data or {}) is not None, "measured_at": self._measured_at}
+
+
+class ProxonRoomAverage(ProxonEntity, SensorEntity):
+    """Mean temperature of all rooms with a panel (the indoor temperature on the dashboard's start page)."""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "RaumMittel", "rooms_average")
+
+    def _temperatures(self) -> list[float]:
+        data = self.coordinator.data or {}
+        out = []
+        for i in range(ROOM_COUNT):
+            value = data.get(f"NBE{i}Temperatur")
+            if room_connected(data, i) and isinstance(value, (int, float)):
+                out.append(float(value))
+        return out
+
+    @property
+    def raw_value(self) -> float | None:
+        temps = self._temperatures()
+        return round(sum(temps) / len(temps), 2) if temps else None
+
+    @property
+    def native_value(self) -> float | None:
+        return self.raw_value
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"rooms": len(self._temperatures())}
 
 
 class ProxonLastWriteError(ProxonEntity, SensorEntity):
