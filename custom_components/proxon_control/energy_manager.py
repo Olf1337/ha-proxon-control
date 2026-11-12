@@ -147,7 +147,7 @@ class EnergyManager:
             self._pending = False
 
     async def async_evaluate(self, now: datetime | None = None) -> None:
-        if not self.supported:
+        if not self.supported or self.coordinator.read_only:  # read only: nothing may be written, so nothing is started
             return
         async with self._lock:
             now = now or dt_util.now()

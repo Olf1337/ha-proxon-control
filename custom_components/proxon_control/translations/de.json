@@ -697,6 +697,12 @@
     "write_blocked_fault": {
       "message": "Die Anlage meldet eine Störung ({words}), deshalb wurde „{name}“ nicht geändert. Während einer Störung sind nur Ausschalten, die Lüftungsstufe und Raumtemperaturen möglich."
     },
+    "write_blocked_read_only": {
+      "message": "Der Nur-Lesen-Modus ist aktiv, deshalb wurde „{name}“ an der Anlage nicht geändert."
+    },
+    "holiday_read_only": {
+      "message": "Der Nur-Lesen-Modus ist aktiv, deshalb lässt sich der Urlaubsmodus nicht einschalten."
+    },
     "season_limits": {
       "message": "„Sommer über“ muss höher sein als „Winter unter“ – der Abstand verhindert, dass ständig hin- und hergeschaltet wird."
     }
@@ -713,6 +719,7 @@
           "surplus_sensor": "Sensor für Solarüberschuss",
           "feed_in_negative": "Einspeisung wird negativ angezeigt",
           "price_sensor": "Sensor für den Strompreis",
+          "read_only": "Nur lesen",
           "picture_theme": "Dashboard-Bilder"
         },
         "data_description": {
@@ -722,6 +729,7 @@
           "surplus_sensor": "Ins Netz eingespeiste Leistung (W oder kW), z. B. die Netzleistung deines Wechselrichters oder Stromzählers.",
           "feed_in_negative": "Einschalten, wenn dein Sensor die Einspeisung als negative Zahl anzeigt.",
           "price_sensor": "Aktueller Preis eines dynamischen Tarifs (ct/kWh, €/kWh oder €/MWh), z. B. EPEX Spot, Tibber oder Nord Pool.",
+          "read_only": "Alle Werte anzeigen, aber nichts an der Anlage über Home Assistant ändern. Bedienung über das Bedienteil oder die App.",
           "picture_theme": "Hell oder dunkel wie das anzeigende Gerät (automatisch), oder immer hell / immer dunkel."
         }
       }

@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import AuthError, BridgeApi, DirectApi, HybridApi, ProxonError, WriteNotAccepted
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
+from .const import CONF_READ_ONLY, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
 from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
@@ -91,10 +91,20 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ProxonError as err:
             raise UpdateFailed(str(err)) from err
 
+    @property
+    def read_only(self) -> bool:
+        """Read-only mode (option): values are read as usual, but nothing is written to the unit."""
+        return bool(self.entry.options.get(CONF_READ_ONLY))
+
     async def async_write(self, key: str, value: float) -> None:
         """Write a value and read it back from the unit. What the unit really reports is what is shown afterwards;
         if it did not take over the value, the change is reported as failed. While the unit reports a fault, only harmless
-        changes are written (switching off, ventilation level, room temperatures)."""
+        changes are written (switching off, ventilation level, room temperatures). In read-only mode nothing is written.
+        Every write of the integration (entities, actions, holiday mode, managers) goes through here."""
+        if self.read_only:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="write_blocked_read_only", translation_placeholders={"name": key}
+            )
         faults = active_faults(self.data or {})
         if faults and not allowed_during_fault(key, value):
             self._write_failed(key, value, "fault")

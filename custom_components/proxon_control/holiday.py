@@ -62,6 +62,9 @@ class HolidayMode:
         return [(k, v) for k, v in writes if k in data]
 
     async def async_turn_on(self) -> None:
+        # read only: refused before anything is saved, so holiday mode isn't marked active without having written anything
+        if self.coordinator.read_only:
+            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="holiday_read_only")
         async with self._lock:
             if self.active:
                 return
