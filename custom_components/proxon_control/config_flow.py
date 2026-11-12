@@ -35,6 +35,7 @@ from .const import (
     CONF_PICTURE_THEME,
     CONF_PORT,
     CONF_PRICE_SENSOR,
+    CONF_READ_ONLY,
     CONF_SCAN_INTERVAL,
     CONF_SURPLUS_SENSOR,
     CONF_TOKEN,
@@ -65,11 +66,13 @@ def mode_selector() -> SelectSelector:
 
 
 class ProxonOptionsFlow(OptionsFlowWithReload):
-    """"Configure" dialog: how often the unit is asked for its values."""
+    """"Configure" dialog: how often the unit is asked for its values, and whether Home Assistant may change anything."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             data: dict[str, Any] = {CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])}
+            if user_input.get(CONF_READ_ONLY):
+                data[CONF_READ_ONLY] = True
             for key in (CONF_SURPLUS_SENSOR, CONF_PRICE_SENSOR):
                 if user_input.get(key):
                     data[key] = user_input[key]
@@ -117,6 +120,8 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         schema = vol.Schema(
             {
                 **connection,
+                # read only: show all values, never change anything on the unit
+                vol.Optional(CONF_READ_ONLY, default=False): BooleanSelector(),
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): NumberSelector(
                     NumberSelectorConfig(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL, step=1, unit_of_measurement="s", mode=NumberSelectorMode.BOX)
                 ),

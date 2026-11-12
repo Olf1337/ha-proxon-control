@@ -132,6 +132,8 @@ class ComfortManager:
         return bool(holiday and holiday.active)
 
     async def async_evaluate(self, now: datetime | None = None) -> None:
+        if self.coordinator.read_only:  # read only: nothing may be written, so nothing is switched
+            return
         async with self._lock:
             now = now or dt_util.now()
             data = self.coordinator.data or {}

@@ -479,6 +479,10 @@ bestehende Automationen funktionieren weiter.
   und die Anzeige zeigt den Wert, den die Anlage wirklich hat – nicht den gewünschten.
 * **Einstellbares Abfrageintervall.** Unter *Geräte & Dienste → Proxon Control → Konfigurieren* lässt sich einstellen, wie oft die Anlage abgefragt wird
   (5 bis 3600 Sekunden, Standard 10). Beim Bridge-Add-on gibt es dieselbe Einstellung („poll_seconds“).
+* **Nur lesen.** Unter *Geräte & Dienste → Proxon Control → Konfigurieren* lässt sich „Nur lesen“ einschalten (Standard: aus). Dann werden alle Werte wie
+  gewohnt gelesen, aber nichts an der Anlage geändert: jede Änderung aus Home Assistant (Entitäten, Aktionen, Urlaubsmodus) wird mit einer Meldung
+  abgelehnt, Warmwasser-Speicher, Nachtkühlung, Warmwasser-Boost und Sommer/Winter-Automatik bleiben untätig. Gedacht zum Ausprobieren (Werte erst mit
+  der App vergleichen) oder wenn die Anlage nur über das Bedienteil / die App bedient werden soll.
 
 ## Hinweise zu den Werten
 
