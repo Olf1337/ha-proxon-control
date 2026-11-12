@@ -1,4 +1,5 @@
-"""Actions for the weekly ventilation schedule: set one phase, copy one day to other days."""
+"""Actions: set one phase of the weekly ventilation schedule, copy one day to other days, create the ready-made dashboard,
+install its glass theme."""
 from __future__ import annotations
 
 from datetime import time
@@ -9,16 +10,18 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import CONF_PICTURE_THEME, DOMAIN
 from .coordinator import ProxonCoordinator
 from .dashboard import build
 from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
+from .theme import THEME_FILE, THEME_NAME, async_install_theme
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
 SERVICE_SET_PHASE = "set_schedule_phase"
 SERVICE_COPY_DAY = "copy_schedule_day"
 SERVICE_DASHBOARD = "create_dashboard"
+SERVICE_THEME = "install_glass_theme"
 DASHBOARD_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY): cv.string})
 
 DAY_NAMES = {
@@ -139,8 +142,39 @@ def async_setup_services(hass: HomeAssistant) -> None:
         `views:`), so the whole answer shown under Developer tools can be pasted into the raw configuration editor."""
         return build(hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY)))
 
+    async def install_glass_theme(call: ServiceCall) -> ServiceResponse:
+        """Write the glass theme into the themes folder, reload the themes, and draw the dashboard pictures dark (they sit
+        on dark glass). Tells whether Home Assistant loads the theme, and what to add to configuration.yaml if not."""
+        entry_id = call.data.get(ATTR_CONFIG_ENTRY)
+        entries = [_entry(hass, entry_id)] if entry_id else [
+            e for e in hass.config_entries.async_entries(DOMAIN) if e.state is ConfigEntryState.LOADED
+        ]
+        installed = await async_install_theme(hass)
+        for entry in entries:
+            if entry.options.get(CONF_PICTURE_THEME) != "dark":
+                hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_PICTURE_THEME: "dark"})
+        german = (hass.config.language or "").startswith("de")
+        if installed:
+            message = (f"Das Theme „{THEME_NAME}“ ist installiert, die Dashboard-Bilder sind auf dunkel gestellt. Das Dashboard "
+                       "nutzt es auf allen Reitern; für ein Wandtablet kannst du es im Profil auch für das ganze Gerät wählen."
+                       if german else
+                       f"The theme \"{THEME_NAME}\" is installed and the dashboard pictures are set to dark. The dashboard uses it on "
+                       "all tabs; on a wall tablet you can also choose it for the whole device in the profile.")
+        else:
+            message = (f"Die Datei themes/{THEME_FILE} ist geschrieben, aber Home Assistant lädt den Ordner themes nicht. Ergänze in "
+                       "configuration.yaml unter frontend: die Zeile „themes: !include_dir_merge_named themes“, starte Home "
+                       "Assistant neu und führe die Aktion noch einmal aus."
+                       if german else
+                       f"The file themes/{THEME_FILE} is written, but Home Assistant doesn't load the themes folder. Add the line "
+                       "\"themes: !include_dir_merge_named themes\" under frontend: in configuration.yaml, restart Home Assistant "
+                       "and run the action again.")
+        return {"theme": THEME_NAME, "installed": installed, "file": f"themes/{THEME_FILE}", "message": message}
+
     hass.services.async_register(
         DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.ONLY
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_THEME, install_glass_theme, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
     )
     hass.services.async_register(DOMAIN, SERVICE_SET_PHASE, set_schedule_phase, schema=SET_PHASE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_COPY_DAY, copy_schedule_day, schema=COPY_DAY_SCHEMA)

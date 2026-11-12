@@ -29,6 +29,7 @@ TEXT = {
         "solar": "Solar", "price": "Günstiger Strom", "boost": "Boost", "cooling": "Nachtkühlung", "tap": "antippen zum Einstellen",
         "ground": "Erdgeschoss", "upper": "Obergeschoss", "technik": "Technik", "charge": "Ladezustand", "middle": "Mitte",
         "bottom": "Unten", "supply_short": "Zuluft", "extract_short": "Abluft", "inside": "Innen", "vent_unit": "Lüftungsanlage",
+        "floor_names": ["Erdgeschoss", "Obergeschoss"],
         "heats": "heizt",
         "status": {
             "off": "aus", "waiting": "wartet", "starting": "startet gleich", "heating_solar": "heizt", "heating_price": "heizt",
@@ -47,6 +48,7 @@ TEXT = {
         "solar": "Solar", "price": "Cheap power", "boost": "Boost", "cooling": "Night cooling", "tap": "tap to adjust",
         "ground": "Ground floor", "upper": "Upper floor", "technik": "Utility room", "charge": "Charge", "middle": "Middle",
         "bottom": "Bottom", "supply_short": "Supply air", "extract_short": "Extract air", "inside": "Indoor", "vent_unit": "Ventilation unit",
+        "floor_names": ["Ground floor", "Upper floor"],
         "heats": "heating",
         "status": {
             "off": "off", "waiting": "waiting", "starting": "starting", "heating_solar": "heating", "heating_price": "heating",
@@ -708,3 +710,380 @@ def house_svg(rooms: list[Room], outside: float | None, lang: str = "de", theme:
     header = (f'<text x="24" y="40" font-size="28" font-weight="600" class="fg">{escape(t["house"])}</text>'
               + _chips_right(lay.width - 20, 14, chips, 16))
     return _svg(lay.width, lay.height, header + "".join(body) + "".join(legend) + ducts + hint, theme)
+
+
+# ---------------- the floor plan from above (start page on tablet / desktop) ----------------
+PLAN_M = 47.0  # units per metre
+PLAN_W_M, PLAN_H_M = 13.0, 10.0  # the plan in metres (wider than deep: fits a tablet screen)
+PLAN_PAD = 14.0
+PLAN_W = int(PLAN_W_M * PLAN_M + 2 * PLAN_PAD)
+PLAN_H = int(PLAN_H_M * PLAN_M + 2 * PLAN_PAD)
+# what a room is by its name: kind, share of the plan, floor covering (first match counts)
+_KINDS = (
+    ("wc", re.compile(r"\bwc\b|toilette|\bklo", re.I), 0.5, "tile"),
+    ("bath", re.compile(r"bad|dusche|bath|shower", re.I), 0.85, "tile"),
+    ("kitchen", re.compile(r"küche|kueche|kitchen|\bkoch", re.I), 1.2, "tile"),
+    ("living", re.compile(r"wohn|living|lounge|stube", re.I), 2.2, "wood"),
+    ("dining", re.compile(r"\bess|dining", re.I), 1.1, "wood"),
+    ("bedroom", re.compile(r"schlaf|eltern|bedroom|master", re.I), 1.35, "wood"),
+    ("child", re.compile(r"kind|\bkid|child|jugend|nursery|baby", re.I), 1.1, "wood"),
+    ("guest", re.compile(r"gäste|gaeste|\bgast|guest", re.I), 1.0, "wood"),
+    ("office", re.compile(r"büro|buero|arbeit|office|study|studio", re.I), 1.0, "wood"),
+    ("hall", re.compile(r"diele|flur|eingang|gang|hall|corridor|entrance|treppe|stair|windfang", re.I), 0.8, "stone"),
+    ("utility", re.compile(r"technik|hwr|hauswirt|keller|utility|laundry|wasch|abstell|speis", re.I), 0.7, "stone"),
+)
+PLAN_LABELS = (("full", 150.0, 58.0), ("compact", 104.0, 46.0), ("mini", 84.0, 36.0))
+
+
+def room_kind(name: str) -> tuple[str, float, str]:
+    """What a room probably is, by its name: kind, its share of the plan, floor covering."""
+    for kind, pattern, weight, floor in _KINDS:
+        if pattern.search(name or ""):
+            return kind, weight, floor
+    return "room", 1.0, "wood"
+
+
+def _squarify(weights: list[float], x: float, y: float, w: float, h: float) -> list[tuple[float, float, float, float]]:
+    """Rectangles with the weights' share of the area, as square as possible (squarified treemap), in the given order."""
+    total = sum(weights) or 1.0
+    areas = [wt * w * h / total for wt in weights]
+    out: list[tuple[float, float, float, float]] = []
+
+    def worst(row: list[float], side: float) -> float:
+        s = sum(row)
+        return max(max(side * side * a / (s * s), s * s / (side * side * a)) for a in row)
+
+    def place(row: list[float], x: float, y: float, w: float, h: float) -> tuple[float, float, float, float]:
+        s = sum(row)
+        if w >= h:  # a column at the left
+            cw, yy = s / h, y
+            for a in row:
+                out.append((x, yy, cw, a / cw))
+                yy += a / cw
+            return x + cw, y, w - cw, h
+        rh, xx = s / w, x  # a row at the top
+        for a in row:
+            out.append((xx, y, a / rh, rh))
+            xx += a / rh
+        return x, y + rh, w, h - rh
+
+    row: list[float] = []
+    i = 0
+    while i < len(areas):
+        side = min(w, h)
+        if not row or worst(row + [areas[i]], side) <= worst(row, side):
+            row.append(areas[i])
+            i += 1
+        else:
+            x, y, w, h = place(row, x, y, w, h)
+            row = []
+    if row:
+        place(row, x, y, w, h)
+    return out
+
+
+@dataclass
+class PlanLayout:
+    width: int
+    height: int
+    rooms: list[tuple[float, float, float, float]]  # per room: x, y, w, h (to the middle of the walls)
+    kinds: list[tuple[str, float, str]]
+    labels: list[tuple[float, float, float, float]]
+    styles: list[str]
+    bands: list[tuple[int, float, float]]  # floor, top, bottom
+
+
+def plan_layout(names: list[str], floors: list[int]) -> PlanLayout:
+    """The rooms on a schematic plan: one band per floor (ground floor at the top), in each band the rooms as squarified
+    rectangles sized by their kind (the living room large, a WC small); every room's label as large as its room allows.
+    Only names and floors count, so the dashboard gets the same tap areas as the picture."""
+    kinds = [room_kind(n) for n in names]
+    x0, y0, w, h = PLAN_PAD, PLAN_PAD, PLAN_W_M * PLAN_M, PLAN_H_M * PLAN_M
+    drawn = sorted(set(floors)) or [0]
+    if len(drawn) > 1:
+        weight = {f: sum(k[1] for k, fl in zip(kinds, floors) if fl == f) for f in drawn}
+        share = min(0.67, max(0.33, weight[0] / (weight[0] + weight[1])))
+        bands = [(0, y0, y0 + h * share), (1, y0 + h * share, y0 + h)]
+    else:
+        bands = [(drawn[0], y0, y0 + h)]
+    rooms: list[tuple[float, float, float, float]] = [(x0, y0, w, h)] * len(names)
+    for floor, top, bottom in bands:
+        order = sorted((i for i, f in enumerate(floors) if f == floor), key=lambda i: -kinds[i][1])
+        for i, rect in zip(order, _squarify([kinds[i][1] for i in order], x0, top, w, bottom - top)):
+            rooms[i] = rect
+    labels, styles = [], []
+    for rx, ry, rw, rh in rooms:
+        style, lw, lh = next(((st, a, b) for st, a, b in PLAN_LABELS if a <= rw - 18 and b <= rh - 18), PLAN_LABELS[-1])
+        labels.append((rx + rw / 2 - lw / 2, ry + rh / 2 - lh / 2, lw, lh))
+        styles.append(style)
+    return PlanLayout(PLAN_W, PLAN_H, rooms, kinds, labels, styles, bands)
+
+
+def plan_targets(names: list[str], floors: list[int]) -> list[tuple[float, float, float, float]]:
+    """Tap areas: every room's floor, in percent of the picture (centre x, centre y, width, height)."""
+    lay = plan_layout(names, floors)
+    return [((x + w / 2) / lay.width * 100, (y + h / 2) / lay.height * 100, (w - 8) / lay.width * 100, (h - 8) / lay.height * 100)
+            for x, y, w, h in lay.rooms]
+
+
+_PLAN_DEFS = (
+    '<pattern id="wood" width="84" height="14" patternUnits="userSpaceOnUse"><rect width="84" height="14" fill="#a0703f"/>'
+    '<rect width="42" height="7" fill="#a87849"/><rect x="42" y="7" width="42" height="7" fill="#9a6a3a"/>'
+    '<rect y="6.5" width="84" height=".8" fill="#7a5129"/><rect y="13.5" width="84" height=".8" fill="#7a5129"/>'
+    '<rect x="42" width=".8" height="7" fill="#7a5129"/><rect x="18" y="7" width=".8" height="7" fill="#7a5129"/></pattern>'
+    '<pattern id="tile" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#cfd5d6"/>'
+    '<path d="M20 0H0V20" fill="none" stroke="#aab2b4" stroke-width="1"/></pattern>'
+    '<pattern id="stone" width="34" height="34" patternUnits="userSpaceOnUse"><rect width="34" height="34" fill="#b9ad9b"/>'
+    '<path d="M34 0H0V34" fill="none" stroke="#9c907e" stroke-width="1.2"/></pattern>'
+    '<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="3" stdDeviation="2.2" '
+    'flood-color="#000" flood-opacity=".42"/></filter>'
+    '<radialGradient id="light" cx=".45" cy=".4" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".14"/>'
+    '<stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></radialGradient>'
+)
+_BLANKETS = {"bedroom": "#8aa0b8", "child": "#c7845a", "guest": "#6f9a76"}
+
+
+def _furniture(kind: str, name: str, x: float, y: float, w: float, h: float) -> str:
+    """Schematic furniture by the kind of room, placed against the walls; pieces that don't fit are left out."""
+    m = PLAN_M
+    W, H = w / m, h / m  # room size in metres
+    out: list[str] = []
+
+    def box(px: float, py: float, pw: float, ph: float, fill: str, rx: float = 3, shadow: bool = True) -> None:
+        if px < 0.1 or py < 0.1 or px + pw > W - 0.1 or py + ph > H - 0.1 or pw <= 0 or ph <= 0:
+            return
+        out.append(f'<rect x="{x + px * m:.1f}" y="{y + py * m:.1f}" width="{pw * m:.1f}" height="{ph * m:.1f}" rx="{rx}" '
+                   f'fill="{fill}"' + (' filter="url(#sh)"' if shadow else "") + "/>")
+
+    def disc(cx: float, cy: float, r: float, fill: str, shadow: bool = True) -> None:
+        if cx - r < 0.1 or cy - r < 0.1 or cx + r > W - 0.1 or cy + r > H - 0.1:
+            return
+        out.append(f'<circle cx="{x + cx * m:.1f}" cy="{y + cy * m:.1f}" r="{r * m:.1f}" fill="{fill}"'
+                   + (' filter="url(#sh)"' if shadow else "") + "/>")
+
+    def table(cx: float, cy: float, tw: float, th: float) -> None:
+        if cx - tw / 2 - 0.55 < 0.1 or cy - th / 2 - 0.55 < 0.1 or cx + tw / 2 + 0.55 > W - 0.1 or cy + th / 2 + 0.55 > H - 0.1:
+            return
+        box(cx - tw / 2, cy - th / 2, tw, th, "#c49a63", 4)
+        for k in range(3 if tw > 1.4 else 2):
+            px = cx - tw / 2 + tw * (k + 0.5) / (3 if tw > 1.4 else 2)
+            disc(px, cy - th / 2 - 0.3, 0.22, "#3d4148")
+            disc(px, cy + th / 2 + 0.3, 0.22, "#3d4148")
+
+    def bed(px: float, py: float, bw: float, blanket: str) -> None:
+        if px + bw > W - 0.1 or py + 2.0 > H - 0.1 or px < 0.1:
+            return
+        box(px, py, bw, 2.0, "#eef0f2", 4)
+        pillows = 2 if bw >= 1.3 else 1
+        for k in range(pillows):
+            box(px + 0.1 + k * (bw - 0.2) / pillows, py + 0.1, (bw - 0.2) / pillows - 0.08, 0.36, "#ffffff", 3, False)
+        box(px, py + 0.62, bw, 1.38, blanket, 4, False)
+
+    if kind == "living":
+        sofa = min(2.8, W - 1.4)
+        if sofa >= 1.6:
+            out.append(f'<ellipse cx="{x + 1.9 * m:.1f}" cy="{y + 1.75 * m:.1f}" rx="{1.3 * m:.1f}" ry="{0.9 * m:.1f}" '
+                       'fill="#d9cfc0" opacity=".85"/>' if W >= 3.4 and H >= 2.9 else "")
+            box(0.3, 0.3, sofa, 0.9, "#4a4f57", 6)
+            box(0.3, 1.2, 0.9, min(1.8, H - 1.7), "#4a4f57", 6)
+            box(0.45, 0.42, sofa - 0.3, 0.42, "#5b616a", 4, False)
+            box(1.6, 1.5, 1.0, 0.6, "#e9e3d8", 3)
+        box(W - 0.65, 0.5, 0.35, min(1.8, H - 1.0), "#2e3137", 2)
+        if W >= 4.6 and H >= 4.4:
+            table(W - 2.0, H - 1.45, 1.8, 0.9)
+    elif kind == "kitchen":
+        box(0.15, 0.15, W - 0.3, 0.62, "#e7e9ea", 2)
+        box(W - 0.77, 0.77, 0.62, min(2.4, H - 1.1), "#e7e9ea", 2)
+        disc(0.75, 0.46, 0.15, "#9aa4ab", False)
+        disc(1.15, 0.46, 0.15, "#9aa4ab", False)
+        box(W - 1.9, 0.24, 0.7, 0.44, "#c9d0d4", 3, False)
+        if H >= 3.2 and W >= 2.6:
+            table(W / 2 - 0.3, H - 1.3, 1.4, 0.8)
+    elif kind == "dining":
+        table(W / 2, H / 2, min(2.0, W - 1.6), min(1.0, H - 1.6))
+    elif kind in ("bath", "wc"):
+        if kind == "bath":
+            if H >= 2.2:
+                box(0.2, 0.2, 0.8, min(1.7, H - 0.4), "#f4f6f7", 8)
+            else:
+                box(0.2, 0.2, 0.9, 0.9, "#f4f6f7", 4)
+        box(W - 0.65, 0.2, 0.45, 0.55, "#f4f6f7", 6)
+        disc(W - 0.5, H - 0.5, 0.28, "#f4f6f7")
+    elif kind in ("bedroom", "child", "guest"):
+        width = 1.6 if kind == "bedroom" else 1.4 if kind == "guest" else 0.9
+        width = min(width, W - 0.9)
+        if kind == "bedroom":
+            bx = (W - width) / 2
+            bed(bx, 0.2, width, _BLANKETS[kind])
+            box(bx - 0.5, 0.25, 0.4, 0.4, "#d8c3a2", 2)
+            box(bx + width + 0.1, 0.25, 0.4, 0.4, "#d8c3a2", 2)
+            if H >= 3.4:
+                box(0.15, H - 0.75, min(2.4, W - 0.3), 0.6, "#5a4636", 2)
+        else:
+            bed(0.2, 0.2, width, _BLANKETS[kind])
+            if kind == "child":
+                box(W - 1.4, H - 0.75, 1.2, 0.6, "#d8c3a2", 2)
+                disc(W - 0.8, H - 1.05, 0.22, "#3d4148")
+            else:
+                disc(W - 0.7, H - 0.7, 0.3, "#5b616a")
+    elif kind == "office":
+        box(W / 2 - 0.8, 0.2, 1.6, 0.7, "#d8c3a2", 2)
+        disc(W / 2, 1.25, 0.24, "#3d4148")
+        box(0.15, H - 0.5, min(2.0, W - 0.3), 0.35, "#5a4636", 2)
+    elif kind == "hall":
+        box(0.15, 0.3, 0.45, min(1.8, H - 0.6), "#5a4636", 2)
+        if re.search(r"treppe|stair", name, re.I) and W >= 1.6 and H >= 2.4:
+            sx, sw = W - 1.1, 0.9
+            box(sx, 0.3, sw, H - 0.6, "#d8d2c6", 2)
+            steps = int((H - 0.6) / 0.28)
+            for k in range(1, steps):
+                out.append(f'<line x1="{x + sx * m:.1f}" y1="{y + (0.3 + k * 0.28) * m:.1f}" x2="{x + (sx + sw) * m:.1f}" '
+                           f'y2="{y + (0.3 + k * 0.28) * m:.1f}" stroke="#a69d8e" stroke-width="1.2"/>')
+    elif kind == "utility":
+        for k in range(2):
+            box(0.2 + k * 0.7, 0.2, 0.6, 0.6, "#f4f6f7", 3)
+            disc(0.5 + k * 0.7, 0.5, 0.18, "#9aa4ab", False)
+    else:
+        table(W / 2, H / 2, min(1.2, W - 1.6), min(0.8, H - 1.6))
+    return "".join(out)
+
+
+def plan_svg(rooms: list[Room], lang: str = "de", theme: str = "auto") -> str:
+    """The rooms as a schematic floor plan from above: floors (wood, tiles, stone) and furniture by the kind of room,
+    walls with doors and windows; on every room its temperature, target and a flame while its heating element heats,
+    tinted blue while too cold and orange while too warm. Two floors: ground floor at the top, upper floor below."""
+    t = _t(lang)
+    lay = plan_layout([r.name for r in rooms], [r.floor for r in rooms])
+    x0, y0, W, H = PLAN_PAD, PLAN_PAD, PLAN_W_M * PLAN_M, PLAN_H_M * PLAN_M
+    body = [f'<defs>{_PLAN_DEFS}</defs>',
+            f'<rect x="{x0 - 8}" y="{y0 - 8}" width="{W + 16}" height="{H + 16}" rx="6" fill="#000" opacity=".35"/>']
+    for (rx, ry, rw, rh), (_kind, _w, cover) in zip(lay.rooms, lay.kinds):
+        body.append(f'<rect x="{rx:.1f}" y="{ry:.1f}" width="{rw:.1f}" height="{rh:.1f}" fill="url(#{cover})"/>')
+    if not rooms:
+        body.append(f'<rect x="{x0}" y="{y0}" width="{W}" height="{H}" fill="url(#wood)"/>')
+    for r, (rx, ry, rw, rh) in zip(rooms, lay.rooms):  # too cold / too warm: tinted, with a coloured edge
+        tint = {"r-cold": "#4f97e8", "r-warm": "#f07a3a"}.get(_room_state(r)[0])
+        if tint:
+            body.append(f'<rect x="{rx:.1f}" y="{ry:.1f}" width="{rw:.1f}" height="{rh:.1f}" fill="{tint}" opacity=".16"/>'
+                        f'<rect x="{rx + 7:.1f}" y="{ry + 7:.1f}" width="{rw - 14:.1f}" height="{rh - 14:.1f}" rx="4" fill="none" '
+                        f'stroke="{tint}" stroke-width="3" opacity=".85"/>')
+    for r, (rx, ry, rw, rh), (kind, _w, _f) in zip(rooms, lay.rooms, lay.kinds):
+        body.append(_furniture(kind, r.name, rx + 3, ry + 3, rw - 6, rh - 6))
+    body.append(_plan_walls(lay))
+    body.append(f'<rect x="{x0}" y="{y0}" width="{W}" height="{H}" fill="url(#light)"/>')
+    names = t["floor_names"]
+    for r, box, style in zip(rooms, lay.labels, lay.styles):
+        body.append(_plan_label(r, box, style, t))
+    if len(lay.bands) > 1:
+        for floor, top, _bottom in lay.bands:
+            text = names[floor]
+            tw = _text_w(text, 11) + 22
+            body.append(f'<rect x="{x0 + 10}" y="{top + 10:.0f}" width="{tw:.0f}" height="22" rx="11" fill="#12162a" fill-opacity=".8" '
+                        f'stroke="#ffffff" stroke-opacity=".18"/><text x="{x0 + 21}" y="{top + 25:.0f}" font-size="11" '
+                        f'font-weight="600" fill="#e8ecff">{escape(text)}</text>')
+    return _svg(lay.width, lay.height, "".join(body), theme)
+
+
+def _plan_walls(lay: PlanLayout) -> str:
+    """Outer walls with windows, inner walls with a door from every room to a neighbour on the same floor (the hall if
+    there is one, else the largest), a thick wall between the floors."""
+    x0, y0, W, H = PLAN_PAD, PLAN_PAD, PLAN_W_M * PLAN_M, PLAN_H_M * PLAN_M
+    eps, door_w = 0.6, 0.9 * PLAN_M
+    floor_of = {}
+    for i, rect in enumerate(lay.rooms):
+        for floor, top, bottom in lay.bands:
+            if top - eps <= rect[1] < bottom - eps:
+                floor_of[i] = floor
+
+    def shared(a: tuple, b: tuple) -> tuple[str, float, float, float] | None:
+        ax, ay, aw, ah = a
+        bx, by, bw, bh = b
+        for xa, xb in ((ax + aw, bx), (bx + bw, ax)):
+            if abs(xa - xb) < eps:
+                lo, hi = max(ay, by), min(ay + ah, by + bh)
+                if hi - lo > 0:
+                    return "v", xa, lo, hi
+        for ya, yb in ((ay + ah, by), (by + bh, ay)):
+            if abs(ya - yb) < eps:
+                lo, hi = max(ax, bx), min(ax + aw, bx + bw)
+                if hi - lo > 0:
+                    return "h", ya, lo, hi
+        return None
+
+    doors: list[tuple[str, float, float, float]] = []
+    for i, a in enumerate(lay.rooms):
+        options = []
+        for j, b in enumerate(lay.rooms):
+            if i == j or floor_of.get(i) != floor_of.get(j):
+                continue
+            edge = shared(a, b)
+            if edge and edge[3] - edge[2] >= door_w + 0.5 * PLAN_M:
+                rank = (lay.kinds[j][0] != "hall", -lay.kinds[j][1], -(edge[3] - edge[2]))
+                options.append((rank, edge))
+        if options:
+            _rank, (orient, pos, lo, hi) = min(options)
+            mid = (lo + hi) / 2
+            door = (orient, pos, mid - door_w / 2, mid + door_w / 2)
+            if not any(d[0] == orient and abs(d[1] - pos) < eps and abs(d[2] - door[2]) < eps for d in doors):
+                doors.append(door)
+
+    def wall(orient: str, pos: float, lo: float, hi: float, width: float) -> str:
+        cuts = sorted((d[2], d[3]) for d in doors if d[0] == orient and abs(d[1] - pos) < eps and d[3] > lo and d[2] < hi)
+        parts, start = [], lo
+        for a, b in cuts:
+            if a > start:
+                parts.append((start, a))
+            start = max(start, b)
+        if start < hi:
+            parts.append((start, hi))
+        out = []
+        for a, b in parts:
+            if b - a < 1:
+                continue
+            x1, y1, x2, y2 = (pos, a, pos, b) if orient == "v" else (a, pos, b, pos)
+            out.append(f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#22252b" stroke-width="{width}" '
+                       'stroke-linecap="square"/>')
+        return "".join(out)
+
+    out = [f'<rect x="{x0}" y="{y0}" width="{W}" height="{H}" fill="none" stroke="#22252b" stroke-width="10"/>']
+    band_lines = {round(top, 1) for _f, top, _b in lay.bands[1:]}
+    for x, y, w, h in lay.rooms:
+        if x + w < x0 + W - eps:
+            out.append(wall("v", x + w, y, y + h, 6))
+        if y + h < y0 + H - eps:
+            out.append(wall("h", y + h, x, x + w, 10 if round(y + h, 1) in band_lines else 6))
+    # windows: one in every outer wall of a room
+    for x, y, w, h in lay.rooms:
+        for orient, pos, lo, hi, outer in (("h", y, x, x + w, abs(y - y0) < eps), ("h", y + h, x, x + w, abs(y + h - y0 - H) < eps),
+                                           ("v", x, y, y + h, abs(x - x0) < eps), ("v", x + w, y, y + h, abs(x + w - x0 - W) < eps)):
+            length = hi - lo
+            if not outer or length < 1.5 * PLAN_M:
+                continue
+            win = min(0.45 * length, 2.2 * PLAN_M)
+            start, end = lo + (length - win) / 2, lo + (length + win) / 2
+            x1, y1, x2, y2 = (start, pos, end, pos) if orient == "h" else (pos, start, pos, end)
+            out.append(f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#a9d6ee" stroke-width="4"/>')
+    return "".join(out)
+
+
+_PLAN_DOTS = {"r-cold": "#8fc3f0", "r-warm": "#f6b27a", "r-fine": "#9be3a6", "r-none": "#aab3c0"}
+
+
+def _plan_label(r: Room, box: tuple[float, float, float, float], style: str, t: dict) -> str:
+    x, y, w, h = box
+    name_size, temp_size = {"full": (12.5, 22), "compact": (11.5, 18), "mini": (10, 14)}[style]
+    pad = 9 if style == "mini" else 11
+    flame = 0.45 if style == "mini" else 0.55
+    name = _fit(r.name, name_size, w - pad - 12 - (18 if r.heating else 6))
+    goal = "–" if r.target is None else _deg(r.target, 0 if float(r.target).is_integer() else 1)
+    target = (f'<text x="{x + w - 10:.0f}" y="{y + h - 12:.0f}" font-size="12" fill="#9aa3c8" text-anchor="end">'
+              f'{t["target"]} {goal}</text>' if style == "full" else "")
+    return (
+        f'<rect x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}" rx="12" fill="#12162a" fill-opacity=".8" '
+        f'stroke="#ffffff" stroke-opacity=".18"/>'
+        f'<circle cx="{x + pad + 2:.0f}" cy="{y + name_size + 1:.0f}" r="{3.5 if style == "mini" else 4}" fill="{_PLAN_DOTS[_room_state(r)[0]]}"/>'
+        f'<text x="{x + pad + 10:.0f}" y="{y + name_size + 5:.0f}" font-size="{name_size}" font-weight="500" fill="#c9cfe8">{escape(name)}</text>'
+        f'<text x="{x + pad:.0f}" y="{y + h - (8 if style == "mini" else 11):.0f}" font-size="{temp_size}" font-weight="600" '
+        f'fill="#ffffff">{_deg(r.actual)}</text>{target}'
+        + (_flame(x + w - 6 - 28 * flame, y + 5, flame) if r.heating else "")
+    )

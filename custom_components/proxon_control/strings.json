@@ -626,6 +626,9 @@
       },
       "picture_house": {
         "name": "Picture house"
+      },
+      "picture_floor_plan": {
+        "name": "Picture floor plan"
       }
     },
     "time": {
@@ -789,6 +792,16 @@
     "create_dashboard": {
       "name": "Create dashboard",
       "description": "Returns a ready-made dashboard (the whole answer, starting with views:): pictures of the unit, the hot water and the house, the room thermostats and all functions, with this unit's real entity IDs. Paste it under Dashboard → ⋮ → Edit → ⋮ → Raw configuration editor.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Unit",
+          "description": "Only needed if more than one Proxon unit is set up."
+        }
+      }
+    },
+    "install_glass_theme": {
+      "name": "Install glass theme",
+      "description": "Puts the theme \"Proxon Glas\" (frosted-glass cards on a dark gradient, the look of the ready-made dashboard) into the themes folder, reloads the themes and sets the dashboard pictures to dark. The answer tells whether Home Assistant loads the theme.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",

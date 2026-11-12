@@ -1,14 +1,15 @@
 """Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), to paste as it is.
 
-Four tabs, built-in cards only:
-* Home - made for the phone: your own house photo (option) with outdoor, indoor, hot water and operation on it (without a
-  photo the drawn house), every room as a card with its temperature curve (tap: its thermostat), next to it ventilation,
+Four tabs, built-in cards only, in the "Proxon Glas" look (frosted glass on a dark gradient; theme installed by an action,
+without it the tabs keep the normal look):
+* Home - on a tablet or computer (from 1024 px wide) like a control panel: outdoor and air temperatures, power and heat
+  recovery on the left, the floor plan from above in the middle (every room with temperature, target and a flame while its
+  heating element heats; tap: its thermostat), the T300 on the right, the functions below. On a phone: your own house photo
+  with the key values on it (without a photo the floor plan), every room as a card with its temperature curve, ventilation,
   hot water and the functions with what they are doing ("On · Waiting").
-* House - the house drawn isometric (both floors, ducts, heating elements; tap a room for its thermostat) and the unit (tap:
-  the ventilation), the heating elements and the unit's values.
-* Hot water - the T300 cut open (tap: the water heater), its controls, the temperatures of the last 24 hours, its switches.
+* House - the house drawn isometric (both floors, ducts, heating elements) and the unit, heating elements, the unit's values.
+* Hot water - the T300 cut open, its controls, the temperatures of the last 24 hours, its switches.
 * Settings - limits with +/- buttons, weekly schedule, runtimes, diagnostics.
-On a phone the sections are shown one below the other.
 """
 from __future__ import annotations
 
@@ -20,7 +21,20 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_HOUSE_PHOTO
 from .entity import house_rooms, room_floors, room_name
-from .pictures import TANK_H, TANK_W, UNIT_H, UNIT_W, house_layout, house_targets, tank_targets, unit_targets
+from .pictures import (
+    PLAN_H,
+    PLAN_W,
+    TANK_H,
+    TANK_W,
+    UNIT_H,
+    UNIT_W,
+    house_layout,
+    house_targets,
+    plan_targets,
+    tank_targets,
+    unit_targets,
+)
+from .theme import THEME_NAME
 
 TEXT: dict[str, dict[str, Any]] = {
     "de": {
@@ -28,6 +42,9 @@ TEXT: dict[str, dict[str, Any]] = {
         "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss"], "now": "Gerade", "elements": "Wärmeelemente",
         "last_day": "Letzte 24 Stunden", "switches": "Schalter", "pills": {"T3Frischluft": "Außen ", "RaumMittel": "Innen ",
                                                                           "WarmwasserIstTemperatur": "Warmwasser "},
+        "outside": "Außen", "power_today": "Strom heute",
+        "air": {"T1Zuluft": "Zuluft", "T7Abluft": "Abluft", "T4Fortluft": "Fortluft"},
+        "badges": {"IstLuefterstufe": "Lüftungsstufe", "Antwortzeit_path": "Verbindung", "Stoerung": "Störung"},
         "functions": "Funktionen", "store": "Warmwasser-Speicher (Solar / Strompreis)", "cooling": "Sommer-Nachtkühlung",
         "boost": "Warmwasser-Boost", "schedule": "Wochenprogramm Lüftung", "diagnostics": "Diagnose",
         "season": "Sommer/Winter-Automatik", "night": "Nachtabsenkung", "runtime": "Laufzeit heute",
@@ -47,7 +64,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "NachtabsenkungEnde": "Ende", "KompressorStartsHeute": "Kompressor-Starts", "KompressorLaufzeitHeute": "Kompressor",
             "WarmwasserKompressorLaufzeitHeute": "Warmwasser-Kompressor", "HeizstabLaufzeitHeute": "Heizstab",
             "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
-            "WarmwasserIstTemperatur": "Warmwasser Mitte", "WarmwasserUntenTemperatur": "Warmwasser unten",
+            "WarmwasserIstTemperatur": "Warmwasser Mitte", "WarmwasserUntenTemperatur": "Warmwasser unten", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Wärmepumpe Warmwasser", "E-Heizstab": "Heizstab freigegeben",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
@@ -61,6 +78,9 @@ TEXT: dict[str, dict[str, Any]] = {
         "rooms": "Rooms", "floors": ["Ground floor", "Upper floor"], "now": "Right now", "elements": "Heating elements",
         "last_day": "Last 24 hours", "switches": "Switches", "pills": {"T3Frischluft": "Outdoor ", "RaumMittel": "Indoor ",
                                                                        "WarmwasserIstTemperatur": "Hot water "},
+        "outside": "Outdoor", "power_today": "Power today",
+        "air": {"T1Zuluft": "Supply air", "T7Abluft": "Extract air", "T4Fortluft": "Exhaust air"},
+        "badges": {"IstLuefterstufe": "Ventilation level", "Antwortzeit_path": "Connection", "Stoerung": "Fault"},
         "functions": "Functions", "store": "Hot-water store (solar / price)", "cooling": "Summer night cooling",
         "boost": "Hot-water boost", "schedule": "Weekly ventilation schedule", "diagnostics": "Diagnostics",
         "season": "Summer/winter automatic", "night": "Night setback", "runtime": "Runtime today",
@@ -80,7 +100,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "NachtabsenkungEnde": "End", "KompressorStartsHeute": "Compressor starts", "KompressorLaufzeitHeute": "Compressor",
             "WarmwasserKompressorLaufzeitHeute": "Hot-water compressor", "HeizstabLaufzeitHeute": "Immersion heater",
             "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
-            "WarmwasserIstTemperatur": "Hot water middle", "WarmwasserUntenTemperatur": "Hot water bottom",
+            "WarmwasserIstTemperatur": "Hot water middle", "WarmwasserUntenTemperatur": "Hot water bottom", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Hot-water heat pump", "E-Heizstab": "Immersion heater released",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
@@ -96,6 +116,9 @@ HALF = {"columns": 6}
 # functions that report what they are doing (status attribute, shown on the tile next to on/off)
 WITH_STATUS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik")
 FUNCTIONS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik", "Urlaubsmodus", "Intensivlueftung")
+# the start page: a control panel on wide screens (tablet, computer), photo and room cards on narrow ones (phone)
+WIDE = [{"condition": "screen", "media_query": "(min-width: 1024px)"}]
+NARROW = [{"condition": "screen", "media_query": "(max-width: 1023px)"}]
 # values on the house photo: two rows of two at its bottom left, held by the bottom edge (whatever the photo's shape)
 PILL_SPOTS = (("12px", "52px"), ("12px", "12px"), ("min(52%, 160px)", "52px"), ("min(52%, 160px)", "12px"))
 PILL_STYLE = {
@@ -153,13 +176,13 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     def heading(text: str, style: str = "title") -> dict:
         return {"type": "heading", "heading": text, "heading_style": style}
 
-    def function_tiles() -> list[dict]:
+    def function_tiles(grid: dict = FULL, **layout) -> list[dict]:
         cards: list[dict] = []
         for key in FUNCTIONS:
             extra: dict = {"state_content": ["state", "status"]} if key in WITH_STATUS else {}
             if key == "Urlaubsmodus":
                 extra["icon_tap_action"] = {"action": "toggle", "confirmation": {"text": t["holiday_confirm"]}}
-            cards += tile(key, FULL, **extra)
+            cards += tile(key, grid, **extra, **layout)
         return [heading(t["functions"]), *cards] if cards else []
 
     # ---- the pictures, with their tap areas ----
@@ -173,14 +196,35 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         for i, target in zip(rooms, house_targets(floors)) if f"NBE{i}Thermostat" in ids
     ]
     unit_picture, tank_picture, house_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas), picture("BildHaus", house_areas)
+    names_now = [room_name(i, data) for i in rooms]
+    plan_areas = [
+        _area(ids[f"NBE{i}Thermostat"], target, (PLAN_W, PLAN_H))
+        for i, target in zip(rooms, plan_targets(names_now, floors)) if f"NBE{i}Thermostat" in ids
+    ]
+    plan_picture = picture("BildGrundriss", plan_areas)
 
-    # ---- home: photo (or the drawn house), rooms, what's going on ----
+    # ---- home on a tablet / computer: values left, floor plan in the middle, hot water right, functions below ----
+    air_rows = [{"entity": ids[k], "name": name} for k, name in t["air"].items() if k in ids]
+    left: list[dict] = []
+    if "T3Frischluft" in ids:
+        left.append({"type": "sensor", "entity": ids["T3Frischluft"], "name": t["outside"], "graph": "line", "hours_to_show": 24,
+                     "detail": 1, "grid_options": FULL})
+    if air_rows:
+        left.append({"type": "entities", "entities": air_rows, "grid_options": FULL})
+    if "EnergieGesamt" in ids:
+        left.append({"type": "statistic", "entity": ids["EnergieGesamt"], "name": t["power_today"], "stat_type": "change",
+                     "period": {"calendar": {"period": "day"}}, "grid_options": HALF})
+    left += [*tile("LeistungGesamt", HALF), *tile("Waermerueckgewinnung", HALF), *tile("FilterRestStunden", HALF)]
+    right = [*tank_picture, *tile("Warmwasser", FULL, features=[{"type": "target-temperature"}])]
+    panel_functions = function_tiles({"columns": 8}, vertical=True)
+
+    # ---- home on a phone: photo (or the floor plan), rooms, what's going on ----
     photo = entry.options.get(CONF_HOUSE_PHOTO)
     if photo:
         pills = []
         shown = [k for k in ("T3Frischluft", "RaumMittel", "WarmwasserIstTemperatur", "AktuellerBetrieb") if k in ids]  # by column
-        for (left, bottom), value in zip(PILL_SPOTS, shown):
-            pill: dict = {"type": "state-label", "entity": ids[value], "style": {"left": left, "bottom": bottom, **PILL_STYLE}}
+        for (left_at, bottom), value in zip(PILL_SPOTS, shown):
+            pill: dict = {"type": "state-label", "entity": ids[value], "style": {"left": left_at, "bottom": bottom, **PILL_STYLE}}
             if value in t["pills"]:
                 pill["prefix"] = t["pills"][value]
             if value == "WarmwasserIstTemperatur" and "Warmwasser" in ids:
@@ -188,7 +232,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
             pills.append(pill)
         hero = [{"type": "picture-elements", "image": photo, "dark_mode_filter": "brightness(0.85)", "elements": pills, "grid_options": FULL}]
     else:
-        hero = house_picture
+        hero = plan_picture
     room_cards: list[dict] = []
     for floor in (0, 1):
         cards = []
@@ -212,8 +256,25 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Warmwasser", HALF), *tile("WarmwasserLadezustand", HALF),
         *tile("Stoerung", HALF), *tile("FilterRestStunden_warning", HALF),
     ]
-    home: list[dict[str, Any]] = [{"type": "grid", "column_span": 2, "cards": [*hero, *room_cards]},
-            {"type": "grid", "cards": [*(now if len(now) > 1 else []), *function_tiles()]}]
+    # four columns (computer): values | floor plan (two wide) | T300, then functions | rooms; three (tablet): values | plan,
+    # then T300 | functions, then rooms; two: values | T300, then the plan, functions, rooms (sections fill the gaps)
+    home: list[dict[str, Any]] = [
+        {"type": "grid", "cards": left, "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": plan_picture, "visibility": WIDE},
+        {"type": "grid", "cards": right, "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": panel_functions, "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": room_cards, "visibility": WIDE},
+        {"type": "grid", "cards": [*hero, *room_cards], "visibility": NARROW},
+        {"type": "grid", "cards": [*(now if len(now) > 1 else []), *function_tiles()], "visibility": NARROW},
+    ]
+    # at the top: operating mode, ventilation level, connection, fault
+    badges = []
+    for key in ("Betriebsart", "IstLuefterstufe", "Antwortzeit_path", "Stoerung"):
+        if key in ids:
+            badge: dict = {"type": "entity", "entity": ids[key], "show_state": True, "show_icon": True, "show_name": key in t["badges"]}
+            if key in t["badges"]:
+                badge["name"] = t["badges"][key]
+            badges.append(badge)
 
     # ---- house: the drawing, the unit, heating elements, the unit's values ----
     elements = [{"entity": ids[f"NBE{i}Waermeelement"], "name": room_name(i, data)} for i in rooms if f"NBE{i}Waermeelement" in ids]
@@ -273,12 +334,16 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     settings = [{"type": "grid", "cards": cards} for cards in (store, cooling, boost, season, night, schedule, runtime, diagnostics)
                 if len(cards) > 1]
 
-    def view(title: str, path: str, icon: str, sections: list[dict]) -> list[dict]:
+    def view(title: str, path: str, icon: str, sections: list[dict], columns: int = 3, **extra) -> list[dict]:
         sections = [s for s in sections if s["cards"]]
-        return [{"title": title, "path": path, "icon": icon, "type": "sections", "max_columns": 3, "sections": sections}] if sections else []
+        if not sections:
+            return []
+        return [{"title": title, "path": path, "icon": icon, "type": "sections", "max_columns": columns, "theme": THEME_NAME,
+                 **extra, "sections": sections}]
 
     return {"views": [
-        *view(t["home"], "proxon", "mdi:home-thermometer-outline", home),
+        *view(t["home"], "proxon", "mdi:home-thermometer-outline", home, 4, dense_section_placement=True,
+              **({"badges": badges} if badges else {})),
         *view(t["house"], "proxon-house", "mdi:floor-plan", house),
         *view(t["tank"], "proxon-hot-water", "mdi:water-boiler", hot_water),
         *view(t["settings"], "proxon-settings", "mdi:tune", settings),

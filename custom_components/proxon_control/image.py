@@ -1,4 +1,5 @@
-"""Dashboard pictures as image entities: the unit, the hot-water tank and the house, drawn from the live values (pictures.py).
+"""Dashboard pictures as image entities: the unit, the hot-water tank, the house and the floor plan, drawn from the live values
+(pictures.py).
 
 The pictures are SVG with animations. Every new picture makes the dashboard load it again, which restarts the animations, so a
 new picture is announced right away only when something switches (mode, level, heater, a function, a room's heating element),
@@ -17,7 +18,7 @@ from homeassistant.util import dt as dt_util
 from . import ProxonConfigEntry
 from .const import CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME
 from .entity import ProxonEntity, house_rooms, room_floors, room_name
-from .pictures import Room, air_running, house_svg, tank_svg, unit_svg
+from .pictures import Room, air_running, house_svg, plan_svg, tank_svg, unit_svg
 from .registers import active_faults, room_heating, room_target
 
 TEMPERATURES_EVERY = 60  # seconds: changed temperatures are shown at most this often
@@ -26,7 +27,11 @@ TEMPERATURES_EVERY = 60  # seconds: changed temperatures are shown at most this 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}
-    entities = [ProxonPicture(hass, coordinator, "BildAnlage", "picture_unit", "unit"), ProxonPicture(hass, coordinator, "BildHaus", "picture_house", "house")]
+    entities = [
+        ProxonPicture(hass, coordinator, "BildAnlage", "picture_unit", "unit"),
+        ProxonPicture(hass, coordinator, "BildHaus", "picture_house", "house"),
+        ProxonPicture(hass, coordinator, "BildGrundriss", "picture_floor_plan", "plan"),
+    ]
     if "WarmwasserIstTemperatur" in data:
         entities.insert(1, ProxonPicture(hass, coordinator, "BildWarmwasser", "picture_hot_water", "tank"))
     async_add_entities(entities)
@@ -85,6 +90,9 @@ class ProxonPicture(ProxonEntity, ImageEntity):
             Room(room_name(i, data), _f(data.get(f"NBE{i}Temperatur")), room_target(data, i), room_heating(data, i), floor)
             for i, floor in zip(indices, floors)
         ]
+        if self._kind == "plan":
+            sig = (tuple((r.name, r.target, r.heating, r.floor) for r in rooms), theme, lang)
+            return plan_svg(rooms, lang, theme), sig
         running = air_running(data)
         sig = (tuple((r.name, r.target, r.heating, r.floor) for r in rooms), running, theme, lang)
         return house_svg(rooms, _f(data.get("T3Frischluft")), lang, theme, running), sig

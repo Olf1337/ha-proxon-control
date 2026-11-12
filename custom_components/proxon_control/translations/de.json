@@ -626,6 +626,9 @@
       },
       "picture_house": {
         "name": "Bild Haus"
+      },
+      "picture_floor_plan": {
+        "name": "Bild Grundriss"
       }
     },
     "time": {
@@ -789,6 +792,16 @@
     "create_dashboard": {
       "name": "Dashboard erstellen",
       "description": "Liefert ein fertiges Dashboard (die ganze Antwort, beginnt mit views:): Bilder von Anlage, Warmwasser und Haus, die Raum-Thermostate und alle Funktionen, mit den tatsächlichen Entitäts-IDs dieser Anlage. Einfügen unter Dashboard → ⋮ → Bearbeiten → ⋮ → Raw-Konfigurationseditor.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Nur nötig, wenn mehr als eine Proxon-Anlage eingerichtet ist."
+        }
+      }
+    },
+    "install_glass_theme": {
+      "name": "Glas-Theme installieren",
+      "description": "Legt das Theme „Proxon Glas“ (Milchglas-Karten auf dunklem Farbverlauf, der Look des fertigen Dashboards) im Ordner themes ab, lädt die Themes neu und stellt die Dashboard-Bilder auf dunkel. Die Antwort sagt, ob Home Assistant das Theme lädt.",
       "fields": {
         "config_entry_id": {
           "name": "Anlage",

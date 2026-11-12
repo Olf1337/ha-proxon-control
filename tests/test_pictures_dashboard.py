@@ -13,11 +13,17 @@ from custom_components.proxon_control import image as image_module
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.pictures import (
     LABELS,
+    PLAN_H,
+    PLAN_W,
     Room,
     guess_floor,
     house_layout,
     house_svg,
     house_targets,
+    plan_layout,
+    plan_svg,
+    plan_targets,
+    room_kind,
     tank_svg,
     tank_targets,
     unit_svg,
@@ -147,12 +153,56 @@ def test_tap_areas_match_the_drawing() -> None:
     assert 0 < tank_targets()["tank"][0] < 100
 
 
+def test_floor_plan() -> None:
+    """The rooms from above: floors and furniture by kind, labels with target and flame, too cold / too warm marked."""
+    rooms = [Room("Wohnen", 22.7, 23.0, False, 0), Room("Küche & Essen", 22.0, 22.0, False, 0), Room("Bad", 20.0, 22.5, True, 0),
+             Room("Schlafen", 24.0, 22.0, False, 1), Room("Kind 1", None, None, False, 1)]
+    svg = valid(plan_svg(rooms, "de"))
+    assert f'viewBox="0 0 {PLAN_W} {PLAN_H}"' in svg
+    assert "Küche &amp; Essen" in svg and "22,7°" in svg and "Soll 23°" in svg and "Soll 22,5°" in svg and "–" in svg
+    assert svg.count('class="flame"') == 1  # the bath heats
+    assert 'stroke="#4f97e8"' in svg and 'stroke="#f07a3a"' in svg  # the bath too cold, the bedroom too warm
+    assert "url(#wood)" in svg and "url(#tile)" in svg and "Erdgeschoss" in svg and "Obergeschoss" in svg
+    one_floor = valid(plan_svg([Room("Wohnen", 21.0, 21.0, False)], "en"))
+    assert "Ground floor" not in one_floor  # one floor: no floor names
+    assert valid(plan_svg([], "de"))
+
+
+def test_room_kinds() -> None:
+    kinds = [room_kind(n)[0] for n in ("Wohnzimmer", "Wohn-/Esszimmer", "Gäste-WC", "Gästebad", "Gästezimmer", "Bad oben", "Kind 2",
+                                       "Schlafen", "Diele", "Arbeitszimmer", "Hauswirtschaft", "Küche", "Hobbyraum")]
+    assert kinds == ["living", "living", "wc", "bath", "guest", "bath", "child", "bedroom", "hall", "office", "utility", "kitchen", "room"]
+
+
+def test_floor_plan_rooms_and_labels() -> None:
+    """Rooms fill the plan without overlapping, labels sit inside their room; tap areas are the rooms."""
+    for n in range(1, 22):
+        for upper in {0, n // 2}:
+            names = [f"Raum {i}" for i in range(n)]
+            floors = [1 if i < upper else 0 for i in range(n)]
+            lay = plan_layout(names, floors)
+            area = sum(w * h for _x, _y, w, h in lay.rooms)
+            assert abs(area - (PLAN_W - 28) * (PLAN_H - 28)) < 2  # the rooms cover the plan
+            for (x, y, w, h), (lx, ly, lw, lh), style in zip(lay.rooms, lay.labels, lay.styles):
+                if style != "mini":
+                    assert x < lx and lx + lw < x + w and y < ly and ly + lh < y + h, (n, upper)
+            for k, (x, y, w, h) in enumerate(lay.rooms):
+                for x2, y2, w2, h2 in lay.rooms[k + 1:]:
+                    assert x + w <= x2 + 0.01 or x2 + w2 <= x + 0.01 or y + h <= y2 + 0.01 or y2 + h2 <= y + 0.01
+    names, floors = ["Wohnen", "Bad", "Kind"], [0, 0, 1]
+    lay = plan_layout(names, floors)
+    for (x, y, w, h), (cx, cy, pw, ph) in zip(lay.rooms, plan_targets(names, floors)):
+        assert abs(cx / 100 * PLAN_W - (x + w / 2)) < 0.5 and abs(cy / 100 * PLAN_H - (y + h / 2)) < 0.5
+        assert abs(pw / 100 * PLAN_W - (w - 8)) < 0.5 and abs(ph / 100 * PLAN_H - (h - 8)) < 0.5
+
+
 # ---------------- in Home Assistant ----------------
 async def test_picture_entities(hass: HomeAssistant, device, hass_client) -> None:
     await setup(hass)
     client = await hass_client()
     # values of the simulated unit (the test system runs in English)
-    for key, expected in (("BildAnlage", "Outdoor air"), ("BildWarmwasser", "36,0°"), ("BildHaus", "Schlafzimmer")):
+    for key, expected in (("BildAnlage", "Outdoor air"), ("BildWarmwasser", "36,0°"), ("BildHaus", "Schlafzimmer"),
+                          ("BildGrundriss", "Wohnzimmer")):
         entity_id = eid(hass, "image", key)
         resp = await client.get(f"/api/image_proxy/{entity_id}")
         assert resp.status == 200 and resp.content_type == "image/svg+xml"
@@ -224,23 +274,39 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     def cards(view: dict) -> list[dict]:
         return [c for s in view["sections"] for c in s["cards"]]
 
+    assert all(v["theme"] == "Proxon Glas" for v in views)  # the glass look (normal look until the theme is installed)
     pictures = {c["image_entity"]: c for v in views for c in cards(v) if c["type"] == "picture-elements"}
-    assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser", "BildHaus")}
-    # tapping: the unit opens the ventilation, the tank the hot water, every room its thermostat
+    assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser", "BildHaus", "BildGrundriss")}
+    # tapping: the unit opens the ventilation, the tank the hot water, every room its thermostat (house and floor plan)
     targets = {k: [e["entity"] for e in c["elements"]] for k, c in pictures.items()}
     assert targets[eid(hass, "image", "BildAnlage")] == [eid(hass, "fan", "Lueftung")]
     assert targets[eid(hass, "image", "BildWarmwasser")] == [eid(hass, "water_heater", "Warmwasser")]
-    assert targets[eid(hass, "image", "BildHaus")] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1, 4)]
+    thermostats = [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1, 4)]
+    assert targets[eid(hass, "image", "BildHaus")] == targets[eid(hass, "image", "BildGrundriss")] == thermostats
     assert all(e["type"] == "image" and e["tap_action"]["action"] == "more-info" for c in pictures.values() for e in c["elements"])
-    # home: without a photo the drawn house leads (wide), then every room with its curve - ground floor first; a tap opens its thermostat
-    lead = home["sections"][0]
-    assert lead["column_span"] == 2 and lead["cards"][0]["image_entity"] == eid(hass, "image", "BildHaus")
-    rooms = [c for c in cards(home) if c.get("features") == [{"type": "trend-graph", "hours_to_show": 24}]]
+    # home on a tablet / computer: values left, floor plan in the middle (two columns), hot water right, functions below
+    wide = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(min-width: 1024px)"}]]
+    narrow = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(max-width: 1023px)"}]]
+    assert len(wide) + len(narrow) == len(home["sections"])
+    left, middle, right, below, rooms_wide = wide
+    assert [c["type"] for c in left["cards"][:3]] == ["sensor", "entities", "statistic"]
+    assert left["cards"][0]["entity"] == eid(hass, "sensor", "T3Frischluft")
+    assert middle["column_span"] == 2 and middle["cards"][0]["image_entity"] == eid(hass, "image", "BildGrundriss")
+    assert right["cards"][0]["image_entity"] == eid(hass, "image", "BildWarmwasser")
+    assert below["column_span"] == 2 and all(c.get("vertical") is True for c in below["cards"] if c["type"] == "tile")
+    assert home["dense_section_placement"] is True and home["max_columns"] == 4
+    assert [c["entity"] for c in rooms_wide["cards"] if c["type"] == "tile"] == [eid(hass, "sensor", f"NBE{n}Temperatur") for n in (0, 4, 1)]
+    assert [b["entity"] for b in home["badges"]] == [eid(hass, "select", "Betriebsart"), eid(hass, "sensor", "IstLuefterstufe"),
+                                                    eid(hass, "sensor", "Antwortzeit_path"), eid(hass, "binary_sensor", "Stoerung")]
+    # home on a phone: without a photo the floor plan leads, then every room with its curve - ground floor first
+    phone = narrow[0]
+    assert phone["cards"][0]["image_entity"] == eid(hass, "image", "BildGrundriss")
+    rooms = [c for c in narrow[0]["cards"] if c.get("features") == [{"type": "trend-graph", "hours_to_show": 24}]]
     assert [c["tap_action"]["entity"] for c in rooms] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 4, 1)]
     assert [c["name"] for c in rooms] == ["Wohnzimmer", "Bad", "Schlafzimmer"]
     assert {"Ground floor", "Upper floor"} <= {c["heading"] for c in cards(home) if c["type"] == "heading"}
-    # functions: full width, short names, status next to on/off
-    tiles = {c["entity"]: c for c in home["sections"][1]["cards"] if c["type"] == "tile"}
+    # functions: short names, status next to on/off
+    tiles = {c["entity"]: c for c in narrow[1]["cards"] if c["type"] == "tile"}
     solar = tiles[eid(hass, "switch", "SolarWarmwasser")]
     assert solar["name"] == "Solar hot water" and solar["state_content"] == ["state", "status"] and solar["grid_options"] == {"columns": "full"}
     holiday = tiles[eid(hass, "switch", "Urlaubsmodus")]
@@ -274,7 +340,8 @@ async def test_dashboard_with_house_photo(hass: HomeAssistant, device) -> None:
     hass.config_entries.async_update_entry(entry, options={"house_photo": "/local/proxon/haus.jpg"})
     await setup(hass, entry)
     dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
-    hero = dashboard["views"][0]["sections"][0]["cards"][0]
+    phone = next(s for s in dashboard["views"][0]["sections"] if s["visibility"][0]["media_query"] == "(max-width: 1023px)")
+    hero = phone["cards"][0]
     assert hero["type"] == "picture-elements" and hero["image"] == "/local/proxon/haus.jpg" and "image_entity" not in hero
     labels = {e["entity"]: e for e in hero["elements"]}
     assert all(e["type"] == "state-label" for e in labels.values())
@@ -282,7 +349,9 @@ async def test_dashboard_with_house_photo(hass: HomeAssistant, device) -> None:
     assert labels[eid(hass, "sensor", "RaumMittel")]["prefix"] == "Indoor "
     assert labels[eid(hass, "sensor", "WarmwasserIstTemperatur")]["tap_action"]["entity"] == eid(hass, "water_heater", "Warmwasser")
     assert eid(hass, "sensor", "AktuellerBetrieb") in labels
-    # the drawn house moves to the house tab
+    # the photo is for the phone; tablet and computer keep the floor plan, the house tab the drawn house
+    wide = dashboard["views"][0]["sections"][1]
+    assert wide["cards"][0]["image_entity"] == eid(hass, "image", "BildGrundriss")
     house = dashboard["views"][1]["sections"][0]["cards"][0]
     assert house["image_entity"] == eid(hass, "image", "BildHaus")
 
@@ -320,3 +389,18 @@ async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device
     await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "upper_floor_rooms": ["1"]})
     await hass.async_block_till_done()
     assert entry.options == {"scan_interval": 10}
+
+
+async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> None:
+    """The action writes the theme into the themes folder and draws the pictures dark; it tells whether the theme loads."""
+    entry = await setup(hass)
+    hass.config.config_dir = str(tmp_path)
+    answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
+    written = (tmp_path / "themes" / "proxon_control.yaml").read_text(encoding="utf-8")
+    assert "Proxon Glas:" in written and "ha-card-backdrop-filter" in written
+    assert parse_yaml(written)["Proxon Glas"]["primary-text-color"] == "#f3f5ff"
+    assert answer["installed"] is False and "configuration.yaml" in answer["message"]  # this test system loads no themes folder
+    assert entry.options["picture_theme"] == "dark"
+    with patch("custom_components.proxon_control.services.async_install_theme", return_value=True):
+        answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
+    assert answer["installed"] is True and answer["theme"] == "Proxon Glas"
