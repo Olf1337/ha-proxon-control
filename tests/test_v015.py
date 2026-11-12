@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+import time
 
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
@@ -148,11 +149,14 @@ async def test_electricity_cost(hass: HomeAssistant, device) -> None:
     entry = await setup_with_sensors(hass)  # price 0.30 €/kWh, the unit draws 531.8 W
     sensor = eid(hass, "sensor", "Stromkosten")
     cost = next(e for e in hass.data["sensor"].entities if e.entity_id == sensor)
+    # readings on the sensor's monotonic clock, far after the real readings of the setup (on a freshly started machine the
+    # clock is small, so fixed times could lie right after them and count a part of that)
+    base = time.monotonic() + 100_000
     for minute in range(61):  # one hour, a reading every minute
-        cost._add(1000.0 + minute * 60)
+        cost._add(base + minute * 60)
     assert round(cost.native_value, 3) == round(0.5318 * 0.30, 3)
     hass.states.async_set("sensor.preis", "unknown")
-    cost._add(1000.0 + 61 * 60)  # no price: costs nothing
+    cost._add(base + 61 * 60)  # no price: costs nothing
     assert round(cost.native_value, 3) == round(0.5318 * 0.30, 3)
     state = hass.states.get(sensor)
     assert state.attributes["device_class"] == "monetary" and state.attributes["state_class"] == "total"

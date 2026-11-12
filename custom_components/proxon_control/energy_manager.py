@@ -242,6 +242,10 @@ class LegionellaFeature:
 
     async def async_set(self, on: bool) -> None:
         m = self._manager
+        # read only: switching it either way would write the unit's own legionella function, so it is refused before
+        # anything is saved (it would show "on" without doing anything)
+        if on != self.state.on and m.coordinator.read_only:
+            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="legionella_read_only")
         data = m.coordinator.data or {}
         if on and not self.state.on:
             self.state.on, self.state.reference = True, dt_util.now()

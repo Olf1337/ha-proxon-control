@@ -741,6 +741,9 @@
     "write_blocked_read_only": {
       "message": "Read-only mode is on, so \"{name}\" was not changed on the unit."
     },
+    "legionella_read_only": {
+      "message": "Read-only mode is on, so the legionella protection with solar power can't be switched."
+    },
     "holiday_read_only": {
       "message": "Read-only mode is on, so holiday mode can't be switched on."
     },

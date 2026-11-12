@@ -74,3 +74,14 @@ async def test_managers_do_not_write(hass: HomeAssistant, device) -> None:
     await entry.runtime_data.energy.async_evaluate(now)
     await hass.async_block_till_done()
     assert device.writes == []
+
+
+async def test_legionella_protection_is_refused(hass: HomeAssistant, device) -> None:
+    """Switching it would write the unit's own legionella function: refused before anything is saved."""
+    entry = await setup(hass, read_only_entry())
+    with pytest.raises(HomeAssistantError) as err:
+        await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "LegionellenSonne"))
+    assert err.value.translation_key == "legionella_read_only"
+    assert entry.runtime_data.energy.legionella.state.on is False
+    assert hass.states.get(eid(hass, "switch", "LegionellenSonne")).state == "off"
+    assert device.writes == []

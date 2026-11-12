@@ -29,6 +29,8 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.15.1:** a *read-only* option (show every value, never change anything on the unit; contributed by NicerDicerPro).
+
 **New in 0.15.0:** *shower supply* (for how many minutes of showering the hot water lasts, also on the T300 picture);
 *legionella protection with solar power* (the weekly heating to 60 °C on a day with solar surplus, after a week at the latest;
 replaces the unit's own legionella function while on); *electricity cost* (with a price sensor in the options); a new dashboard tab
@@ -66,7 +68,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.15.0)
+# Proxon Control – Integration für Home Assistant (Version 0.15.1)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -91,6 +93,13 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.15.1: Nur lesen
+
+* **Option „Nur lesen“** (beigetragen von NicerDicerPro): Alle Werte werden wie gewohnt gelesen, aber Home Assistant ändert nichts an der
+  Anlage. Jede Änderung wird mit einer Meldung abgelehnt, die automatischen Funktionen bleiben untätig. Einzuschalten unter *Geräte &
+  Dienste → Proxon Control → Konfigurieren*. Mehr unter „Nur lesen“ weiter unten.
+* Hinweis für Home Assistant in Docker Desktop: dort die IP-Adresse der Anlage eintragen (siehe Fehlersuche).
 
 ## Neu in Version 0.15.0: Duschvorrat, Legionellenschutz mit Sonne, Energie-Tab
 
@@ -481,8 +490,10 @@ bestehende Automationen funktionieren weiter.
   (5 bis 3600 Sekunden, Standard 10). Beim Bridge-Add-on gibt es dieselbe Einstellung („poll_seconds“).
 * **Nur lesen.** Unter *Geräte & Dienste → Proxon Control → Konfigurieren* lässt sich „Nur lesen“ einschalten (Standard: aus). Dann werden alle Werte wie
   gewohnt gelesen, aber nichts an der Anlage geändert: jede Änderung aus Home Assistant (Entitäten, Aktionen, Urlaubsmodus) wird mit einer Meldung
-  abgelehnt, Warmwasser-Speicher, Nachtkühlung, Warmwasser-Boost und Sommer/Winter-Automatik bleiben untätig. Gedacht zum Ausprobieren (Werte erst mit
-  der App vergleichen) oder wenn die Anlage nur über das Bedienteil / die App bedient werden soll.
+  abgelehnt, Warmwasser-Speicher, Nachtkühlung, Warmwasser-Boost, Sommer/Winter-Automatik und Legionellenschutz mit Sonne bleiben untätig. Gedacht zum
+  Ausprobieren (Werte erst mit der App vergleichen) oder wenn die Anlage nur über das Bedienteil / die App bedient werden soll. Am besten einschalten,
+  solange keine dieser Funktionen gerade etwas verstellt hat: Was sie gerade geändert haben (z. B. ein angehobenes Warmwasser-Soll), bleibt so, bis
+  „Nur lesen“ wieder aus ist.
 
 ## Hinweise zu den Werten
 
@@ -573,6 +584,8 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 * „Die Anlage hat im Heimnetz nicht geantwortet“: Ist Home Assistant im selben Netz? Hilft eine feste IP-Adresse der Anlage im Router, die unter
   *Konfigurieren* eingetragen wird? UDP-Port 5570 darf nicht von einer Firewall/VLAN-Regel blockiert sein. Wird das Zertifikat abgelehnt, holt die
   Integration beim nächsten Versuch automatisch ein neues; die Anlage muss dafür einmal online gewesen sein.
+* Home Assistant in **Docker Desktop unter Windows (oder macOS)**: Die automatische Suche per Broadcast erreicht die Anlage dort nicht (die Broadcasts
+  kommen nicht durch das Netz von Docker Desktop). Die IP-Adresse der Anlage unter *Konfigurieren* eintragen, dann klappt die Verbindung.
 
 * „Permission denied“ beim Starten des Hilfsprogramms: Die Integration setzt die nötige Berechtigung jetzt selbst und weicht notfalls auf einen
   temporären Ordner aus, falls Home Assistant in `/config` keine Programme starten lässt.

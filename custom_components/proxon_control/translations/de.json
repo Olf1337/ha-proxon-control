@@ -741,6 +741,9 @@
     "write_blocked_read_only": {
       "message": "Der Nur-Lesen-Modus ist aktiv, deshalb wurde „{name}“ an der Anlage nicht geändert."
     },
+    "legionella_read_only": {
+      "message": "Der Nur-Lesen-Modus ist aktiv, deshalb lässt sich der Legionellenschutz mit Sonne nicht umschalten."
+    },
     "holiday_read_only": {
       "message": "Der Nur-Lesen-Modus ist aktiv, deshalb lässt sich der Urlaubsmodus nicht einschalten."
     },
