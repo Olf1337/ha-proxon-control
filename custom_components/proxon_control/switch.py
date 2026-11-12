@@ -41,6 +41,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if coordinator.energy.supported:
         entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water", "mdi:solar-power-variant"),
                      ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water", "mdi:cash-clock")]
+    if coordinator.energy.legionella.supported:
+        entities.append(ProxonEnergySwitch(coordinator, "on", "LegionellenSonne", "legionella_solar", "mdi:bacteria-outline",
+                                           coordinator.energy.legionella))
     async_add_entities(entities)
 
 

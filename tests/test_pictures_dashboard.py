@@ -267,9 +267,9 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert list(dashboard) == ["views"]  # the answer is the dashboard itself: paste it as it is
     assert parse_yaml(dump(dashboard)) == dashboard
     views = dashboard["views"]
-    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-settings"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-energy", "proxon-settings"]
     assert all(v["type"] == "sections" for v in views)
-    home, house, water, settings = views
+    home, house, water, energy, settings = views
 
     def cards(view: dict) -> list[dict]:
         return [c for s in view["sections"] for c in s["cards"]]
@@ -320,6 +320,19 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert graph["entities"] == [eid(hass, "sensor", k) for k in ("WarmwasserIstTemperatur", "WarmwasserUntenTemperatur")]
     heater = next(c for c in cards(water) if c.get("entity") == eid(hass, "water_heater", "Warmwasser"))
     assert {"type": "target-temperature"} in heater["features"]
+    assert any(c.get("entity") == eid(hass, "sensor", "WarmwasserDuschminuten") for c in cards(water))
+    legionella = next(c for c in cards(water) if c.get("entity") == eid(hass, "switch", "LegionellenSonne"))
+    assert legionella["state_content"] == ["state", "status"]
+    # energy: consumption today / week / month / year, per day and month, power, runtimes and starts per day
+    totals = [c for c in cards(energy) if c["type"] == "statistic"]
+    assert [c["period"]["calendar"]["period"] for c in totals] == ["day", "week", "month", "year"]
+    assert all(c["entity"] == eid(hass, "sensor", "EnergieGesamt") and c["stat_type"] == "change" for c in totals)
+    graphs = [c for c in cards(energy) if c["type"] == "statistics-graph"]
+    assert [(g["period"], g["stat_types"], g["days_to_show"]) for g in graphs] == [
+        ("day", ["change"], 14), ("day", ["change"], 14), ("day", ["change"], 30), ("month", ["change"], 365)]
+    assert [e["entity"] for e in graphs[2]["entities"]] == [eid(hass, "sensor", k) for k in ("EnergieGesamt", "EnergieKompressor")]
+    assert all(g["chart_type"] == "bar" for g in graphs)
+    assert any(c["type"] == "history-graph" for c in cards(energy))
     # settings: limits with +/- buttons, the weekly schedule with day names
     all_settings = cards(settings)
     numbers = [c for c in all_settings if c.get("features") == [{"type": "numeric-input", "style": "buttons"}]]
@@ -328,7 +341,8 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert [r["name"] for r in schedule["entities"]][1:] == ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     every = {c.get("entity") for v in views for c in cards(v)} | {r["entity"] for v in views for c in cards(v) for r in c.get("entities", [])
                                                                   if isinstance(r, dict)}
-    every |= {e for v in views for c in cards(v) if c["type"] == "history-graph" for e in c["entities"]} | set(sum(targets.values(), []))
+    every |= {e if isinstance(e, str) else e["entity"] for v in views for c in cards(v) if c["type"] == "history-graph"
+              for e in c["entities"]} | set(sum(targets.values(), []))
     every |= {c["tap_action"]["entity"] for c in rooms}
     assert all(e is None or hass.states.get(e) is not None for e in every)  # only entities that exist
 

@@ -210,6 +210,9 @@
       "water_bottom": {
         "name": "Warmwasser unten"
       },
+      "shower_minutes": {
+        "name": "Duschvorrat"
+      },
       "water_charge": {
         "name": "Warmwasser-Ladezustand"
       },
@@ -372,6 +375,21 @@
       },
       "ptc_off_threshold": {
         "name": "Wärmeelemente Ausschaltschwelle"
+      },
+      "legionella_status": {
+        "name": "Legionellenschutz mit Sonne",
+        "state": {
+          "off": "Aus",
+          "waiting": "Erledigt, wartet",
+          "looking_for_sun": "Wartet auf Sonne",
+          "starting": "Sonne da, startet gleich",
+          "heating_solar": "Heizt mit Sonnenstrom",
+          "heating_due": "Heizt (Woche um)",
+          "blocked": "Pausiert (Urlaub)"
+        }
+      },
+      "energy_cost": {
+        "name": "Stromkosten"
       }
     },
     "select": {
@@ -537,6 +555,23 @@
       },
       "night_setback": {
         "name": "Nachtabsenkung"
+      },
+      "legionella_solar": {
+        "name": "Legionellenschutz mit Sonne",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "waiting": "Erledigt, wartet",
+              "looking_for_sun": "Wartet auf Sonne",
+              "starting": "Sonne da, startet gleich",
+              "heating_solar": "Heizt mit Sonnenstrom",
+              "heating_due": "Heizt (Woche um)",
+              "blocked": "Pausiert (Urlaub)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {

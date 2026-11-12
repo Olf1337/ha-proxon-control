@@ -416,6 +416,8 @@ def read_all(client, names: bool = True) -> dict[str, float | str]:
         out["AktuellerBetrieb"] = op
     if (charge := water_charge(out)) is not None:
         out["WarmwasserLadezustand"] = charge
+    if (minutes := shower_minutes(out)) is not None:
+        out["WarmwasserDuschminuten"] = minutes
     if "LaufzeitFilter" in out:
         out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - float(out["LaufzeitFilter"]))
     return out
@@ -446,6 +448,22 @@ def water_charge(values: dict) -> float | None:
     share = ((mid - COLD_WATER) + (bottom - COLD_WATER)) / (2 * (target - COLD_WATER))
     return float(round(min(1.0, max(0.0, share)) * 100))
 
+
+
+TANK_LITERS = 300.0  # the T300
+SHOWER_TEMP = 40.0  # °C at the shower head
+SHOWER_LITERS_PER_MINUTE = 8.0  # an ordinary shower head
+
+
+def shower_minutes(values: dict) -> float | None:
+    """For how many minutes of showering (40 °C, 8 l/min) the hot water lasts, in steps of 5 minutes. The tank's upper half
+    counted at the middle sensor's temperature, its lower half at the bottom sensor's; only water warmer than 40 °C counts,
+    mixed down with cold water. An estimate - the tank has no sensor at the top."""
+    mid, bottom = values.get("WarmwasserIstTemperatur"), values.get("WarmwasserUntenTemperatur")
+    if not isinstance(mid, (int, float)) or not isinstance(bottom, (int, float)):
+        return None
+    liters = sum(TANK_LITERS / 2 * (t - COLD_WATER) / (SHOWER_TEMP - COLD_WATER) for t in (mid, bottom) if t > SHOWER_TEMP)
+    return float(int(liters / SHOWER_LITERS_PER_MINUTE) // 5 * 5)
 
 MIN_RECOVERY_SPREAD = 5.0  # K between extract and outdoor air needed for a meaningful efficiency
 

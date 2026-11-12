@@ -1,6 +1,6 @@
 """Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), to paste as it is.
 
-Four tabs, built-in cards only, in the "Proxon Glas" look (frosted glass on a dark gradient; theme installed by an action,
+Five tabs, built-in cards only, in the "Proxon Glas" look (frosted glass on a dark gradient; theme installed by an action,
 without it the tabs keep the normal look):
 * Home - on a tablet or computer (from 1024 px wide) like a control panel: outdoor and air temperatures, power and heat
   recovery on the left, the floor plan from above in the middle (every room with temperature, target and a flame while its
@@ -9,6 +9,8 @@ without it the tabs keep the normal look):
   hot water and the functions with what they are doing ("On · Waiting").
 * House - the house drawn isometric (both floors, ducts, heating elements) and the unit, heating elements, the unit's values.
 * Hot water - the T300 cut open, its controls, the temperatures of the last 24 hours, its switches.
+* Energy - consumption (and cost, with a price sensor) today / this week / month / year, per day and month, power of the
+  last day, runtimes and compressor starts per day.
 * Settings - limits with +/- buttons, weekly schedule, runtimes, diagnostics.
 """
 from __future__ import annotations
@@ -48,6 +50,10 @@ TEXT: dict[str, dict[str, Any]] = {
         "functions": "Funktionen", "store": "Warmwasser-Speicher (Solar / Strompreis)", "cooling": "Sommer-Nachtkühlung",
         "boost": "Warmwasser-Boost", "schedule": "Wochenprogramm Lüftung", "diagnostics": "Diagnose",
         "season": "Sommer/Winter-Automatik", "night": "Nachtabsenkung", "runtime": "Laufzeit heute",
+        "energy": "Energie", "consumption": "Verbrauch", "periods": {"day": "Heute", "week": "Diese Woche", "month": "Dieser Monat",
+                                                                     "year": "Dieses Jahr"},
+        "cost": "Kosten", "per_day": "Verbrauch pro Tag (30 Tage)", "per_month": "Verbrauch pro Monat", "power_day": "Leistung, letzte 24 Stunden",
+        "cost_per_day": "Kosten pro Tag (30 Tage)", "runtime_days": "Laufzeit pro Tag (14 Tage)", "starts_days": "Kompressor-Starts pro Tag",
         "names": {
             "Lueftung": "Lüftung", "Betriebsart": "Betriebsart", "Warmwasser": "Warmwasser", "Stoerung": "Störung",
             "FilterRestStunden_warning": "Filterwechsel", "SolarWarmwasser": "Solar-Warmwasser", "PreisWarmwasser": "Günstiger Strom",
@@ -66,6 +72,9 @@ TEXT: dict[str, dict[str, Any]] = {
             "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
             "WarmwasserIstTemperatur": "Warmwasser Mitte", "WarmwasserUntenTemperatur": "Warmwasser unten", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Wärmepumpe Warmwasser", "E-Heizstab": "Heizstab freigegeben",
+            "WarmwasserDuschminuten": "Duschvorrat", "LegionellenSonne": "Legionellenschutz mit Sonne", "LegionellenStatus": "Status",
+            "EnergieKompressor": "Kompressor", "LeistungKompressor": "Kompressor", "LeistungLueftung": "Lüftung und Elektronik",
+            "Stromkosten": "Kosten", "WarmwasserKompressorStartsHeute": "Warmwasser-Kompressor",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
         "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "schedule_on": "Programm aktiv",
@@ -84,6 +93,10 @@ TEXT: dict[str, dict[str, Any]] = {
         "functions": "Functions", "store": "Hot-water store (solar / price)", "cooling": "Summer night cooling",
         "boost": "Hot-water boost", "schedule": "Weekly ventilation schedule", "diagnostics": "Diagnostics",
         "season": "Summer/winter automatic", "night": "Night setback", "runtime": "Runtime today",
+        "energy": "Energy", "consumption": "Consumption", "periods": {"day": "Today", "week": "This week", "month": "This month",
+                                                                       "year": "This year"},
+        "cost": "Cost", "per_day": "Consumption per day (30 days)", "per_month": "Consumption per month", "power_day": "Power, last 24 hours",
+        "cost_per_day": "Cost per day (30 days)", "runtime_days": "Runtime per day (14 days)", "starts_days": "Compressor starts per day",
         "names": {
             "Lueftung": "Ventilation", "Betriebsart": "Operating mode", "Warmwasser": "Hot water", "Stoerung": "Fault",
             "FilterRestStunden_warning": "Filter change", "SolarWarmwasser": "Solar hot water", "PreisWarmwasser": "Cheap power",
@@ -102,6 +115,9 @@ TEXT: dict[str, dict[str, Any]] = {
             "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
             "WarmwasserIstTemperatur": "Hot water middle", "WarmwasserUntenTemperatur": "Hot water bottom", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Hot-water heat pump", "E-Heizstab": "Immersion heater released",
+            "WarmwasserDuschminuten": "Shower supply", "LegionellenSonne": "Legionella protection with solar", "LegionellenStatus": "Status",
+            "EnergieKompressor": "Compressor", "LeistungKompressor": "Compressor", "LeistungLueftung": "Ventilation and electronics",
+            "Stromkosten": "Cost", "WarmwasserKompressorStartsHeute": "Hot-water compressor",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "schedule_on": "Schedule active",
@@ -114,7 +130,7 @@ TEXT: dict[str, dict[str, Any]] = {
 FULL = {"columns": "full"}
 HALF = {"columns": 6}
 # functions that report what they are doing (status attribute, shown on the tile next to on/off)
-WITH_STATUS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik")
+WITH_STATUS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik", "LegionellenSonne")
 FUNCTIONS = ("SolarWarmwasser", "PreisWarmwasser", "Nachtkuehlung", "WarmwasserBoost", "SaisonAutomatik", "Urlaubsmodus", "Intensivlueftung")
 # the start page: a control panel on wide screens (tablet, computer), photo and room cards on narrow ones (phone)
 WIDE = [{"condition": "screen", "media_query": "(min-width: 1024px)"}]
@@ -253,7 +269,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Lueftung", FULL, features=[{"type": "fan-speed"}], features_position="inline"),
         *tile("Betriebsart", FULL, features=[{"type": "select-options"}], features_position="inline"),
         *tile("AktuellerBetrieb", HALF), *tile("LeistungGesamt", HALF),
-        *tile("Warmwasser", HALF), *tile("WarmwasserLadezustand", HALF),
+        *tile("Warmwasser", HALF), *tile("WarmwasserDuschminuten", HALF),
         *tile("Stoerung", HALF), *tile("FilterRestStunden_warning", HALF),
     ]
     # four columns (computer): values | floor plan (two wide) | T300, then functions | rooms; three (tablet): values | plan,
@@ -295,13 +311,14 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
             {"type": "water-heater-operation-modes", "operation_modes": ["off", "heat_pump", "high_demand", "electric"]},
             {"type": "target-temperature"},
         ]),
-        *tile("WarmwasserLadezustand", HALF), *tile("WarmwasserUntenTemperatur", HALF),
+        *tile("WarmwasserLadezustand", HALF), *tile("WarmwasserDuschminuten", HALF),
         *([heading(t["last_day"], "subtitle"), {"type": "history-graph", "entities": curve, "hours_to_show": 24, "grid_options": FULL}]
           if curve else []),
     ]
     switches = [*tile("T300Betriebsart", FULL), *tile("E-Heizstab", FULL), *tile("Legionellenfunktion", FULL),
                 *tile("SolarWarmwasser", FULL, state_content=["state", "status"]), *tile("PreisWarmwasser", FULL, state_content=["state", "status"]),
-                *tile("WarmwasserBoost", FULL, state_content=["state", "status"]), *number("SollWassertemperatur"),
+                *tile("WarmwasserBoost", FULL, state_content=["state", "status"]),
+                *tile("LegionellenSonne", FULL, state_content=["state", "status"]), *number("SollWassertemperatur"),
                 *number("Soll-E-Heizstab-Temperatur")]
     hot_water: list[dict[str, Any]] = [{"type": "grid", "cards": tank_picture}, {"type": "grid", "cards": water},
                  {"type": "grid", "cards": [heading(t["switches"]), *switches] if switches else []}]
@@ -313,7 +330,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                *number("KuehlStufe")]
     boost = [heading(t["boost"]), *tile("WarmwasserBoost", FULL, state_content=["state", "status"]), *number("BoostGrenze"),
              *number("Soll-E-Heizstab-Temperatur"), *number("SollWassertemperatur"), *tile("Legionellenfunktion", FULL),
-             *number("IntensivlueftungsDauer")]
+             *tile("LegionellenSonne", FULL, state_content=["state", "status"]), *number("IntensivlueftungsDauer")]
     season = [heading(t["season"]), *tile("SaisonAutomatik", FULL, state_content=["state", "status"]), *number("SaisonWinterUnter"),
               *number("SaisonSommerUeber")]
     night = [heading(t["night"]), *tile("NachtabsenkungAktiv", FULL), *number("NachtabsenkungTemperatur"),
@@ -334,6 +351,42 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     settings = [{"type": "grid", "cards": cards} for cards in (store, cooling, boost, season, night, schedule, runtime, diagnostics)
                 if len(cards) > 1]
 
+    # ---- energy: consumption and cost by day / week / month / year, per day and month, power, runtimes ----
+    def statistic(key: str, name: str, period: str) -> list[dict]:
+        if key not in ids:
+            return []
+        return [{"type": "statistic", "entity": ids[key], "name": name, "stat_type": "change",
+                 "period": {"calendar": {"period": period}}, "grid_options": HALF}]
+
+    def bars(title: str, keys: list[str], stat: str, period: str, days: int) -> list[dict]:
+        shown = [{"entity": ids[k], "name": names.get(k, k)} for k in keys if k in ids]
+        if not shown:
+            return []
+        return [heading(title, "subtitle"), {"type": "statistics-graph", "entities": shown, "stat_types": [stat], "period": period,
+                                              "days_to_show": days, "chart_type": "bar", "hide_legend": len(shown) == 1,
+                                              "grid_options": FULL}]
+
+    p = t["periods"]
+    totals = [heading(t["consumption"]), *[c for period in ("day", "week", "month", "year") for c in statistic("EnergieGesamt", p[period], period)]]
+    if "Stromkosten" in ids:
+        totals += [heading(t["cost"]), *statistic("Stromkosten", p["day"], "day"), *statistic("Stromkosten", p["month"], "month")]
+    power_rows = [{"entity": ids[k], "name": names[k]} for k in ("LeistungGesamt", "LeistungKompressor", "LeistungLueftung") if k in ids]
+    # left: totals, power and runtimes one below the other; right (two wide): consumption and cost per day and month
+    energy_view: list[dict[str, Any]] = [
+        {"type": "grid", "cards": [
+            *(totals if len(totals) > 1 else []),
+            *([heading(t["power_day"], "subtitle"), {"type": "history-graph", "entities": power_rows, "hours_to_show": 24,
+                                                      "grid_options": FULL}] if power_rows else []),
+            *bars(t["runtime_days"], ["KompressorLaufzeitHeute", "WarmwasserKompressorLaufzeitHeute", "HeizstabLaufzeitHeute"], "change", "day", 14),
+            *bars(t["starts_days"], ["KompressorStartsHeute", "WarmwasserKompressorStartsHeute"], "change", "day", 14),
+        ]},
+        {"type": "grid", "column_span": 2, "cards": [
+            *bars(t["per_day"], ["EnergieGesamt", "EnergieKompressor"], "change", "day", 30),
+            *bars(t["cost_per_day"], ["Stromkosten"], "change", "day", 30),
+            *bars(t["per_month"], ["EnergieGesamt"], "change", "month", 365),
+        ]},
+    ]
+
     def view(title: str, path: str, icon: str, sections: list[dict], columns: int = 3, **extra) -> list[dict]:
         sections = [s for s in sections if s["cards"]]
         if not sections:
@@ -346,5 +399,6 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
               **({"badges": badges} if badges else {})),
         *view(t["house"], "proxon-house", "mdi:floor-plan", house),
         *view(t["tank"], "proxon-hot-water", "mdi:water-boiler", hot_water),
+        *view(t["energy"], "proxon-energy", "mdi:lightning-bolt-outline", energy_view),
         *view(t["settings"], "proxon-settings", "mdi:tune", settings),
     ]}

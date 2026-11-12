@@ -80,10 +80,11 @@ class ProxonPicture(ProxonEntity, ImageEntity):
             boost_on = boost and boost.supported and boost.settings.on
             boost_status = boost.status if boost_on else None
             limit = boost.settings.limit if boost_on else None
-            sig = (data.get("E-Heizstab"), data.get("T300Betriebsart"), data.get("SollWassertemperatur"), data.get("Soll-E-Heizstab-Temperatur"),
+            legionella = bool(energy and energy.legionella.state.active)
+            sig = (legionella, data.get("E-Heizstab"), data.get("T300Betriebsart"), data.get("SollWassertemperatur"), data.get("Soll-E-Heizstab-Temperatur"),
                    data.get("T300RelaisHeizstab"), data.get("T300RelaisKompressor"), bool(data.get("T300LuefterDrehzahl")),
                    energy_status, boost_status, limit, theme, lang)
-            return tank_svg(data, lang, limit, theme, energy_status, boost_status), sig
+            return tank_svg(data, lang, limit, theme, energy_status, boost_status, legionella), sig
         indices = house_rooms(data)
         floors = room_floors(self.coordinator.entry.options, data, indices)
         rooms = [

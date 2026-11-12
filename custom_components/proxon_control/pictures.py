@@ -26,8 +26,8 @@ TEXT = {
         "modes": {0: "Aus", 1: "Sommer", 2: "Winter", 3: "ECO Komfort", 4: "Ofenbetrieb", 5: "Urlaub"},
         "doing": {"heat": "Heizen", "cool": "Kühlen", "vent": "Lüften", "off": "Steht"},
         "cold": "zu kalt", "fine": "passt", "warm": "zu warm", "fault": "Störung", "boost_vent": "Intensivlüftung",
-        "solar": "Solar", "price": "Günstiger Strom", "boost": "Boost", "cooling": "Nachtkühlung", "tap": "antippen zum Einstellen",
-        "ground": "Erdgeschoss", "upper": "Obergeschoss", "technik": "Technik", "charge": "Ladezustand", "middle": "Mitte",
+        "solar": "Solar", "price": "Günstiger Strom", "boost": "Boost", "legionella": "Legionellenschutz: heizt auf 60 °C", "cooling": "Nachtkühlung", "tap": "antippen zum Einstellen",
+        "ground": "Erdgeschoss", "upper": "Obergeschoss", "technik": "Technik", "charge": "Ladezustand", "shower": "reicht für ≈ {m} Min. Duschen", "middle": "Mitte",
         "bottom": "Unten", "supply_short": "Zuluft", "extract_short": "Abluft", "inside": "Innen", "vent_unit": "Lüftungsanlage",
         "floor_names": ["Erdgeschoss", "Obergeschoss"],
         "heats": "heizt",
@@ -45,8 +45,8 @@ TEXT = {
         "modes": {0: "Off", 1: "Summer", 2: "Winter", 3: "ECO Comfort", 4: "Stove", 5: "Holiday"},
         "doing": {"heat": "Heating", "cool": "Cooling", "vent": "Ventilating", "off": "Stopped"},
         "cold": "too cold", "fine": "fine", "warm": "too warm", "fault": "Fault", "boost_vent": "Boost ventilation",
-        "solar": "Solar", "price": "Cheap power", "boost": "Boost", "cooling": "Night cooling", "tap": "tap to adjust",
-        "ground": "Ground floor", "upper": "Upper floor", "technik": "Utility room", "charge": "Charge", "middle": "Middle",
+        "solar": "Solar", "price": "Cheap power", "boost": "Boost", "legionella": "Legionella protection: heating to 60 °C", "cooling": "Night cooling", "tap": "tap to adjust",
+        "ground": "Ground floor", "upper": "Upper floor", "technik": "Utility room", "charge": "Charge", "shower": "≈ {m} min of showering", "middle": "Middle",
         "bottom": "Bottom", "supply_short": "Supply air", "extract_short": "Extract air", "inside": "Indoor", "vent_unit": "Ventilation unit",
         "floor_names": ["Ground floor", "Upper floor"],
         "heats": "heating",
@@ -300,7 +300,7 @@ def _on(data: dict, key: str) -> bool | None:
 
 def tank_svg(
     data: dict, lang: str = "de", boost_limit: float | None = None, theme: str = "auto",
-    energy_status: str | None = None, boost_status: str | None = None,
+    energy_status: str | None = None, boost_status: str | None = None, legionella_heating: bool = False,
 ) -> str:
     """The T300 in section: the heat pump on top (display, fan turning while the compressor runs), the tank cut open with
     the water coloured by its measured temperatures, the condenser coil, the immersion heater (glowing while it heats), the
@@ -316,6 +316,7 @@ def tank_svg(
     fan_rpm = _num(data, "T300LuefterDrehzahl")
     heater_target = _num(data, "Soll-E-Heizstab-Temperatur")
     charge = _num(data, "WarmwasserLadezustand")
+    shower = _num(data, "WarmwasserDuschminuten")
     x, w = TANK_X, TANK_WIDTH
     cap_top, body_top, body_bottom = CAP_TOP, BODY_TOP, BODY_BOTTOM
     # the cut: right half of the tank, insulation (yellow), then the water
@@ -346,10 +347,12 @@ def tank_svg(
     if charge is not None:
         bw = TANK_W - lx - 24
         rows.append(
-            f'<text x="{lx}" y="244" font-size="13" class="mu">{t["charge"]} {round(charge)} %</text>'
-            f'<rect x="{lx}" y="254" width="{bw}" height="10" rx="5" class="chip"/>'
-            f'<rect x="{lx}" y="254" width="{max(10.0, bw * max(0.0, min(1.0, charge / 100))):.0f}" height="10" rx="5" fill="#f0884a"/>'
+            f'<text x="{lx}" y="236" font-size="13" class="mu">{t["charge"]} {round(charge)} %</text>'
+            f'<rect x="{lx}" y="244" width="{bw}" height="10" rx="5" class="chip"/>'
+            f'<rect x="{lx}" y="244" width="{max(10.0, bw * max(0.0, min(1.0, charge / 100))):.0f}" height="10" rx="5" fill="#f0884a"/>'
         )
+    if shower is not None:
+        rows.append(f'<text x="{lx}" y="273" font-size="13" class="fg">{t["shower"].format(m=round(shower))}</text>')
 
     def pointer(y: float, name: str, value: str) -> str:
         """A line from a point in the tank to its text."""
@@ -368,6 +371,8 @@ def tank_svg(
         f'<tspan class="fg" font-weight="600">{_deg(heater_target, 0)}</tspan></text>'
     )
     chips: list[tuple[str, str | None, str | None]] = []
+    if legionella_heating:
+        chips.append((f"♨ {t['legionella']}", "#fde4d8", "#6e2a10"))
     if energy_status:
         on = energy_status in ("heating_solar", "heating_price")
         name = t["price"] if energy_status == "heating_price" else t["solar"]

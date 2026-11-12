@@ -169,7 +169,11 @@ class ComfortManager:
                 elif action == "off":
                     self.boost.state.active, self.boost.state.since, self.boost.state.last_stop = False, None, now
                     changed = True
-                    await self._write("E-Heizstab", 0, "hot-water boost: immersion heater off")
+                    energy = getattr(self.coordinator, "energy", None)
+                    if energy and energy.legionella.state.active:  # legionella protection heats on: it switches off itself
+                        _LOGGER.debug("Hot-water boost done; the immersion heater stays on for the legionella protection")
+                    else:
+                        await self._write("E-Heizstab", 0, "hot-water boost: immersion heater off")
             if self.season.supported:
                 mode = num("Betriebsart")
                 before = (len(self.season.state.samples), self.season.state.last_switch, self.season.state.last_mode)

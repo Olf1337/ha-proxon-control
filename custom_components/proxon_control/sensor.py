@@ -27,6 +27,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
+from . import legionella as L
 from .api import PATH_KEY
 from .comfort import (
     B_ALREADY_ON,
@@ -49,7 +50,7 @@ from .comfort import (
     S_SUMMER,
     S_WINTER,
 )
-from .const import PPM
+from .const import CONF_PRICE_SENSOR, PPM
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
 from .registers import (
@@ -127,6 +128,10 @@ SENSORS: list[ProxonSensorDescription] = [
     ProxonSensorDescription(
         key="WarmwasserLadezustand", translation_key="water_charge", native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT, icon="mdi:water-boiler",
+    ),
+    ProxonSensorDescription(
+        key="WarmwasserDuschminuten", translation_key="shower_minutes", native_unit_of_measurement=UnitOfTime.MINUTES,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0, icon="mdi:shower-head",
     ),
     ProxonSensorDescription(
         key="AktuellerBetrieb", translation_key="operation", device_class=SensorDeviceClass.ENUM,
@@ -267,6 +272,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if comfort.boost.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status", "mdi:heating-coil",
                                             [B_OFF, B_IDLE, B_HEATING, B_ALREADY_ON, B_PAUSED, B_BLOCKED]))
+    if coordinator.energy.legionella.supported:
+        entities.append(ProxonFeatureStatus(coordinator, coordinator.energy.legionella, "LegionellenStatus", "legionella_status",
+                                            "mdi:bacteria-outline", [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
+                                                                     L.HEATING_DUE, L.BLOCKED]))
+    if entry.options.get(CONF_PRICE_SENSOR) and "LeistungGesamt" in data:
+        entities.append(ProxonEnergyCost(coordinator, hass.config.currency))
     if comfort.season.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status", "mdi:sun-snowflake-variant",
                                             [S_OFF, S_COLLECTING, S_SUMMER, S_WINTER, S_MANUAL, S_BLOCKED]))
@@ -295,7 +306,7 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         if self._key == "GeraeteTyp":
             return {0: "heating_only", 1: "heating_cooling"}.get(int(v))
         if self._key in ("FirmwareVersion", "FirmwareT300", "IstLuefterstufe", "IntensivlueftungsRestDauer", "UhrAbweichung",
-                         "FilterStandzeit", "WarmwasserLadezustand") or self._key.endswith("StartsHeute"):
+                         "FilterStandzeit", "WarmwasserLadezustand", "WarmwasserDuschminuten") or self._key.endswith("StartsHeute"):
             return int(v)
         return v
 
@@ -319,7 +330,7 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
     """Energy the unit used (kWh), added up from its power readings (trapezoidal rule). Kept across restarts; for the
     Energy dashboard (individual devices)."""
 
-    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_native_unit_of_measurement: str | None = UnitOfEnergy.KILO_WATT_HOUR
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_suggested_display_precision = 2
@@ -347,7 +358,7 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
             return
         interval = self.coordinator.update_interval.total_seconds() if self.coordinator.update_interval else 0
         if self._last is not None and 0 < now - self._last[1] <= max(MAX_GAP_SECONDS, 3 * interval):
-            self._kwh += (self._last[0] + watt) / 2 * (now - self._last[1]) / 3_600_000
+            self._kwh += self._count((self._last[0] + watt) / 2 * (now - self._last[1]) / 3_600_000)
         self._last = (float(watt), now)
 
     @callback
@@ -355,9 +366,30 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
         self._add(time.monotonic())
         super()._handle_coordinator_update()
 
+    def _count(self, kwh: float) -> float:
+        """What a piece of energy adds to the total."""
+        return kwh
+
     @property
     def native_value(self) -> float:
         return round(self._kwh, 4)
+
+
+class ProxonEnergyCost(ProxonEnergy):
+    """What the unit's electricity cost (in the currency of Home Assistant), added up from its power and the price sensor
+    chosen in the options. A piece of energy is counted at the price of that moment; without a price it costs nothing."""
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_icon = "mdi:cash"
+
+    def __init__(self, coordinator, currency: str) -> None:
+        super().__init__(coordinator, "Stromkosten", "LeistungGesamt", "energy_cost")
+        self._attr_native_unit_of_measurement = currency
+
+    def _count(self, kwh: float) -> float:
+        price_ct = self.coordinator.energy.price_ct()
+        return 0.0 if price_ct is None else kwh * price_ct / 100
 
 
 class ProxonHeatingElement(ProxonEntity, SensorEntity):

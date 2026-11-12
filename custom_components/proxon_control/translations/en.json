@@ -210,6 +210,9 @@
       "water_bottom": {
         "name": "Hot water bottom"
       },
+      "shower_minutes": {
+        "name": "Shower supply"
+      },
       "water_charge": {
         "name": "Hot water charge"
       },
@@ -372,6 +375,21 @@
       },
       "ptc_off_threshold": {
         "name": "Heating elements switch-off threshold"
+      },
+      "legionella_status": {
+        "name": "Legionella protection with solar",
+        "state": {
+          "off": "Off",
+          "waiting": "Done, waiting",
+          "looking_for_sun": "Waiting for sun",
+          "starting": "Sun there, starting soon",
+          "heating_solar": "Heating with solar power",
+          "heating_due": "Heating (week is up)",
+          "blocked": "Paused (holiday)"
+        }
+      },
+      "energy_cost": {
+        "name": "Electricity cost"
       }
     },
     "select": {
@@ -537,6 +555,23 @@
       },
       "night_setback": {
         "name": "Night setback"
+      },
+      "legionella_solar": {
+        "name": "Legionella protection with solar",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "waiting": "Done, waiting",
+              "looking_for_sun": "Waiting for sun",
+              "starting": "Sun there, starting soon",
+              "heating_solar": "Heating with solar power",
+              "heating_due": "Heating (week is up)",
+              "blocked": "Paused (holiday)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {
