@@ -258,3 +258,24 @@ def test_key_file_is_private(tmp_path) -> None:
     with patch.object(LC.urllib.request, "urlopen", return_value=resp):
         LC.fetch(str(tmp_path), "abc123", "pw")
     assert os.stat(tmp_path / "local" / "abc123" / "key.pem").st_mode & 0o777 == 0o600
+
+
+# ---------------- 0.12.2: heating element per room ----------------
+def test_element_state() -> None:
+    assert R.element_state({"NBE1PTC": 0.0, "NBE1LED": 6.0}, 1) == "off"
+    assert R.element_state({"NBE1PTC": 1.0, "NBE1LED": 5.0}, 1) == "ready"
+    assert R.element_state({"NBE1PTC": 1.0, "NBE1LED": 6.0}, 1) == "heating"
+    assert R.element_state({}, 1) is None
+
+
+async def test_heating_element_sensor(hass: HomeAssistant, device) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    await setup(hass)
+    assert state(hass, "sensor", "NBE1Waermeelement").state == "heating"  # released, LED: too cold
+    assert state(hass, "sensor", "NBE4Waermeelement").state == "ready"  # released, at target
+    assert state(hass, "sensor", "NBE0Waermeelement").state == "off"  # living room: not released
+    bedroom = er.async_get(hass).async_get(eid(hass, "sensor", "NBE1Waermeelement"))
+    assert bedroom.device_id == er.async_get(hass).async_get(eid(hass, "climate", "NBE1Thermostat")).device_id
+    await call(hass, "climate", "set_hvac_mode", entity_id=eid(hass, "climate", "NBE1Thermostat"), hvac_mode="auto")
+    assert state(hass, "sensor", "NBE1Waermeelement").state == "off"

@@ -355,6 +355,14 @@
           "heating_only": "Heating only",
           "heating_cooling": "Heating and cooling"
         }
+      },
+      "heating_element": {
+        "name": "Heating element",
+        "state": {
+          "off": "Not released",
+          "ready": "Ready",
+          "heating": "Heating"
+        }
       }
     },
     "select": {
@@ -564,8 +572,8 @@
       "room_thermostat": {
         "name": "{room}",
         "state": {
-          "auto": "Auto (heat pump)",
-          "heat": "With heating element"
+          "auto": "Heating element off",
+          "heat": "Heating element released"
         },
         "state_attributes": {
           "heat_demand": {

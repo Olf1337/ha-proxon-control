@@ -52,7 +52,7 @@ from .comfort import (
 from .const import PPM
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
-from .registers import HOUR_COUNTERS, OPERATION_KEYS, ROOM_COUNT, filter_months, heat_recovery, room_connected
+from .registers import HOUR_COUNTERS, OPERATION_KEYS, ROOM_COUNT, element_state, filter_months, heat_recovery, room_connected
 from .schedule import DAYS, hhmm, read_day, summary, unit_clock
 
 
@@ -232,6 +232,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
     entities.append(ProxonLastWriteError(coordinator))
+    # every room's heating element: not released / ready / heating
+    entities += [ProxonHeatingElement(coordinator, i) for i in range(ROOM_COUNT) if room_connected(data, i) and element_state(data, i) is not None]
     # weekly ventilation schedule: one sensor per day, and the unit's clock (the schedule follows it)
     if read_day(data, 0) is not None:
         entities += [ProxonScheduleDay(coordinator, day) for day in range(7)]
@@ -337,6 +339,30 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
     @property
     def native_value(self) -> float:
         return round(self._kwh, 4)
+
+
+class ProxonHeatingElement(ProxonEntity, SensorEntity):
+    """The room's electric heating element: not released, ready (released, no heat needed) or heating (released and the room
+    too cold, as the Proxon app shows it)."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["off", "ready", "heating"]
+
+    def __init__(self, coordinator, room: int) -> None:
+        super().__init__(coordinator, f"NBE{room}Waermeelement", "heating_element", device=room_device(coordinator, room))
+        self._room = room
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and element_state(self.coordinator.data or {}, self._room) is not None
+
+    @property
+    def native_value(self) -> str | None:
+        return element_state(self.coordinator.data or {}, self._room)
+
+    @property
+    def icon(self) -> str:
+        return {"heating": "mdi:radiator", "ready": "mdi:radiator-disabled"}.get(self.native_value or "", "mdi:radiator-off")
 
 
 class ProxonHeatRecovery(ProxonEntity, SensorEntity):

@@ -652,6 +652,16 @@ def room_heating(values: dict, i: int) -> bool:
     return bool(values.get(f"NBE{i}PTC")) and room_demand(values, i) == "too_cold"
 
 
+def element_state(values: dict, i: int) -> str | None:
+    """The room's electric heating element: "off" (not released), "ready" (released, the room needs no heat) or "heating"
+    (released and the room too cold - as the original app shows it; which relay really switches isn't known per room)."""
+    if f"NBE{i}PTC" not in values:
+        return None
+    if not values.get(f"NBE{i}PTC"):
+        return "off"
+    return "heating" if room_heating(values, i) else "ready"
+
+
 def heating_channels(values: dict) -> list[str]:
     """Relays K1-K10 of the room heating module that are switched on right now."""
     word = values.get("HeizmodulRelais")

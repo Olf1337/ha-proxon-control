@@ -355,6 +355,14 @@
           "heating_only": "Nur Heizen",
           "heating_cooling": "Heizen und Kühlen"
         }
+      },
+      "heating_element": {
+        "name": "Wärmeelement",
+        "state": {
+          "off": "Nicht freigegeben",
+          "ready": "Bereit",
+          "heating": "Heizt"
+        }
       }
     },
     "select": {
@@ -564,8 +572,8 @@
       "room_thermostat": {
         "name": "{room}",
         "state": {
-          "auto": "Automatik (Wärmepumpe)",
-          "heat": "Mit Wärmeelement"
+          "auto": "Wärmeelement aus",
+          "heat": "Wärmeelement freigegeben"
         },
         "state_attributes": {
           "heat_demand": {
