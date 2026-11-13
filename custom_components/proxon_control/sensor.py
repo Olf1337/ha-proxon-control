@@ -50,7 +50,7 @@ from .comfort import (
     S_SUMMER,
     S_WINTER,
 )
-from .const import CONF_PRICE_SENSOR, PPM
+from .const import CONF_FIXED_PRICE, CONF_PRICE_SENSOR, PPM
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
 from .entity import ProxonEnergyEntity, ProxonEntity, room_device
 from .registers import (
@@ -280,7 +280,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonFeatureStatus(coordinator, coordinator.energy.legionella, "LegionellenStatus", "legionella_status",
                                             "mdi:bacteria-outline", [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
                                                                      L.HEATING_DUE, L.BLOCKED]))
-    if entry.options.get(CONF_PRICE_SENSOR) and "LeistungGesamt" in data:
+    # electricity cost: with a price sensor (dynamic tariff) or a fixed price
+    if (entry.options.get(CONF_PRICE_SENSOR) or entry.options.get(CONF_FIXED_PRICE)) and "LeistungGesamt" in data:
         cost = ProxonEnergyCost(coordinator, hass.config.currency)
         entities += [cost, *_with_forecast(coordinator, cost, "energy_cost")]
     if comfort.season.supported:

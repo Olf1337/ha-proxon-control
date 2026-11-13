@@ -27,6 +27,7 @@ from .const import (
     CONF_CONNECTION,
     CONF_DEVICE_ID,
     CONF_FEED_IN_NEGATIVE,
+    CONF_FIXED_PRICE,
     CONF_HOST,
     CONF_HOUSE_PHOTO,
     CONF_LOCAL_HOST,
@@ -78,6 +79,8 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                     data[key] = user_input[key]
             if user_input.get(CONF_FEED_IN_NEGATIVE):
                 data[CONF_FEED_IN_NEGATIVE] = True
+            if (price := user_input.get(CONF_FIXED_PRICE)) and float(price) > 0:
+                data[CONF_FIXED_PRICE] = float(price)
             if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
                 data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
             rooms = self._rooms()
@@ -129,6 +132,10 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 vol.Optional(CONF_SURPLUS_SENSOR): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="power")),
                 vol.Optional(CONF_FEED_IN_NEGATIVE, default=False): BooleanSelector(),
                 vol.Optional(CONF_PRICE_SENSOR): EntitySelector(EntitySelectorConfig(domain="sensor")),
+                # a fixed tariff: the price for the electricity cost when no price sensor is chosen
+                vol.Optional(CONF_FIXED_PRICE): NumberSelector(
+                    NumberSelectorConfig(min=0, max=200, step=0.01, unit_of_measurement="ct/kWh", mode=NumberSelectorMode.BOX)
+                ),
                 # dashboard pictures: light / dark
                 vol.Optional(CONF_PICTURE_THEME, default=DEFAULT_PICTURE_THEME): SelectSelector(
                     SelectSelectorConfig(options=PICTURE_THEMES, mode=SelectSelectorMode.DROPDOWN, translation_key=CONF_PICTURE_THEME)

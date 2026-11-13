@@ -21,7 +21,7 @@ from homeassistant.util import dt as dt_util
 
 from . import energy as E
 from . import legionella as L
-from .const import CONF_FEED_IN_NEGATIVE, CONF_PRICE_SENSOR, CONF_SURPLUS_SENSOR, DOMAIN
+from .const import CONF_FEED_IN_NEGATIVE, CONF_FIXED_PRICE, CONF_PRICE_SENSOR, CONF_SURPLUS_SENSOR, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -115,8 +115,12 @@ class EnergyManager:
         return None if value is None else E.power_in_watt(value, unit, bool(self.entry.options.get(CONF_FEED_IN_NEGATIVE)))
 
     def price_ct(self) -> float | None:
-        """The electricity price now in ct/kWh (price sensor from the options), or None."""
-        return self._price()
+        """The electricity price now in ct/kWh for the cost: the price sensor from the options, without one the fixed price
+        (a fixed tariff), else None. ("Cheap power" uses the sensor only: a fixed price is never cheaper.)"""
+        if self.entry.options.get(CONF_PRICE_SENSOR):
+            return self._price()
+        fixed = self.entry.options.get(CONF_FIXED_PRICE)
+        return float(fixed) if isinstance(fixed, (int, float)) and fixed > 0 else None
 
     def _price(self) -> float | None:
         value, unit = self._sensor_value(CONF_PRICE_SENSOR)

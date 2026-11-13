@@ -270,3 +270,40 @@ async def test_cost_per_period_and_forecasts(hass: HomeAssistant, device, freeze
     from homeassistant.helpers import entity_registry as er
 
     assert er.async_get(hass).async_get_entity_id("sensor", "proxon_control", "abc123_EnergieKompressorMonatPrognose") is None
+
+
+# ---------------- fixed electricity price ----------------
+async def test_fixed_price_for_the_cost(hass: HomeAssistant, device) -> None:
+    """Without a price sensor a fixed price (ct/kWh) from the options counts; a price sensor goes first."""
+    from .test_integration import make_entry
+
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"fixed_price": 32.5})
+    await setup(hass, entry)
+    sensor = eid(hass, "sensor", "Stromkosten")
+    assert eid(hass, "sensor", "StromkostenMonatPrognose")
+    assert entry.runtime_data.energy.price_ct() == 32.5
+    cost = next(e for e in hass.data["sensor"].entities if e.entity_id == sensor)
+    base = time.monotonic() + 100_000
+    for minute in range(61):  # one hour at 531.8 W
+        cost._add(base + minute * 60)
+    assert round(cost.native_value, 3) == round(0.5318 * 0.325, 3)
+    # with a price sensor too, the sensor counts
+    hass.states.async_set("sensor.preis", "0.20", {"unit_of_measurement": "€/kWh"})
+    hass.config_entries.async_update_entry(entry, options={"fixed_price": 32.5, "price_sensor": "sensor.preis"})
+    await hass.async_block_till_done()
+    assert entry.runtime_data.energy.price_ct() == 20.0
+
+
+async def test_fixed_price_in_the_options(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert "fixed_price" in {str(k) for k in result["data_schema"].schema}
+    await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "fixed_price": 29.9})
+    await hass.async_block_till_done()
+    assert entry.options == {"scan_interval": 10, "fixed_price": 29.9}
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "fixed_price": 0})
+    await hass.async_block_till_done()
+    assert "fixed_price" not in entry.options  # 0: no fixed price

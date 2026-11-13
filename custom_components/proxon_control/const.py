@@ -24,6 +24,7 @@ CONF_PORT = "port"
 CONF_SURPLUS_SENSOR = "surplus_sensor"
 CONF_FEED_IN_NEGATIVE = "feed_in_negative"
 CONF_PRICE_SENSOR = "price_sensor"
+CONF_FIXED_PRICE = "fixed_price"  # ct/kWh of a fixed tariff: for the electricity cost when no price sensor is chosen
 # dashboard pictures: follow the device's light/dark mode, or always light / dark
 CONF_PICTURE_THEME = "picture_theme"
 PICTURE_THEMES = ["auto", "light", "dark"]
