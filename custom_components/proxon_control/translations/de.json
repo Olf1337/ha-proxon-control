@@ -288,10 +288,49 @@
         "name": "Leistung Lüftung und Elektronik"
       },
       "energy_total": {
-        "name": "Energieverbrauch"
+        "name": "Energieverbrauch gesamt"
+      },
+      "energy_total_day": {
+        "name": "Energieverbrauch heute"
+      },
+      "energy_total_week": {
+        "name": "Energieverbrauch diese Woche"
+      },
+      "energy_total_month": {
+        "name": "Energieverbrauch diesen Monat"
+      },
+      "energy_total_year": {
+        "name": "Energieverbrauch dieses Jahr"
       },
       "energy_compressor": {
-        "name": "Energieverbrauch Kompressor"
+        "name": "Energieverbrauch Kompressor gesamt"
+      },
+      "energy_compressor_day": {
+        "name": "Energieverbrauch Kompressor heute"
+      },
+      "energy_compressor_week": {
+        "name": "Energieverbrauch Kompressor diese Woche"
+      },
+      "energy_compressor_month": {
+        "name": "Energieverbrauch Kompressor diesen Monat"
+      },
+      "energy_compressor_year": {
+        "name": "Energieverbrauch Kompressor dieses Jahr"
+      },
+      "energy_ventilation": {
+        "name": "Energieverbrauch Lüftung und Elektronik gesamt"
+      },
+      "energy_ventilation_day": {
+        "name": "Energieverbrauch Lüftung und Elektronik heute"
+      },
+      "energy_ventilation_week": {
+        "name": "Energieverbrauch Lüftung und Elektronik diese Woche"
+      },
+      "energy_ventilation_month": {
+        "name": "Energieverbrauch Lüftung und Elektronik diesen Monat"
+      },
+      "energy_ventilation_year": {
+        "name": "Energieverbrauch Lüftung und Elektronik dieses Jahr"
       },
       "hours_vorwaerme": {
         "name": "Betriebsstunden Vorwärmung"

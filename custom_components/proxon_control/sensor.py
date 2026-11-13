@@ -250,7 +250,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
                 and "T300Betriebsart" not in data:
             continue
         entities.append(ProxonSensor(coordinator, d))
-    entities += [ProxonEnergy(coordinator, key, power, tk) for key, power, tk in ENERGY if power in data]
+    for key, power, tk in ENERGY:
+        if power in data:
+            total = ProxonEnergy(coordinator, key, power, tk)
+            # the same energy for today / this week / this month / this year
+            entities += [total, *[ProxonEnergyPeriod(coordinator, total, suffix, f"{tk}_{period}", period) for suffix, period in PERIODS]]
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
     if "NBE0Temperatur" in data:
@@ -321,7 +325,8 @@ class ProxonSensor(ProxonEntity, SensorEntity):
 
 
 # energy counters for the Energy dashboard: (key, power value they add up, translation key)
-ENERGY = [("EnergieGesamt", "LeistungGesamt", "energy_total"), ("EnergieKompressor", "LeistungKompressor", "energy_compressor")]
+ENERGY = [("EnergieGesamt", "LeistungGesamt", "energy_total"), ("EnergieKompressor", "LeistungKompressor", "energy_compressor"),
+          ("EnergieLueftung", "LeistungLueftung", "energy_ventilation")]
 # a gap between two readings longer than this (or three query intervals; Home Assistant stopped, unit not reachable) isn't counted
 MAX_GAP_SECONDS = 15 * 60
 
@@ -340,6 +345,7 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
         self._power_key = power_key
         self._kwh = 0.0
         self._last: tuple[float, float] | None = None  # (watt, monotonic time)
+        self.restored = False  # the total from before a restart is back (the period sensors count from it)
 
     @property
     def available(self) -> bool:
@@ -349,6 +355,7 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
         await super().async_added_to_hass()
         if (last := await self.async_get_last_sensor_data()) is not None and isinstance(last.native_value, (int, float)):
             self._kwh = float(last.native_value)
+        self.restored = True
         self._add(time.monotonic())
 
     def _add(self, now: float) -> None:
@@ -373,6 +380,65 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
     @property
     def native_value(self) -> float:
         return round(self._kwh, 4)
+
+
+# energy per period: (key suffix, period)
+PERIODS = (("Heute", "day"), ("Woche", "week"), ("Monat", "month"), ("Jahr", "year"))
+
+
+def period_of(now: datetime, period: str) -> str:
+    """Which day / week (ISO, starting on Monday) / month / year a local time belongs to."""
+    if period == "day":
+        return now.date().isoformat()
+    if period == "week":
+        year, week, _ = now.isocalendar()
+        return f"{year}-W{week:02d}"
+    if period == "month":
+        return f"{now.year}-{now.month:02d}"
+    return str(now.year)
+
+
+class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
+    """Energy used today / this week / this month / this year: the total energy counter minus its value at the start of the
+    period (local time). Starts again from 0 with every new period; kept across restarts."""
+
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator, total: ProxonEnergy, suffix: str, tk: str, period: str) -> None:
+        super().__init__(coordinator, f"{total._key}{suffix}", tk)
+        self._total = total
+        self._period = period
+        self._current: str | None = None  # the period counted now
+        self._start: float | None = None  # the total at its start
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (state := await self.async_get_last_state()) is not None:
+            start = state.attributes.get("period_start_kwh")
+            if isinstance(state.attributes.get("period"), str) and isinstance(start, (int, float)):
+                self._current, self._start = state.attributes["period"], float(start)
+
+    @property
+    def native_value(self) -> float | None:
+        if not self._total.restored:  # the total isn't back yet after a restart: nothing to count from
+            return None
+        total = self._total._kwh
+        now = period_of(dt_util.now(), self._period)
+        # a new period (also when Home Assistant was off at its start), or the total started again: count from here
+        if self._current != now or self._start is None or self._start > total:
+            self._current, self._start = now, total
+        return round(total - self._start, 4)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"period": self._current, "period_start_kwh": None if self._start is None else round(self._start, 4)}
 
 
 class ProxonEnergyCost(ProxonEnergy):

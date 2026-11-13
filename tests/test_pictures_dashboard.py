@@ -330,7 +330,7 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     graphs = [c for c in cards(energy) if c["type"] == "statistics-graph"]
     assert [(g["period"], g["stat_types"], g["days_to_show"]) for g in graphs] == [
         ("day", ["change"], 14), ("day", ["change"], 14), ("day", ["change"], 30), ("month", ["change"], 365)]
-    assert [e["entity"] for e in graphs[2]["entities"]] == [eid(hass, "sensor", k) for k in ("EnergieGesamt", "EnergieKompressor")]
+    assert [e["entity"] for e in graphs[2]["entities"]] == [eid(hass, "sensor", k) for k in ("EnergieGesamt", "EnergieKompressor", "EnergieLueftung")]
     assert all(g["chart_type"] == "bar" for g in graphs)
     assert any(c["type"] == "history-graph" for c in cards(energy))
     # settings: limits with +/- buttons, the weekly schedule with day names

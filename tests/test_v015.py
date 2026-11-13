@@ -179,3 +179,42 @@ def test_fwt3_led_values_fall_back_to_the_temperature() -> None:
     assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 24.1}, 1) == "warmer"
     assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 22.0}, 1) == "at_target"
     assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 21.0}, 1) == "too_cold"
+
+
+
+# ---------------- energy per day / week / month / year ----------------
+def test_period_of() -> None:
+    from custom_components.proxon_control.sensor import period_of
+
+    t = datetime(2026, 11, 13, 7, 30)  # a Friday
+    assert [period_of(t, p) for p in ("day", "week", "month", "year")] == ["2026-11-13", "2026-W46", "2026-11", "2026"]
+    assert period_of(datetime(2027, 1, 1), "week") == "2026-W53"  # 1 January 2027 still belongs to the last week of 2026
+
+
+async def test_energy_per_period(hass: HomeAssistant, device, freezer) -> None:
+    await hass.config.async_set_time_zone("Europe/Berlin")  # periods follow the local time
+    freezer.move_to("2026-11-13 10:00:00+01:00")
+    entry = await setup(hass)
+    total = next(e for e in hass.data["sensor"].entities if e.entity_id == eid(hass, "sensor", "EnergieGesamt"))
+    names = {p: eid(hass, "sensor", f"EnergieGesamt{p}") for p in ("Heute", "Woche", "Monat", "Jahr")}
+    assert eid(hass, "sensor", "EnergieKompressorHeute") and eid(hass, "sensor", "EnergieLueftungJahr")
+    async def refresh() -> None:
+        entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
+        await hass.async_block_till_done()
+
+    total._kwh = 0.0  # nothing counted yet (the test unit's first readings are dropped)
+    await refresh()
+    assert {p: float(hass.states.get(e).state) for p, e in names.items()} == {"Heute": 0, "Woche": 0, "Monat": 0, "Jahr": 0}
+    total._kwh += 3.5  # used since the start
+    await refresh()
+    assert all(float(hass.states.get(e).state) == 3.5 for e in names.values())
+    # next day (Saturday): today starts again, the week goes on
+    freezer.move_to("2026-11-14 00:05:00+01:00")
+    await refresh()
+    total._kwh += 0.5
+    await refresh()
+    assert float(hass.states.get(names["Heute"]).state) == 0.5
+    assert float(hass.states.get(names["Woche"]).state) == 4.0
+    state = hass.states.get(names["Heute"])
+    assert state.attributes["period"] == "2026-11-14" and state.attributes["period_start_kwh"] == 3.5
+    assert state.attributes["state_class"] == "total_increasing"

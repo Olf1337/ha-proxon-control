@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.16.0:** energy consumption per day, week, month and year (total, compressor, ventilation and electronics), and
+the energy of ventilation and electronics as a counter of its own.
+
 **New in 0.15.2:** the diagnostics download no longer contains the unit's IP address or the house photo; values of an FWT 3.0
 (firmware 12) checked.
 
@@ -71,7 +74,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.15.2)
+# Proxon Control – Integration für Home Assistant (Version 0.16.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -96,6 +99,21 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.16.0: Energieverbrauch nach Zeitraum
+
+* **Verbrauch heute, diese Woche, diesen Monat und dieses Jahr** als eigene Sensoren, jeweils für
+  * den **gesamten** Verbrauch der Anlage,
+  * den **Kompressor** (die Wärmepumpe der Lüftungsanlage: Heizen und Kühlen der Zuluft),
+  * **Lüftung und Elektronik** (neu auch als fortlaufender Zähler „… gesamt“).
+
+  Gesamt ist Kompressor plus Lüftung und Elektronik. Der Warmwasserspeicher T300 meldet keine Leistung und ist nicht
+  enthalten. Die Zeiträume richten sich nach der Ortszeit (die Woche beginnt am Montag) und fangen jeweils wieder bei 0 an;
+  nach einem Neustart zählen sie weiter. Direkt nach dem Update beginnen sie bei 0, die Kacheln im Energie-Tab zeigen
+  weiterhin die Werte aus der Statistik von Home Assistant.
+* Die fortlaufenden Zähler heißen jetzt „Energieverbrauch gesamt“ und „Energieverbrauch Kompressor gesamt“ (nur der
+  angezeigte Name; Entity-IDs, Automationen und Dashboards bleiben gleich).
+* Energie-Tab: Die Balken pro Tag zeigen zusätzlich Lüftung und Elektronik (Dashboard neu erstellen).
 
 ## Neu in Version 0.15.2
 

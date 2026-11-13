@@ -288,10 +288,49 @@
         "name": "Ventilation and electronics power"
       },
       "energy_total": {
-        "name": "Energy consumption"
+        "name": "Energy consumption total"
+      },
+      "energy_total_day": {
+        "name": "Energy consumption today"
+      },
+      "energy_total_week": {
+        "name": "Energy consumption this week"
+      },
+      "energy_total_month": {
+        "name": "Energy consumption this month"
+      },
+      "energy_total_year": {
+        "name": "Energy consumption this year"
       },
       "energy_compressor": {
-        "name": "Compressor energy consumption"
+        "name": "Compressor energy consumption total"
+      },
+      "energy_compressor_day": {
+        "name": "Compressor energy consumption today"
+      },
+      "energy_compressor_week": {
+        "name": "Compressor energy consumption this week"
+      },
+      "energy_compressor_month": {
+        "name": "Compressor energy consumption this month"
+      },
+      "energy_compressor_year": {
+        "name": "Compressor energy consumption this year"
+      },
+      "energy_ventilation": {
+        "name": "Ventilation and electronics energy consumption total"
+      },
+      "energy_ventilation_day": {
+        "name": "Ventilation and electronics energy consumption today"
+      },
+      "energy_ventilation_week": {
+        "name": "Ventilation and electronics energy consumption this week"
+      },
+      "energy_ventilation_month": {
+        "name": "Ventilation and electronics energy consumption this month"
+      },
+      "energy_ventilation_year": {
+        "name": "Ventilation and electronics energy consumption this year"
       },
       "hours_vorwaerme": {
         "name": "Operating hours preheating"
