@@ -168,3 +168,14 @@ async def test_no_cost_without_price_sensor(hass: HomeAssistant, device) -> None
     from homeassistant.helpers import entity_registry as er
 
     assert er.async_get(hass).async_get_entity_id("sensor", "proxon_control", "abc123_Stromkosten") is None
+
+
+
+# ---------------- FWT 3.0 ----------------
+def test_fwt3_led_values_fall_back_to_the_temperature() -> None:
+    """FWT 3.0, firmware 12: the LED field holds two bytes (high byte = offset + 4), not the 4/5/6 demand level."""
+    base = {"NBE0MittelTemperatur": 23.0}
+    room = {"NBE1MittelTemperatur": 20.0, "NBE1OffsetTemperatur": 2.0}  # target 22 °C
+    assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 24.1}, 1) == "warmer"
+    assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 22.0}, 1) == "at_target"
+    assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 21.0}, 1) == "too_cold"

@@ -652,6 +652,9 @@ def room_base(values: dict, i: int) -> float | None:
 
 
 LED_DEMAND = {6: "too_cold", 5: "at_target", 4: "warmer"}
+# An FWT 3.0 (firmware 12) reports two bytes here instead, e.g. 0x0504 / 0x0604: the high byte followed the room's offset
+# (+4) in every room, so it seems to be the target shown on the panel, not the heat demand. Such values aren't in
+# LED_DEMAND, so the demand is worked out from the room's temperature and target there.
 
 
 def room_demand(values: dict, i: int) -> str | None:

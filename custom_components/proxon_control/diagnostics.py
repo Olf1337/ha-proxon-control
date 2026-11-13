@@ -2,7 +2,7 @@
 
 Holds the raw values of the last query, so problems on other units or firmware versions can be looked at. The values
 "Pruefwert_DP0_n" are data points from Proxon's Modbus list whose meaning over the network is still being checked.
-Device ID, password, address of the bridge add-on and the room names are removed.
+Device ID, password, the addresses of the unit and of the bridge add-on, the house photo and the room names are removed.
 """
 from __future__ import annotations
 
@@ -13,10 +13,11 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
 from . import ProxonConfigEntry
-from .const import CONF_CONNECTION, CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD
+from .const import CONF_CONNECTION, CONF_DEVICE_ID, CONF_HOST, CONF_HOUSE_PHOTO, CONF_LOCAL_HOST, CONF_PASSWORD
 
 REDACTED = "**REDACTED**"
-TO_REDACT = {CONF_DEVICE_ID, CONF_PASSWORD, CONF_HOST}
+# the unit's address in the home network is in the setup data or (changed later) in the options
+TO_REDACT = {CONF_DEVICE_ID, CONF_PASSWORD, CONF_HOST, CONF_LOCAL_HOST, CONF_HOUSE_PHOTO}
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ProxonConfigEntry) -> dict[str, Any]:
@@ -32,7 +33,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ProxonC
             "version": entry.version,
             "connection": entry.data.get(CONF_CONNECTION),
             "data": async_redact_data(dict(entry.data), TO_REDACT),
-            "options": dict(entry.options),
+            "options": async_redact_data(dict(entry.options), TO_REDACT),
         },
         "system": {"machine": platform.machine(), "system": platform.system()},
         "coordinator": {

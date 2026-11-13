@@ -9,7 +9,7 @@ import pytest
 
 from custom_components.proxon_control.diagnostics import async_get_config_entry_diagnostics
 
-from .test_integration import call, eid, no_entity, setup
+from .test_integration import call, eid, make_entry, no_entity, setup
 
 
 # ---------------- ventilation as a fan ----------------
@@ -133,3 +133,19 @@ async def test_diagnostics_hide_login_and_room_names(hass: HomeAssistant, device
     assert diag["coordinator"]["last_update_success"] is True
     assert diag["values"]["Luefterstufe"] == 2
     assert diag["values"]["T3Frischluft"] == 17.5
+
+
+async def test_diagnostics_hide_the_units_address(hass: HomeAssistant, device) -> None:
+    """The unit's IP address (setup data, or options when changed later) and the house photo aren't in the download."""
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, "local_host": "192.168.178.33"},
+        options={"local_host": "192.168.178.34", "house_photo": "/local/proxon/haus.jpg", "scan_interval": 10},
+    )
+    await setup(hass, entry)
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+    text = json.dumps(diag)
+    assert "192.168.178" not in text and "haus.jpg" not in text
+    assert diag["entry"]["data"]["local_host"] == diag["entry"]["options"]["local_host"] == "**REDACTED**"
+    assert diag["entry"]["options"]["scan_interval"] == 10
