@@ -30,8 +30,8 @@ Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
 **New in 0.17.0:** the ready-made dashboard in five tabs by task (home, hot water, optimisation, power, settings), with the
-rooms' targets right on the start page; electricity cost per day, week, month and year; a forecast of this month's and year's
-consumption and cost.
+rooms' targets right on the start page, created by the action itself as the dashboard "Proxon" in the sidebar; electricity cost
+per day, week, month and year; a forecast of this month's and year's consumption and cost.
 
 **New in 0.16.0:** energy consumption per day, week, month and year (total, compressor, ventilation and electronics), and
 the energy of ventilation and electronics as a counter of its own.
@@ -117,8 +117,11 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
      pro Tag und Monat, Laufzeiten.
   5. **Einstellungen:** Lüftungs-Grenzwerte, Wochenprogramm, Wärmeelemente, Werte der Anlage, Diagnose.
 
-  Der bisherige Tab „Haus“ entfällt (das gezeichnete Haus steht jetzt auf „Zuhause“). Zum Übernehmen „Dashboard erstellen“
-  ausführen und den Inhalt im Raw-Konfigurationseditor ersetzen.
+  Der bisherige Tab „Haus“ entfällt (das gezeichnete Haus steht jetzt auf „Zuhause“).
+* **„Dashboard erstellen“ legt das Dashboard selbst an:** Die Aktion legt das Dashboard **„Proxon“** in der Seitenleiste an
+  (`/proxon-dashboard`) und schreibt es bei jedem weiteren Aufruf neu – Kopieren und Einfügen entfällt. Achtung: Was darin von
+  Hand geändert wurde, wird dabei ersetzt. Wer lieber selbst einfügt, wählt die Option „Nur zum Einfügen“ (wie bisher).
+  Dein bisheriges, selbst eingefügtes Dashboard bleibt unverändert; es kann gelöscht werden, wenn „Proxon“ passt.
 * **Stromkosten heute, diese Woche, diesen Monat und dieses Jahr** (mit Strompreis-Sensor in den Optionen).
 * **Hochrechnung** für diesen Monat und dieses Jahr, für Verbrauch und Kosten: Was bisher gezählt wurde, im gleichen Tempo
   auf den ganzen Zeitraum hochgerechnet. Sie erscheint nach 12 Stunden (Monat) bzw. 3 Tagen (Jahr) Zählzeit; ist erst
@@ -404,12 +407,15 @@ Schwellwerte mit +/–, das Wochenprogramm der Lüftung (Montag–Sonntag), die 
 
 Auf breiten Bildschirmen zwei Spalten, auf dem Handy alles untereinander.
 
-**Einrichten (einmalig):**
-1. *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion ausführen* → die **ganze Antwort** kopieren (sie beginnt mit `views:`).
-2. *Einstellungen → Dashboards → Dashboard hinzufügen → Neues Dashboard von Grund auf*, öffnen → ✏️ → ⋮ → **Raw-Konfigurationseditor** → Inhalt ersetzen → Speichern.
+**Einrichten (ab 0.17.0 mit einem Klick):** *Entwicklerwerkzeuge → Aktionen* → **„Proxon Control: Dashboard erstellen“** → *Aktion
+ausführen*. Das Dashboard **„Proxon“** erscheint in der Seitenleiste (Adresse `/proxon-dashboard`). Nach einem Update mit neuem
+Dashboard-Aufbau die Aktion einfach noch einmal ausführen: Das Dashboard wird neu geschrieben – **was du darin von Hand geändert
+hast, wird dabei ersetzt.** Wer es anpassen will, legt sich am besten eine Kopie an (im Dashboard ✏️ → ⋮ → *Dashboard kopieren*)
+oder nutzt die Option **„Nur zum Einfügen“**: Dann liefert die Aktion das Dashboard als Antwort (sie beginnt mit `views:`), zum
+Einfügen im *Raw-Konfigurationseditor* eines eigenen Dashboards (✏️ → ⋮ → *Raw-Konfigurationseditor* → Inhalt ersetzen).
 
 Das Dashboard enthält die tatsächlichen Entitäts-IDs deiner Anlage (auch mit Bereichs-Präfix wie `hwr_`) und nur das, was deine Anlage hat.
-Nach einem Update mit neuem Dashboard-Aufbau einfach die Aktion noch einmal ausführen und den Inhalt erneut ersetzen.
+Eine zweite Proxon-Anlage bekommt ein eigenes Dashboard.
 
 ### Warmwasser als Speicher für Solarstrom und günstigen Strom
 

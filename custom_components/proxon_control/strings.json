@@ -900,11 +900,15 @@
     },
     "create_dashboard": {
       "name": "Create dashboard",
-      "description": "Returns a ready-made dashboard (the whole answer, starting with views:): pictures of the unit, the hot water and the house, the room thermostats and all functions, with this unit's real entity IDs. Paste it under Dashboard → ⋮ → Edit → ⋮ → Raw configuration editor.",
+      "description": "Creates the ready-made dashboard \"Proxon\" in the sidebar (written anew the next time; changes made in it by hand are replaced): home, hot water, optimisation, power, settings, with this unit's real entity IDs.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",
           "description": "Only needed if more than one Proxon unit is set up."
+        },
+        "paste_only": {
+          "name": "Paste only",
+          "description": "Don't create a dashboard, just return it (starting with views:), to paste into the raw configuration editor of a dashboard of your own."
         }
       }
     },

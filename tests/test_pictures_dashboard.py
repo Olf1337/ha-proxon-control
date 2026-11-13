@@ -263,7 +263,7 @@ async def test_status_is_right_from_the_start(hass: HomeAssistant, device, hass_
 
 async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
     assert list(dashboard) == ["views"]  # the answer is the dashboard itself: paste it as it is
     assert parse_yaml(dump(dashboard)) == dashboard
     views = dashboard["views"]
@@ -388,7 +388,7 @@ async def test_dashboard_with_house_photo(hass: HomeAssistant, device) -> None:
     entry.add_to_hass(hass)
     hass.config_entries.async_update_entry(entry, options={"house_photo": "/local/proxon/haus.jpg"})
     await setup(hass, entry)
-    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
     phone = next(s for s in dashboard["views"][0]["sections"] if s["visibility"][0]["media_query"] == "(max-width: 1023px)")
     hero = phone["cards"][0]
     assert hero["type"] == "picture-elements" and hero["image"] == "/local/proxon/haus.jpg" and "image_entity" not in hero
@@ -454,3 +454,36 @@ async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> Non
     with patch("custom_components.proxon_control.services.async_install_theme", return_value=True):
         answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
     assert answer["installed"] is True and answer["theme"] == "Proxon Glas"
+
+
+async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant, device, hass_ws_client) -> None:
+    """Without "paste only" the action creates the dashboard "Proxon" (sidebar) and writes it anew on the next run."""
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, "lovelace", {})
+    await setup(hass)
+    answer = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    assert answer["url"] == "/proxon-dashboard" and answer["created"] is True
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
+    boards = (await client.receive_json())["result"]
+    proxon = next(b for b in boards if b["url_path"] == "proxon-dashboard")
+    assert proxon["title"] == "Proxon" and proxon["show_in_sidebar"] is True and proxon["mode"] == "storage"
+    await client.send_json_auto_id({"type": "lovelace/config", "url_path": "proxon-dashboard"})
+    views = (await client.receive_json())["result"]["views"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-hot-water", "proxon-optimize", "proxon-energy", "proxon-settings"]
+    # the next run writes it anew instead of creating a second one
+    answer = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    assert answer["created"] is False and "replaced" in answer["message"]
+    await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
+    assert [b["url_path"] for b in (await client.receive_json())["result"]].count("proxon-dashboard") == 1
+
+
+async def test_create_dashboard_without_dashboards(hass: HomeAssistant, device) -> None:
+    """Without Home Assistant's dashboards the action says how to paste it instead."""
+    from homeassistant.exceptions import ServiceValidationError
+    import pytest
+
+    await setup(hass)
+    with pytest.raises(ServiceValidationError, match="paste only"):
+        await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)

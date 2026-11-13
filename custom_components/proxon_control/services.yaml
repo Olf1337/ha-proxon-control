@@ -63,6 +63,11 @@ create_dashboard:
       selector:
         config_entry:
           integration: proxon_control
+    paste_only:
+      required: false
+      default: false
+      selector:
+        boolean:
 install_glass_theme:
   fields:
     config_entry_id:

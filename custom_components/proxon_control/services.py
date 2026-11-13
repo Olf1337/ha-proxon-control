@@ -1,5 +1,5 @@
-"""Actions: set one phase of the weekly ventilation schedule, copy one day to other days, create the ready-made dashboard,
-install its glass theme."""
+"""Actions: set one phase of the weekly ventilation schedule, copy one day to other days, create the ready-made dashboard
+(put into Home Assistant, or returned to paste), install its glass theme."""
 from __future__ import annotations
 
 from datetime import time
@@ -13,6 +13,7 @@ import voluptuous as vol
 from .const import CONF_PICTURE_THEME, DOMAIN
 from .coordinator import ProxonCoordinator
 from .dashboard import build
+from .dashboard_store import DashboardStoreError, async_store_dashboard
 from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
 from .theme import THEME_FILE, THEME_NAME, async_install_theme
@@ -23,6 +24,9 @@ SERVICE_COPY_DAY = "copy_schedule_day"
 SERVICE_DASHBOARD = "create_dashboard"
 SERVICE_THEME = "install_glass_theme"
 DASHBOARD_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY): cv.string})
+ATTR_PASTE_ONLY = "paste_only"
+CREATE_DASHBOARD_SCHEMA = DASHBOARD_SCHEMA.extend({vol.Optional(ATTR_PASTE_ONLY, default=False): cv.boolean})
+DASHBOARD_URL = "proxon-dashboard"
 
 DAY_NAMES = {
     "de": ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"),
@@ -138,9 +142,38 @@ def async_setup_services(hass: HomeAssistant) -> None:
         await async_copy_day(hass, coordinator, DAYS.index(call.data["source_day"]), [DAYS.index(d) for d in call.data["target_days"]])
 
     async def create_dashboard(call: ServiceCall) -> ServiceResponse:
-        """The ready-made dashboard, with this unit's real entity IDs. Returned as the dashboard itself (starting with
-        `views:`), so the whole answer shown under Developer tools can be pasted into the raw configuration editor."""
-        return build(hass, _entry(hass, call.data.get(ATTR_CONFIG_ENTRY)))
+        """The ready-made dashboard, with this unit's real entity IDs: put into Home Assistant as the dashboard "Proxon"
+        (created on the first run, written anew on every further one). With "paste only" it is just returned (starting
+        with `views:`), to paste into the raw configuration editor of a dashboard of one's own."""
+        entry = _entry(hass, call.data.get(ATTR_CONFIG_ENTRY))
+        config = build(hass, entry)
+        if call.data.get(ATTR_PASTE_ONLY):
+            return config
+        german = (hass.config.language or "").startswith("de")
+        # a second unit gets a dashboard of its own
+        others = [e for e in hass.config_entries.async_entries(DOMAIN) if e.entry_id != entry.entry_id]
+        first = not others or entry.entry_id == sorted(e.entry_id for e in hass.config_entries.async_entries(DOMAIN))[0]
+        url = DASHBOARD_URL if first else f"{DASHBOARD_URL}-{entry.entry_id[-6:].lower()}"
+        try:
+            created = await async_store_dashboard(hass, url, "Proxon" if first else f"Proxon {entry.title}", config)
+        except DashboardStoreError as err:
+            if str(err) == "yaml":
+                reason = (f"Unter /{url} gibt es schon ein Dashboard aus der YAML-Konfiguration; das wird nicht überschrieben."
+                          if german else f"There is a dashboard from the YAML configuration at /{url}; it isn't written over.")
+            else:
+                reason = ("Diese Home-Assistant-Version lässt das Anlegen von Dashboards nicht zu."
+                          if german else "This version of Home Assistant doesn't let the dashboard be created.")
+            hint = (" Führe die Aktion mit „Nur zum Einfügen“ aus und füge die Antwort im Raw-Konfigurationseditor eines "
+                    "eigenen Dashboards ein." if german else
+                    " Run the action with \"paste only\" and paste the answer into the raw configuration editor of a dashboard.")
+            raise ServiceValidationError(reason + hint) from err
+        if german:
+            message = (f"Das Dashboard „Proxon“ ist angelegt: Seitenleiste oder /{url}." if created else
+                       f"Das Dashboard unter /{url} ist neu geschrieben. Änderungen, die dort von Hand gemacht wurden, sind ersetzt.")
+        else:
+            message = (f"The dashboard \"Proxon\" is created: sidebar or /{url}." if created else
+                       f"The dashboard at /{url} is written anew. Changes made there by hand are replaced.")
+        return {"url": f"/{url}", "created": created, "message": message}
 
     async def install_glass_theme(call: ServiceCall) -> ServiceResponse:
         """Write the glass theme into the themes folder, reload the themes, and draw the dashboard pictures dark (they sit
@@ -171,7 +204,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return {"theme": THEME_NAME, "installed": installed, "file": f"themes/{THEME_FILE}", "message": message}
 
     hass.services.async_register(
-        DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.ONLY
+        DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=CREATE_DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
     )
     hass.services.async_register(
         DOMAIN, SERVICE_THEME, install_glass_theme, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
