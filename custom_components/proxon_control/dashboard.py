@@ -40,7 +40,7 @@ from .theme import THEME_NAME
 TEXT: dict[str, dict[str, Any]] = {
     "de": {
         "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus",
-        "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss"], "now": "Gerade", "elements": "Wärmeelemente",
+        "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss"], "now": "Jetzt", "whole": "Gesamt", "elements": "Wärmeelemente",
         "last_day": "Letzte 24 Stunden", "switches": "Schalter", "pills": {"T3Frischluft": "Außen ", "RaumMittel": "Innen ",
                                                                           "WarmwasserIstTemperatur": "Warmwasser "},
         "outside": "Außen", "power_today": "Strom heute",
@@ -66,7 +66,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "Soll-E-Heizstab-Temperatur": "Heizstab-Soll", "BoostStatus": "Status", "SollWassertemperatur": "Warmwasser-Soll",
             "WarmwasserLadezustand": "Ladezustand", "Legionellenfunktion": "Legionellenschaltung", "AktuellerBetrieb": "Betrieb",
             "Waermerueckgewinnung": "Wärmerückgewinnung", "IntensivlueftungsDauer": "Dauer Intensivlüftung",
-            "LeistungGesamt": "Leistung", "EnergieGesamt": "Verbrauch",
+            "LeistungGesamt": "Leistung jetzt", "EnergieGesamt": "Verbrauch",
             "SaisonAutomatik": "Sommer/Winter automatisch", "SaisonWinterUnter": "Winter unter", "SaisonSommerUeber": "Sommer über",
             "NachtabsenkungAktiv": "Nachtabsenkung", "NachtabsenkungTemperatur": "Nachttemperatur", "NachtabsenkungStart": "Beginn",
             "NachtabsenkungEnde": "Ende", "KompressorStartsHeute": "Kompressor-Starts", "KompressorLaufzeitHeute": "Kompressor",
@@ -89,7 +89,7 @@ TEXT: dict[str, dict[str, Any]] = {
     },
     "en": {
         "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House",
-        "rooms": "Rooms", "floors": ["Ground floor", "Upper floor"], "now": "Right now", "elements": "Heating elements",
+        "rooms": "Rooms", "floors": ["Ground floor", "Upper floor"], "now": "Right now", "whole": "Total", "elements": "Heating elements",
         "last_day": "Last 24 hours", "switches": "Switches", "pills": {"T3Frischluft": "Outdoor ", "RaumMittel": "Indoor ",
                                                                        "WarmwasserIstTemperatur": "Hot water "},
         "outside": "Outdoor", "power_today": "Power today",
@@ -116,7 +116,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "Soll-E-Heizstab-Temperatur": "Heater target", "BoostStatus": "Status", "SollWassertemperatur": "Hot-water target",
             "WarmwasserLadezustand": "Charge", "Legionellenfunktion": "Legionella protection", "AktuellerBetrieb": "Operation",
             "Waermerueckgewinnung": "Heat recovery", "IntensivlueftungsDauer": "Boost duration",
-            "LeistungGesamt": "Power", "EnergieGesamt": "Consumption",
+            "LeistungGesamt": "Power now", "EnergieGesamt": "Consumption",
             "SaisonAutomatik": "Automatic summer/winter", "SaisonWinterUnter": "Winter below", "SaisonSommerUeber": "Summer above",
             "NachtabsenkungAktiv": "Night setback", "NachtabsenkungTemperatur": "Night temperature", "NachtabsenkungStart": "Start",
             "NachtabsenkungEnde": "End", "KompressorStartsHeute": "Compressor starts", "KompressorLaufzeitHeute": "Compressor",
@@ -247,6 +247,9 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                              "hours_to_show": 24, "detail": 1, "grid_options": FULL})
     if air_rows:
         temperatures.append({"type": "entities", "entities": air_rows, "grid_options": FULL})
+    # the power right now (tap: the power tab)
+    temperatures += tile("LeistungGesamt", FULL, features=[{"type": "trend-graph", "hours_to_show": 1}], features_position="inline",
+                         tap_action=go("proxon-energy"))
 
     # every room: target with +/- right on the card, below it the temperature of the last day (tap: the thermostat)
     def room_card(i: int, grid: dict) -> list[dict]:
@@ -363,7 +366,11 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                                               "grid_options": FULL}]
 
     p = t["periods"]
-    totals = [heading(t["consumption"]), *[c for period in ("day", "week", "month", "year") for c in statistic("EnergieGesamt", p[period], period)]]
+    # right now: the whole unit with the last hour, compressor and ventilation with electronics
+    now_power = [*tile("LeistungGesamt", FULL, features=[{"type": "trend-graph", "hours_to_show": 1}]),
+                 *tile("LeistungKompressor", HALF), *tile("LeistungLueftung", HALF)]
+    totals = [*([heading(t["now"]), *now_power] if now_power else []), heading(t["consumption"]),
+              *[c for period in ("day", "week", "month", "year") for c in statistic("EnergieGesamt", p[period], period)]]
     if "Stromkosten" in ids:
         totals += [heading(t["cost"]), *[c for period in ("day", "week", "month", "year") for c in statistic("Stromkosten", p[period], period)]]
     # what this month and year will probably come to
@@ -378,7 +385,8 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                 for suffix, period in (("Heute", "day"), ("Woche", "week"), ("Monat", "month"), ("Jahr", "year")) if f"{key}{suffix}" in ids]
         if rows:
             split.append({"type": "entities", "title": names[key], "entities": rows, "grid_options": FULL})
-    power_rows = [{"entity": ids[k], "name": names[k]} for k in ("LeistungGesamt", "LeistungKompressor", "LeistungLueftung") if k in ids]
+    power_rows = [{"entity": ids[k], "name": t["whole"] if k == "LeistungGesamt" else names[k]}
+                  for k in ("LeistungGesamt", "LeistungKompressor", "LeistungLueftung") if k in ids]
     # left: totals, split, power and runtimes one below the other; right (two wide): consumption and cost per day and month
     energy_view: list[dict[str, Any]] = [
         {"type": "grid", "cards": [

@@ -349,7 +349,12 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     numbers = [c for c in cards(optimize) if c.get("features") == [{"type": "numeric-input", "style": "buttons"}]]
     assert {c["entity"] for c in numbers} >= {eid(hass, "number", k) for k in ("SolarSchwelle", "PreisSchwelle", "BoostGrenze", "KuehlWunsch")}
 
-    # ---- power: consumption today / week / month / year, the split, per day and month, power, runtimes and starts ----
+    # ---- power: right now, consumption today / week / month / year, the split, per day and month, runtimes and starts ----
+    now = [c.get("entity") for c in energy["sections"][0]["cards"][1:4]]
+    assert now == [eid(hass, "sensor", k) for k in ("LeistungGesamt", "LeistungKompressor", "LeistungLueftung")]
+    assert energy["sections"][0]["cards"][1]["features"] == [{"type": "trend-graph", "hours_to_show": 1}]
+    live = next(c for c in values["cards"] if c.get("entity") == eid(hass, "sensor", "LeistungGesamt"))
+    assert live["tap_action"] == {"action": "navigate", "navigation_path": "proxon-energy"}  # on home, with the temperatures
     totals = [c for c in cards(energy) if c["type"] == "statistic"]
     assert [c["period"]["calendar"]["period"] for c in totals] == ["day", "week", "month", "year"]
     forecast = [c["entity"] for c in cards(energy) if c.get("entity", "").endswith("forecast_this_month")
