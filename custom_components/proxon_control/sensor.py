@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 from homeassistant.components.sensor import (
@@ -253,8 +253,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     for key, power, tk in ENERGY:
         if power in data:
             total = ProxonEnergy(coordinator, key, power, tk)
-            # the same energy for today / this week / this month / this year
-            entities += [total, *[ProxonEnergyPeriod(coordinator, total, suffix, f"{tk}_{period}", period) for suffix, period in PERIODS]]
+            # the same energy for today / this week / this month / this year (the whole unit also with a forecast)
+            entities += [total, *_with_forecast(coordinator, total, tk, forecast=key == "EnergieGesamt")]
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
     if "NBE0Temperatur" in data:
@@ -281,7 +281,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
                                             "mdi:bacteria-outline", [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
                                                                      L.HEATING_DUE, L.BLOCKED]))
     if entry.options.get(CONF_PRICE_SENSOR) and "LeistungGesamt" in data:
-        entities.append(ProxonEnergyCost(coordinator, hass.config.currency))
+        cost = ProxonEnergyCost(coordinator, hass.config.currency)
+        entities += [cost, *_with_forecast(coordinator, cost, "energy_cost")]
     if comfort.season.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status", "mdi:sun-snowflake-variant",
                                             [S_OFF, S_COLLECTING, S_SUMMER, S_WINTER, S_MANUAL, S_BLOCKED]))
@@ -386,6 +387,15 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
 PERIODS = (("Heute", "day"), ("Woche", "week"), ("Monat", "month"), ("Jahr", "year"))
 
 
+def _with_forecast(coordinator, total: ProxonEnergy, tk: str, forecast: bool = True) -> list[SensorEntity]:
+    """The total for today / this week / this month / this year, and (forecast) what this month and year will come to."""
+    periods = {period: ProxonEnergyPeriod(coordinator, total, suffix, f"{tk}_{period}", period) for suffix, period in PERIODS}
+    out: list[SensorEntity] = list(periods.values())
+    if forecast:
+        out += [ProxonForecast(coordinator, periods[period], f"{tk}_forecast_{period}") for period in ("month", "year")]
+    return out
+
+
 def period_of(now: datetime, period: str) -> str:
     """Which day / week (ISO, starting on Monday) / month / year a local time belongs to."""
     if period == "day":
@@ -398,13 +408,26 @@ def period_of(now: datetime, period: str) -> str:
     return str(now.year)
 
 
-class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
-    """Energy used today / this week / this month / this year: the total energy counter minus its value at the start of the
-    period (local time). Starts again from 0 with every new period; kept across restarts."""
+def period_bounds(now: datetime, period: str) -> tuple[datetime, datetime]:
+    """Start and end (local time) of the day / week / month / year a local time belongs to."""
+    day = now.date()
+    if period == "day":
+        first, after = day, day + timedelta(days=1)
+    elif period == "week":
+        first = day - timedelta(days=day.weekday())
+        after = first + timedelta(days=7)
+    elif period == "month":
+        first = day.replace(day=1)
+        after = (first + timedelta(days=32)).replace(day=1)
+    else:
+        first, after = day.replace(month=1, day=1), day.replace(year=day.year + 1, month=1, day=1)
+    return dt_util.start_of_local_day(first), dt_util.start_of_local_day(after)
 
-    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-    _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
+    """Energy used (or what it cost) today / this week / this month / this year: the running total minus its value at the
+    start of the period (local time). Starts again from 0 with every new period; kept across restarts."""
+
     _attr_suggested_display_precision = 2
 
     def __init__(self, coordinator, total: ProxonEnergy, suffix: str, tk: str, period: str) -> None:
@@ -413,6 +436,12 @@ class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
         self._period = period
         self._current: str | None = None  # the period counted now
         self._start: float | None = None  # the total at its start
+        self.counting_since: datetime | None = None  # the period's start, or later when counting began within it
+        self._attr_native_unit_of_measurement = total.native_unit_of_measurement
+        self._attr_device_class = total.device_class
+        # money is a "total" with a reset time; energy simply starts again from 0
+        self._attr_state_class = SensorStateClass.TOTAL if total.device_class == SensorDeviceClass.MONETARY \
+            else SensorStateClass.TOTAL_INCREASING
 
     @property
     def available(self) -> bool:
@@ -421,24 +450,84 @@ class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         if (state := await self.async_get_last_state()) is not None:
-            start = state.attributes.get("period_start_kwh")
-            if isinstance(state.attributes.get("period"), str) and isinstance(start, (int, float)):
-                self._current, self._start = state.attributes["period"], float(start)
+            a = state.attributes
+            start = a.get("period_start_value", a.get("period_start_kwh"))
+            if isinstance(a.get("period"), str) and isinstance(start, (int, float)):
+                self._current, self._start = a["period"], float(start)
+                since = a.get("counting_since")
+                self.counting_since = dt_util.parse_datetime(since) if isinstance(since, str) else None
+
+    @property
+    def last_reset(self) -> datetime | None:
+        if self._attr_state_class != SensorStateClass.TOTAL:
+            return None
+        return period_bounds(dt_util.now(), self._period)[0]
 
     @property
     def native_value(self) -> float | None:
         if not self._total.restored:  # the total isn't back yet after a restart: nothing to count from
             return None
         total = self._total._kwh
-        now = period_of(dt_util.now(), self._period)
-        # a new period (also when Home Assistant was off at its start), or the total started again: count from here
-        if self._current != now or self._start is None or self._start > total:
-            self._current, self._start = now, total
+        now = dt_util.now()
+        current = period_of(now, self._period)
+        if self._current != current or self._start is None or self._start > total:
+            start_of_period = period_bounds(now, self._period)[0]
+            # counted right through the change of period: this one is counted from its start; otherwise (first time,
+            # Home Assistant off at the change, total started again) only from now
+            through = self._current is not None and self._current == period_of(start_of_period - timedelta(seconds=1), self._period)
+            self.counting_since = start_of_period if through and self._start is not None and self._start <= total else now
+            self._current, self._start = current, total
+        if self.counting_since is None:
+            self.counting_since = now
         return round(total - self._start, 4)
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {"period": self._current, "period_start_kwh": None if self._start is None else round(self._start, 4)}
+        return {"period": self._current, "period_start_value": None if self._start is None else round(self._start, 4),
+                "counting_since": self.counting_since.isoformat() if self.counting_since else None}
+
+
+# a forecast needs this much counted time first, so a single unusual hour doesn't decide it
+FORECAST_MIN = {"month": timedelta(hours=12), "year": timedelta(days=3)}
+
+
+class ProxonForecast(ProxonEntity, SensorEntity):
+    """What this month / this year will probably come to: what has been counted so far, extended at the same rate to the
+    whole period. Only an estimate - the weather of the rest of the period decides."""
+
+    _attr_suggested_display_precision = 0
+    _attr_icon = "mdi:chart-timeline-variant-shimmer"
+
+    def __init__(self, coordinator, so_far: ProxonEnergyPeriod, tk: str) -> None:
+        super().__init__(coordinator, f"{so_far._key}Prognose", tk)
+        self._so_far = so_far
+        self._attr_native_unit_of_measurement = so_far.native_unit_of_measurement
+        self._attr_device_class = so_far.device_class
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    def _counted(self) -> tuple[float, timedelta] | None:
+        value, since = self._so_far.native_value, self._so_far.counting_since
+        if value is None or since is None:
+            return None
+        return float(value), dt_util.now() - since
+
+    @property
+    def native_value(self) -> float | None:
+        counted = self._counted()
+        if counted is None or counted[1] < FORECAST_MIN[self._so_far._period]:
+            return None
+        value, duration = counted
+        start, end = period_bounds(dt_util.now(), self._so_far._period)
+        return round(value * (end - start).total_seconds() / duration.total_seconds(), 2)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        counted = self._counted()
+        return {"so_far": None if counted is None else round(counted[0], 2),
+                "counted_days": None if counted is None else round(counted[1].total_seconds() / 86400, 1)}
 
 
 class ProxonEnergyCost(ProxonEnergy):

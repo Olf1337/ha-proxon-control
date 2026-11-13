@@ -51,7 +51,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "season": "Sommer/Winter-Automatik", "night": "Nachtabsenkung", "runtime": "Laufzeit heute",
         "energy": "Strom", "consumption": "Verbrauch", "ventilation": "Lüftung", "temperatures": "Temperaturen", "inside": "Innen (Mittel)",
         "optimize": "Optimierung", "automatic": "Automatik", "legionella": "Legionellenschutz mit Sonne", "last_day_short": "24 h",
-        "split": "Aufteilung", "auto_names": {"Energiemanager": "Solar / günstiger Strom", "BoostStatus": "Warmwasser-Boost",
+        "split": "Aufteilung", "forecast": "Hochrechnung", "auto_names": {"Energiemanager": "Solar / günstiger Strom", "BoostStatus": "Warmwasser-Boost",
                                               "LegionellenStatus": "Legionellenschutz"}, "periods": {"day": "Heute", "week": "Diese Woche", "month": "Dieser Monat",
                                                                      "year": "Dieses Jahr"},
         "cost": "Kosten", "per_day": "Verbrauch pro Tag (30 Tage)", "per_month": "Verbrauch pro Monat", "power_day": "Leistung, letzte 24 Stunden",
@@ -78,6 +78,8 @@ TEXT: dict[str, dict[str, Any]] = {
             "EnergieKompressor": "Kompressor", "EnergieLueftung": "Lüftung und Elektronik", "LeistungKompressor": "Kompressor", "LeistungLueftung": "Lüftung und Elektronik",
             "Stromkosten": "Kosten", "WarmwasserKompressorStartsHeute": "Warmwasser-Kompressor",
             "GrenzwertFeuchte": "Grenzwert Feuchte", "GrenzwertCO2": "Grenzwert CO₂",
+            "EnergieGesamtMonatPrognose": "Verbrauch Monat", "StromkostenMonatPrognose": "Kosten Monat",
+            "EnergieGesamtJahrPrognose": "Verbrauch Jahr", "StromkostenJahrPrognose": "Kosten Jahr",
         },
         "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
         "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "schedule_on": "Programm aktiv",
@@ -98,7 +100,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "season": "Summer/winter automatic", "night": "Night setback", "runtime": "Runtime today",
         "energy": "Power", "consumption": "Consumption", "ventilation": "Ventilation", "temperatures": "Temperatures",
         "inside": "Indoor (average)", "optimize": "Optimisation", "automatic": "Automatic", "legionella": "Legionella protection with solar",
-        "last_day_short": "24 h", "split": "Split",
+        "last_day_short": "24 h", "split": "Split", "forecast": "Forecast",
         "auto_names": {"Energiemanager": "Solar / cheap power", "BoostStatus": "Hot-water boost", "LegionellenStatus": "Legionella protection"},
         "periods": {"day": "Today", "week": "This week", "month": "This month",
                                                                        "year": "This year"},
@@ -126,6 +128,8 @@ TEXT: dict[str, dict[str, Any]] = {
             "EnergieKompressor": "Compressor", "EnergieLueftung": "Ventilation and electronics", "LeistungKompressor": "Compressor", "LeistungLueftung": "Ventilation and electronics",
             "Stromkosten": "Cost", "WarmwasserKompressorStartsHeute": "Hot-water compressor",
             "GrenzwertFeuchte": "Humidity limit", "GrenzwertCO2": "CO₂ limit",
+            "EnergieGesamtMonatPrognose": "Consumption month", "StromkostenMonatPrognose": "Cost month",
+            "EnergieGesamtJahrPrognose": "Consumption year", "StromkostenJahrPrognose": "Cost year",
         },
         "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "schedule_on": "Schedule active",
@@ -361,7 +365,12 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     p = t["periods"]
     totals = [heading(t["consumption"]), *[c for period in ("day", "week", "month", "year") for c in statistic("EnergieGesamt", p[period], period)]]
     if "Stromkosten" in ids:
-        totals += [heading(t["cost"]), *statistic("Stromkosten", p["day"], "day"), *statistic("Stromkosten", p["month"], "month")]
+        totals += [heading(t["cost"]), *[c for period in ("day", "week", "month", "year") for c in statistic("Stromkosten", p[period], period)]]
+    # what this month and year will probably come to
+    forecast = [c for key in ("EnergieGesamtMonatPrognose", "StromkostenMonatPrognose", "EnergieGesamtJahrPrognose", "StromkostenJahrPrognose")
+                for c in tile(key, HALF)]
+    if forecast:
+        totals += [heading(t["forecast"]), *forecast]
     # compressor (heating / cooling) and ventilation with electronics: today / this week / this month / this year
     split: list[dict] = []
     for key in ("EnergieKompressor", "EnergieLueftung"):

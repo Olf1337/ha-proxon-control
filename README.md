@@ -29,6 +29,10 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.17.0:** the ready-made dashboard in five tabs by task (home, hot water, optimisation, power, settings), with the
+rooms' targets right on the start page; electricity cost per day, week, month and year; a forecast of this month's and year's
+consumption and cost.
+
 **New in 0.16.0:** energy consumption per day, week, month and year (total, compressor, ventilation and electronics), and
 the energy of ventilation and electronics as a counter of its own.
 
@@ -74,7 +78,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.16.0)
+# Proxon Control – Integration für Home Assistant (Version 0.17.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -99,6 +103,27 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.17.0: Dashboard nach Aufgaben, Kosten und Hochrechnung
+
+* **Das fertige Dashboard in fünf Tabs**, je einer für eine Aufgabe:
+  1. **Zuhause:** Lüftung bedienen (Stufe, Betriebsart, Intensivlüftung, Urlaubsmodus), Warmwasser kurz, jeder Raum mit
+     Soll +/− und der Kurve der letzten 24 Stunden, Grundriss und gezeichnetes Haus, die wichtigsten Temperaturen und die
+     Anlage. Auf dem Handy zuerst das Hausfoto (oder der Grundriss).
+  2. **Warmwasser:** der T300 im Schnitt, alles zum Einstellen, was die Automatiken gerade tun.
+  3. **Optimierung:** jede Automatik (Solar/günstiger Strom, Boost, Legionellenschutz mit Sonne, Nachtkühlung,
+     Sommer/Winter, Nachtabsenkung) mit Schalter, Status und Grenzwerten.
+  4. **Strom:** Verbrauch und Kosten nach Zeitraum, Aufteilung Kompressor / Lüftung und Elektronik, Hochrechnung, Balken
+     pro Tag und Monat, Laufzeiten.
+  5. **Einstellungen:** Lüftungs-Grenzwerte, Wochenprogramm, Wärmeelemente, Werte der Anlage, Diagnose.
+
+  Der bisherige Tab „Haus“ entfällt (das gezeichnete Haus steht jetzt auf „Zuhause“). Zum Übernehmen „Dashboard erstellen“
+  ausführen und den Inhalt im Raw-Konfigurationseditor ersetzen.
+* **Stromkosten heute, diese Woche, diesen Monat und dieses Jahr** (mit Strompreis-Sensor in den Optionen).
+* **Hochrechnung** für diesen Monat und dieses Jahr, für Verbrauch und Kosten: Was bisher gezählt wurde, im gleichen Tempo
+  auf den ganzen Zeitraum hochgerechnet. Sie erscheint nach 12 Stunden (Monat) bzw. 3 Tagen (Jahr) Zählzeit; ist erst
+  mitten im Zeitraum mitgezählt worden, wird ab da gerechnet. Eine Schätzung: Das Wetter des restlichen Zeitraums
+  entscheidet.
 
 ## Neu in Version 0.16.0: Energieverbrauch nach Zeitraum
 

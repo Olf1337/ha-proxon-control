@@ -352,6 +352,9 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     # ---- power: consumption today / week / month / year, the split, per day and month, power, runtimes and starts ----
     totals = [c for c in cards(energy) if c["type"] == "statistic"]
     assert [c["period"]["calendar"]["period"] for c in totals] == ["day", "week", "month", "year"]
+    forecast = [c["entity"] for c in cards(energy) if c.get("entity", "").endswith("forecast_this_month")
+                or c.get("entity", "").endswith("forecast_this_year")]
+    assert forecast == [eid(hass, "sensor", "EnergieGesamtMonatPrognose"), eid(hass, "sensor", "EnergieGesamtJahrPrognose")]
     assert all(c["entity"] == eid(hass, "sensor", "EnergieGesamt") and c["stat_type"] == "change" for c in totals)
     split = [c for c in cards(energy) if c["type"] == "entities"]
     assert [c["title"] for c in split] == ["Compressor", "Ventilation and electronics"]

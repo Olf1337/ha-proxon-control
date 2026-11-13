@@ -429,6 +429,30 @@
       },
       "energy_cost": {
         "name": "Electricity cost"
+      },
+      "energy_cost_day": {
+        "name": "Electricity cost today"
+      },
+      "energy_cost_week": {
+        "name": "Electricity cost this week"
+      },
+      "energy_cost_month": {
+        "name": "Electricity cost this month"
+      },
+      "energy_cost_year": {
+        "name": "Electricity cost this year"
+      },
+      "energy_cost_forecast_month": {
+        "name": "Electricity cost forecast this month"
+      },
+      "energy_cost_forecast_year": {
+        "name": "Electricity cost forecast this year"
+      },
+      "energy_total_forecast_month": {
+        "name": "Energy consumption forecast this month"
+      },
+      "energy_total_forecast_year": {
+        "name": "Energy consumption forecast this year"
       }
     },
     "select": {

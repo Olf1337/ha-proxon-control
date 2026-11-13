@@ -429,6 +429,30 @@
       },
       "energy_cost": {
         "name": "Stromkosten"
+      },
+      "energy_cost_day": {
+        "name": "Stromkosten heute"
+      },
+      "energy_cost_week": {
+        "name": "Stromkosten diese Woche"
+      },
+      "energy_cost_month": {
+        "name": "Stromkosten diesen Monat"
+      },
+      "energy_cost_year": {
+        "name": "Stromkosten dieses Jahr"
+      },
+      "energy_cost_forecast_month": {
+        "name": "Stromkosten Hochrechnung Monat"
+      },
+      "energy_cost_forecast_year": {
+        "name": "Stromkosten Hochrechnung Jahr"
+      },
+      "energy_total_forecast_month": {
+        "name": "Energieverbrauch Hochrechnung Monat"
+      },
+      "energy_total_forecast_year": {
+        "name": "Energieverbrauch Hochrechnung Jahr"
       }
     },
     "select": {

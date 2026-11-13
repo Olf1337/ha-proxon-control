@@ -216,5 +216,57 @@ async def test_energy_per_period(hass: HomeAssistant, device, freezer) -> None:
     assert float(hass.states.get(names["Heute"]).state) == 0.5
     assert float(hass.states.get(names["Woche"]).state) == 4.0
     state = hass.states.get(names["Heute"])
-    assert state.attributes["period"] == "2026-11-14" and state.attributes["period_start_kwh"] == 3.5
+    assert state.attributes["period"] == "2026-11-14" and state.attributes["period_start_value"] == 3.5
     assert state.attributes["state_class"] == "total_increasing"
+
+    # counted right through midnight: today counts from its start (for the forecasts)
+    assert state.attributes["counting_since"] == "2026-11-14T00:00:00+01:00"
+
+
+def test_period_bounds() -> None:
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.proxon_control.sensor import period_bounds
+
+    t = datetime(2026, 11, 13, 7, 30, tzinfo=dt_util.get_default_time_zone())
+    start, end = period_bounds(t, "week")
+    assert (start.date().isoformat(), end.date().isoformat()) == ("2026-11-09", "2026-11-16")  # Monday to Monday
+    start, end = period_bounds(t, "month")
+    assert (start.date().isoformat(), end.date().isoformat()) == ("2026-11-01", "2026-12-01")
+    start, end = period_bounds(datetime(2026, 12, 31, 23, 0, tzinfo=t.tzinfo), "year")
+    assert (start.date().isoformat(), end.date().isoformat()) == ("2026-01-01", "2027-01-01")
+
+
+async def test_cost_per_period_and_forecasts(hass: HomeAssistant, device, freezer) -> None:
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    freezer.move_to("2026-11-10 12:00:00+01:00")  # 10 November: 30 days in the month
+    entry = await setup_with_sensors(hass)
+    sensors = {e.entity_id: e for e in hass.data["sensor"].entities}
+    total = sensors[eid(hass, "sensor", "EnergieGesamt")]
+    cost = sensors[eid(hass, "sensor", "Stromkosten")]
+    total._kwh, cost._kwh = 0.0, 0.0
+
+    async def refresh() -> None:
+        entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
+        await hass.async_block_till_done()
+
+    await refresh()  # counting starts now (12:00), within the month
+    month = eid(hass, "sensor", "EnergieGesamtMonatPrognose")
+    assert hass.states.get(month).state == "unknown"  # not enough counted yet
+    # one day later: 10 kWh and 3 € so far -> 30 days in November: 300 kWh, 90 €
+    freezer.move_to("2026-11-11 12:00:00+01:00")
+    total._kwh, cost._kwh = 10.0, 3.0
+    await refresh()
+    assert float(hass.states.get(month).state) == 300.0
+    assert float(hass.states.get(eid(hass, "sensor", "StromkostenMonatPrognose")).state) == 90.0
+    assert hass.states.get(month).attributes["counted_days"] == 1.0
+    assert hass.states.get(eid(hass, "sensor", "EnergieGesamtJahrPrognose")).state == "unknown"  # a year needs 3 days
+    # the cost of today: money, a total with its reset at midnight
+    today = hass.states.get(eid(hass, "sensor", "StromkostenHeute"))
+    assert today.attributes["device_class"] == "monetary" and today.attributes["state_class"] == "total"
+    assert today.attributes["last_reset"] == "2026-11-11T00:00:00+01:00"
+    assert float(hass.states.get(eid(hass, "sensor", "StromkostenMonat")).state) == 3.0
+    # only the whole unit has a forecast
+    from homeassistant.helpers import entity_registry as er
+
+    assert er.async_get(hass).async_get_entity_id("sensor", "proxon_control", "abc123_EnergieKompressorMonatPrognose") is None
