@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.17.1:** a fixed electricity price (ct/kWh) as an option for the cost with a fixed tariff; the power right now on the
+start page and at the top of the power tab.
+
 **New in 0.17.0:** the ready-made dashboard in five tabs by task (home, hot water, optimisation, power, settings), with the
 rooms' targets right on the start page, created by the action itself as the dashboard "Proxon" in the sidebar; electricity cost
 per day, week, month and year; a forecast of this month's and year's consumption and cost.
@@ -78,7 +81,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.17.0)
+# Proxon Control – Integration für Home Assistant (Version 0.17.1)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -103,6 +106,14 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.17.1
+
+* **Fester Strompreis:** Unter *Geräte & Dienste → Proxon Control → Konfigurieren* lässt sich ein fester Preis in ct/kWh
+  eintragen (z. B. 32,5). Damit gibt es die Stromkosten (gesamt, heute, Woche, Monat, Jahr, Hochrechnung) auch ohne
+  dynamischen Tarif. Ist zusätzlich ein Strompreis-Sensor gewählt, zählt der Sensor. Die Kosten zählen ab dem Eintragen.
+* **Leistung jetzt im Dashboard:** im Strom-Tab ganz oben (gesamt mit der letzten Stunde, Kompressor, Lüftung und
+  Elektronik) und auf „Zuhause“ bei den Temperaturen. Zum Übernehmen „Dashboard erstellen“ noch einmal ausführen.
 
 ## Neu in Version 0.17.0: Dashboard nach Aufgaben, Kosten und Hochrechnung
 
