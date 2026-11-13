@@ -1,6 +1,9 @@
 {
   "domain": "proxon_control",
   "name": "Proxon Control",
+  "after_dependencies": [
+    "lovelace"
+  ],
   "codeowners": [
     "@Olf1337"
   ],
