@@ -289,12 +289,12 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         hero = [{"type": "picture-elements", "image": photo, "dark_mode_filter": "brightness(0.85)", "elements": pills, "grid_options": FULL}]
     else:
         hero = plan_picture
-    # four columns (computer): ventilation, hot water and the rooms | house (two wide) | temperatures and the unit; fewer
+    # four columns (computer): ventilation, hot water and the rooms | house and unit (two wide) | temperatures; fewer
     # columns: the sections fill the gaps. A phone gets the photo (or the floor plan) first.
     home: list[dict[str, Any]] = [
         {"type": "grid", "cards": [*ventilation, *hot_water_short, *room_cards(FULL)], "visibility": WIDE},
-        {"type": "grid", "column_span": 2, "cards": [*plan_picture, *house_picture], "visibility": WIDE},
-        {"type": "grid", "cards": [*temperatures, *unit_picture], "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": [*plan_picture, *house_picture, *unit_picture], "visibility": WIDE},
+        {"type": "grid", "cards": temperatures, "visibility": WIDE},
         {"type": "grid", "cards": [*hero, *ventilation], "visibility": NARROW},
         {"type": "grid", "cards": room_cards(HALF), "visibility": NARROW},
         {"type": "grid", "cards": [*hot_water_short, *temperatures, *house_picture, *(plan_picture if photo else []), *unit_picture],

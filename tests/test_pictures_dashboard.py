@@ -302,13 +302,12 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert "confirmation" in holiday["icon_tap_action"]
     short = next(c for c in controls["cards"] if c.get("entity") == eid(hass, "water_heater", "Warmwasser"))
     assert short["tap_action"] == {"action": "navigate", "navigation_path": "proxon-hot-water"}
-    # the house: floor plan and the drawn house, two columns wide
+    # the house and the unit: floor plan, the drawn house and the unit, all two columns wide
     assert house["column_span"] == 2
-    assert [c["image_entity"] for c in house["cards"]] == [eid(hass, "image", k) for k in ("BildGrundriss", "BildHaus")]
+    assert [c["image_entity"] for c in house["cards"]] == [eid(hass, "image", k) for k in ("BildGrundriss", "BildHaus", "BildAnlage")]
     # temperatures (outdoor curve, indoor average and the air) and the unit
     assert values["cards"][1]["entity"] == eid(hass, "sensor", "T3Frischluft")
     assert values["cards"][2]["entities"][0] == {"entity": eid(hass, "sensor", "RaumMittel"), "name": "Indoor (average)"}
-    assert values["cards"][-1]["image_entity"] == eid(hass, "image", "BildAnlage")
     # every room under the controls: target with +/- and the last day below, ground floor first
     stacks = [c for c in controls["cards"] if c["type"] == "vertical-stack"]
     assert [st["cards"][0]["entity"] for st in stacks] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 4, 1)]
@@ -406,7 +405,7 @@ async def test_dashboard_with_house_photo(hass: HomeAssistant, device) -> None:
     # the photo is for the phone; tablet and computer keep the floor plan and the drawn house; the phone gets the floor
     # plan further down
     wide = dashboard["views"][0]["sections"][1]
-    assert [c["image_entity"] for c in wide["cards"]] == [eid(hass, "image", k) for k in ("BildGrundriss", "BildHaus")]
+    assert [c["image_entity"] for c in wide["cards"]] == [eid(hass, "image", k) for k in ("BildGrundriss", "BildHaus", "BildAnlage")]
     rest = [s for s in dashboard["views"][0]["sections"] if s["visibility"][0]["media_query"] == "(max-width: 1023px)"][-1]
     assert eid(hass, "image", "BildGrundriss") in [c.get("image_entity") for c in rest["cards"]]
 
