@@ -250,11 +250,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
                 and "T300Betriebsart" not in data:
             continue
         entities.append(ProxonSensor(coordinator, d))
+    periods: dict[str, dict[str, ProxonEnergyPeriod]] = {}
     for key, power, tk in ENERGY:
         if power in data:
             total = ProxonEnergy(coordinator, key, power, tk)
-            # the same energy for today / this week / this month / this year (the whole unit also with a forecast)
-            entities += [total, *_with_forecast(coordinator, total, tk, forecast=key == "EnergieGesamt")]
+            # the same energy for today / this week / this month / this year
+            periods[key] = _periods(coordinator, total, tk)
+            entities += [total, *periods[key].values()]
+    # what this month and year will probably come to: the whole unit (the year by the season)
+    energy_year: ProxonForecast | None = None
+    if whole := periods.get("EnergieGesamt"):
+        energy_year = ProxonYearForecast(coordinator, whole["year"], "energy_total_forecast_year",
+                                         compressor=periods.get("EnergieKompressor", {}).get("year"),
+                                         ventilation=periods.get("EnergieLueftung", {}).get("year"))
+        entities += [ProxonForecast(coordinator, whole["month"], "energy_total_forecast_month"), energy_year]
     if all(k in data for k in ("T3Frischluft", "T1Zuluft", "T7Abluft")):
         entities.append(ProxonHeatRecovery(coordinator))
     if "NBE0Temperatur" in data:
@@ -283,7 +292,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     # electricity cost: with a price sensor (dynamic tariff) or a fixed price
     if (entry.options.get(CONF_PRICE_SENSOR) or entry.options.get(CONF_FIXED_PRICE)) and "LeistungGesamt" in data:
         cost = ProxonEnergyCost(coordinator, hass.config.currency)
-        entities += [cost, *_with_forecast(coordinator, cost, "energy_cost")]
+        cost_periods = _periods(coordinator, cost, "energy_cost")
+        entities += [cost, *cost_periods.values(), ProxonForecast(coordinator, cost_periods["month"], "energy_cost_forecast_month")]
+        if energy_year is not None:
+            entities.append(ProxonYearForecast(coordinator, cost_periods["year"], "energy_cost_forecast_year", energy=energy_year))
     if comfort.season.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status", "mdi:sun-snowflake-variant",
                                             [S_OFF, S_COLLECTING, S_SUMMER, S_WINTER, S_MANUAL, S_BLOCKED]))
@@ -388,13 +400,9 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
 PERIODS = (("Heute", "day"), ("Woche", "week"), ("Monat", "month"), ("Jahr", "year"))
 
 
-def _with_forecast(coordinator, total: ProxonEnergy, tk: str, forecast: bool = True) -> list[SensorEntity]:
-    """The total for today / this week / this month / this year, and (forecast) what this month and year will come to."""
-    periods = {period: ProxonEnergyPeriod(coordinator, total, suffix, f"{tk}_{period}", period) for suffix, period in PERIODS}
-    out: list[SensorEntity] = list(periods.values())
-    if forecast:
-        out += [ProxonForecast(coordinator, periods[period], f"{tk}_forecast_{period}") for period in ("month", "year")]
-    return out
+def _periods(coordinator, total: ProxonEnergy, tk: str) -> dict[str, ProxonEnergyPeriod]:
+    """The total for today / this week / this month / this year."""
+    return {period: ProxonEnergyPeriod(coordinator, total, suffix, f"{tk}_{period}", period) for suffix, period in PERIODS}
 
 
 def period_of(now: datetime, period: str) -> str:
@@ -529,6 +537,80 @@ class ProxonForecast(ProxonEntity, SensorEntity):
         counted = self._counted()
         return {"so_far": None if counted is None else round(counted[0], 2),
                 "counted_days": None if counted is None else round(counted[1].total_seconds() / 86400, 1)}
+
+
+# Share of a year's heating in each month (January .. December): heating degree days of a German average year. The
+# compressor heats mostly in winter; ventilation and electronics need about the same all year round.
+HEATING_SHARE = (0.175, 0.15, 0.13, 0.085, 0.04, 0.01, 0.005, 0.005, 0.025, 0.075, 0.125, 0.175)
+
+
+def heating_weight(start: datetime, end: datetime) -> float:
+    """Which share of a year's heating falls between two times (month by month, each month by the part of it covered)."""
+    total, cursor = 0.0, start
+    while cursor < end:
+        month_start, month_end = period_bounds(cursor, "month")
+        part_end = min(end, month_end)
+        total += HEATING_SHARE[cursor.month - 1] * (part_end - cursor).total_seconds() / (month_end - month_start).total_seconds()
+        cursor = part_end
+    return total
+
+
+class ProxonYearForecast(ProxonForecast):
+    """What this year will probably come to, by the season: ventilation and electronics at the rate counted so far, the
+    compressor weighted by the typical heating of each month (a few counted days in November don't make a whole year of
+    November). The cost: that energy at the average price counted so far. Without the split into compressor and
+    ventilation the whole consumption is weighted by the season."""
+
+    def __init__(self, coordinator, so_far: ProxonEnergyPeriod, tk: str, compressor: ProxonEnergyPeriod | None = None,
+                 ventilation: ProxonEnergyPeriod | None = None, energy: ProxonForecast | None = None) -> None:
+        super().__init__(coordinator, so_far, tk)
+        self._compressor, self._ventilation, self._energy = compressor, ventilation, energy
+
+    @staticmethod
+    def _part(period: ProxonEnergyPeriod | None, now: datetime) -> tuple[float, datetime] | None:
+        if period is None or period.counting_since is None or (value := period.native_value) is None:
+            return None
+        return float(value), period.counting_since
+
+    def _energy_year(self, now: datetime) -> float | None:
+        """The whole year's energy: seasonal compressor plus steady ventilation, or the total weighted by the season."""
+        start, end = period_bounds(now, "year")
+        year = (end - start).total_seconds()
+        comp, vent = self._part(self._compressor, now), self._part(self._ventilation, now)
+        if comp is not None and vent is not None:
+            weight = heating_weight(comp[1], now)
+            counted = (now - vent[1]).total_seconds()
+            if weight <= 0 or counted <= 0:
+                return None
+            return comp[0] / weight + vent[0] * year / counted
+        total = self._part(self._so_far, now)
+        if total is None or (weight := heating_weight(total[1], now)) <= 0:
+            return None
+        return total[0] / weight
+
+    @property
+    def native_value(self) -> float | None:
+        counted = self._counted()
+        if counted is None or counted[1] < FORECAST_MIN["year"]:
+            return None
+        now = dt_util.now()
+        if self._energy is None:  # energy
+            value = self._energy_year(now)
+            return None if value is None else round(value, 2)
+        # cost: the year's energy at the average price counted so far
+        energy_year = self._energy.native_value
+        energy = self._part(self._energy._so_far, now)
+        cost = self._part(self._so_far, now)
+        if energy_year is None or energy is None or cost is None or energy[0] <= 0:
+            return None
+        if abs((cost[1] - energy[1]).total_seconds()) > 3600:  # the price came later: energy since then isn't known
+            price = self.coordinator.energy.price_ct()
+            return None if price is None else round(energy_year * price / 100, 2)
+        return round(energy_year * cost[0] / energy[0], 2)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {**super().extra_state_attributes, "method": "seasonal"}
 
 
 class ProxonEnergyCost(ProxonEnergy):

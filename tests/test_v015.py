@@ -307,3 +307,46 @@ async def test_fixed_price_in_the_options(hass: HomeAssistant, device) -> None:
     await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "fixed_price": 0})
     await hass.async_block_till_done()
     assert "fixed_price" not in entry.options  # 0: no fixed price
+
+
+# ---------------- year forecast by the season ----------------
+def test_heating_weight() -> None:
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.proxon_control.sensor import HEATING_SHARE, heating_weight
+
+    tz = dt_util.get_default_time_zone()
+    assert round(sum(HEATING_SHARE), 6) == 1.0
+    assert round(heating_weight(datetime(2026, 1, 1, tzinfo=tz), datetime(2027, 1, 1, tzinfo=tz)), 6) == 1.0
+    assert round(heating_weight(datetime(2026, 11, 10, tzinfo=tz), datetime(2026, 11, 14, tzinfo=tz)), 6) == round(0.125 * 4 / 30, 6)
+    # four days in January weigh far more than four days in July
+    assert heating_weight(datetime(2026, 1, 10, tzinfo=tz), datetime(2026, 1, 14, tzinfo=tz)) > 30 * heating_weight(
+        datetime(2026, 7, 10, tzinfo=tz), datetime(2026, 7, 14, tzinfo=tz))
+
+
+async def test_year_forecast_by_the_season(hass: HomeAssistant, device, freezer) -> None:
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    freezer.move_to("2026-11-10 00:00:00+01:00")
+    entry = await setup_with_sensors(hass)  # price 0.30 €/kWh
+    sensors = {e.entity_id: e for e in hass.data["sensor"].entities}
+    total, comp, vent, cost = (sensors[eid(hass, "sensor", k)] for k in ("EnergieGesamt", "EnergieKompressor", "EnergieLueftung", "Stromkosten"))
+    for s in (total, comp, vent, cost):
+        s._kwh = 0.0
+
+    async def refresh() -> None:
+        entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
+        await hass.async_block_till_done()
+
+    await refresh()  # counting starts on 10 November
+    # four days: the compressor 10 kWh a day, ventilation and electronics 1 kWh a day
+    freezer.move_to("2026-11-14 00:00:00+01:00")
+    comp._kwh, vent._kwh = 40.0, 4.0
+    total._kwh, cost._kwh = 44.0, 13.2
+    await refresh()
+    year = hass.states.get(eid(hass, "sensor", "EnergieGesamtJahrPrognose"))
+    # compressor: 40 kWh in 4/30 of November (12.5 % of a year's heating) -> 2400 kWh; ventilation 1 kWh a day -> 365 kWh
+    assert float(year.state) == 2765.0 and year.attributes["method"] == "seasonal"
+    # the cost at the average price so far (0.30 €/kWh)
+    assert float(hass.states.get(eid(hass, "sensor", "StromkostenJahrPrognose")).state) == 829.5
+    # the month stays linear: 44 kWh in 4 days -> 330 kWh in November
+    assert float(hass.states.get(eid(hass, "sensor", "EnergieGesamtMonatPrognose")).state) == 330.0
