@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.18.0:** the weekly ventilation schedule can be switched on and off as a whole; the year forecast follows the
+season (the compressor weighted by the typical heating of each month); the unit as large as the house on the start page.
+
 **New in 0.17.1:** a fixed electricity price (ct/kWh) as an option for the cost with a fixed tariff; the power right now on the
 start page and at the top of the power tab.
 
@@ -81,7 +84,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.17.1)
+# Proxon Control – Integration für Home Assistant (Version 0.18.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -106,6 +109,20 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.18.0
+
+* **Zeitprogramm global an/aus:** Der Schalter **„Zeitprogramm Lüftung“** schaltet das ganze Wochenprogramm der Lüftung ein
+  oder aus (wie „Zeitprogramm An/Aus“ am Bedienteil); die eingestellten Phasen bleiben dabei erhalten. Er ersetzt die
+  bisherige reine Anzeige „Zeitprogramm aktiv“, die beim Start entfernt wird. Im Dashboard unter *Einstellungen →
+  Wochenprogramm Lüftung*. (Geschrieben wie die übrigen Werte des Zeitprogramms; bitte einmal am Bedienteil oder in der App
+  prüfen, ob das Umschalten ankommt.)
+* **Jahres-Hochrechnung nach Jahreszeit:** Lüftung und Elektronik werden gleichmäßig hochgerechnet, der Kompressor nach dem
+  typischen Heizbedarf jedes Monats (Heizgradtage eines durchschnittlichen deutschen Jahres) gewichtet. Ein paar gezählte
+  Wintertage ergeben so kein ganzes Jahr Winter mehr. Die Kosten fürs Jahr: diese Energie zum bisherigen Durchschnittspreis.
+  Die Hochrechnung für den Monat bleibt linear.
+* **Dashboard:** Auf „Zuhause“ steht das Bild der Anlage so groß wie das Haus darunter. Zum Übernehmen „Dashboard
+  erstellen“ noch einmal ausführen.
 
 ## Neu in Version 0.17.1
 
