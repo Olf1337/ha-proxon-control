@@ -184,7 +184,8 @@ def _registers() -> list[Reg]:
         # clock of the unit (set point object 3): needed for the rules of the weekly schedule
         *[Reg(k, True, (3, 56 + i)) for i, k in enumerate(CLOCK_KEYS)],
         # weekly ventilation schedule switched on at the unit (read only)
-        Reg("ZeitprogrammAktiv", True, (5, 106), None, "bool"),
+        # weekly schedule on/off ("Zeitprogramm An/Aus", Modbus 4x0613): written like the schedule's other values
+        Reg("ZeitprogrammAktiv", True, (5, 106), (0, 1236), "bool"),
         *[Reg(fault_key(p), False, p) for p in FAULT_POINTS],
         # Addresses below as documented by the ha-lan-proxon project (MIT), verified there on a real unit.
         Reg("FilterStandzeit", True, (0, 460)),  # filter lifetime set at the unit, months (3-8)

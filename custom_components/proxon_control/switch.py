@@ -1,4 +1,4 @@
-"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater, legionella function. (Room heating elements are part of the room thermostats.)"""
+"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater, legionella function, weekly schedule. (Room heating elements are part of the room thermostats.)"""
 from __future__ import annotations
 
 from typing import Any
@@ -18,6 +18,7 @@ SWITCHES: list[tuple[str, str, str, int | None]] = [
     ("E-Heizstab", "immersion_heater", "mdi:heating-coil", None),
     ("Legionellenfunktion", "legionella", "mdi:bacteria-outline", None),
     ("NachtabsenkungAktiv", "night_setback", "mdi:weather-night", None),
+    ("ZeitprogrammAktiv", "schedule", "mdi:calendar-clock", None),
 ]
 
 

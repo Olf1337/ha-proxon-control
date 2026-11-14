@@ -140,7 +140,7 @@ async def test_day_sensors_and_clock(hass: HomeAssistant, device) -> None:
     assert tuesday.attributes["phase_1"] == {"start": "06:00", "end": "08:00", "level": 2, "active": True}
     assert tuesday.attributes["phase_3"]["active"] is False
     assert "Tuesday" in tuesday.attributes["friendly_name"]
-    assert hass.states.get(eid(hass, "binary_sensor", "ZeitprogrammAktiv")).state == "on"
+    assert hass.states.get(eid(hass, "switch", "ZeitprogrammAktiv")).state == "on"
     clock = hass.states.get(eid(hass, "sensor", "Uhr"))
     assert clock.state.startswith("2026-11-09T")
 
@@ -208,3 +208,32 @@ async def test_copy_day_writes_nothing_if_one_day_cannot_take_it(hass: HomeAssis
         await hass.services.async_call(DOMAIN, "copy_schedule_day", {"source_day": "monday", "target_days": ["wednesday", "tuesday"]}, blocking=True)
     assert err.value.translation_key == "schedule_too_soon"
     assert device.writes == []
+
+
+
+async def test_schedule_switched_on_and_off(hass: HomeAssistant, device) -> None:
+    """The whole weekly schedule on/off (Modbus "Zeitprogramm An/Aus"), written like the schedule's other values."""
+    from .test_integration import call
+
+    await setup(hass)
+    switch = eid(hass, "switch", "ZeitprogrammAktiv")
+    await call(hass, "switch", "turn_off", entity_id=switch)
+    assert device.writes[-1] == {"obj": 0, "address": 1236, "value": 0}
+    assert hass.states.get(switch).state == "off"
+    await call(hass, "switch", "turn_on", entity_id=switch)
+    assert device.writes[-1] == {"obj": 0, "address": 1236, "value": 1}
+
+
+async def test_old_schedule_sensor_is_removed(hass: HomeAssistant, device) -> None:
+    """The read-only "schedule active" sensor of earlier versions goes away; the switch takes its place."""
+    from homeassistant.helpers import entity_registry as er
+
+    from .test_integration import make_entry
+
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    reg = er.async_get(hass)
+    old = reg.async_get_or_create("binary_sensor", "proxon_control", "abc123_ZeitprogrammAktiv", config_entry=entry)
+    await setup(hass, entry)
+    assert reg.async_get(old.entity_id) is None
+    assert eid(hass, "switch", "ZeitprogrammAktiv")

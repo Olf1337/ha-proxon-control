@@ -635,6 +635,9 @@
             }
           }
         }
+      },
+      "schedule": {
+        "name": "Zeitprogramm Lüftung"
       }
     },
     "binary_sensor": {
@@ -643,9 +646,6 @@
       },
       "compressor": {
         "name": "Kompressor"
-      },
-      "schedule_active": {
-        "name": "Zeitprogramm aktiv"
       },
       "fault": {
         "name": "Störung"

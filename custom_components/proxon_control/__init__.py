@@ -87,6 +87,9 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
     for ent in er.async_entries_for_config_entry(reg, entry.entry_id):
         if ent.domain in ("number", "switch") and _LEGACY.search(ent.unique_id):
             reg.async_remove(ent.entity_id)
+        # "weekly schedule active" was a read-only sensor; it is a switch since 0.18.0
+        elif ent.domain == "binary_sensor" and ent.unique_id.endswith("_ZeitprogrammAktiv"):
+            reg.async_remove(ent.entity_id)
 
 
 @callback

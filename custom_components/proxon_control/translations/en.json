@@ -635,6 +635,9 @@
             }
           }
         }
+      },
+      "schedule": {
+        "name": "Weekly ventilation schedule"
       }
     },
     "binary_sensor": {
@@ -643,9 +646,6 @@
       },
       "compressor": {
         "name": "Compressor"
-      },
-      "schedule_active": {
-        "name": "Weekly schedule active"
       },
       "fault": {
         "name": "Fault"
