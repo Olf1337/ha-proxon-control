@@ -140,7 +140,8 @@ SENSORS: list[ProxonSensorDescription] = [
     # diagnostics of the heat pump / air paths
     _temp("T12VorKondensator", "t12_pre_condenser", diag=True),
     _temp("T13Kompressor", "t13_compressor", diag=True),
-    # "suction gas": exactly 52.2 °C on two real units, too warm for suction gas - not a measurement it seems; hidden
+    # "suction gas": a real sensor (20.6 °C on a unit at standstill), but exactly 52.2 °C on two units while the compressor
+    # ran - too warm for suction gas, probably the end of its range; hidden, named "unchecked"
     ProxonSensorDescription(
         key="T14Sauggas", translation_key="t14_suction_gas", native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,

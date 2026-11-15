@@ -114,15 +114,22 @@ class EnergyManager:
         value, unit = self._sensor_value(CONF_SURPLUS_SENSOR)
         return None if value is None else E.power_in_watt(value, unit, bool(self.entry.options.get(CONF_FEED_IN_NEGATIVE)))
 
-    def price_ct(self) -> float | None:
-        """The electricity price now in ct/kWh for the cost: the price sensor from the options, without one the fixed price
-        (a fixed tariff), else None. ("Cheap power" uses the sensor only: a fixed price is never cheaper.)"""
-        if self.entry.options.get(CONF_PRICE_SENSOR):
-            return self._price()
+    def _fixed_price(self) -> float | None:
+        """The fixed price from the options (ct/kWh, a fixed tariff), or None."""
         fixed = self.entry.options.get(CONF_FIXED_PRICE)
         return float(fixed) if isinstance(fixed, (int, float)) and fixed > 0 else None
 
+    def price_ct(self) -> float | None:
+        """The electricity price now in ct/kWh for the cost: a fixed price from the options (a fixed tariff), else the price
+        sensor (a dynamic tariff), else None."""
+        fixed = self._fixed_price()
+        return fixed if fixed is not None else self._price()
+
     def _price(self) -> float | None:
+        """The price for "cheap power": the price sensor - but not with a fixed tariff (a fixed price is never cheaper, and
+        the sensor is then ignored altogether)."""
+        if self._fixed_price() is not None:
+            return None
         value, unit = self._sensor_value(CONF_PRICE_SENSOR)
         return None if value is None else E.price_in_cent(value, unit)
 

@@ -840,7 +840,7 @@
           "surplus_sensor": "Power fed into the grid (W or kW), e.g. the grid power of your inverter or smart meter.",
           "feed_in_negative": "Turn on if your sensor shows power fed into the grid as a negative number.",
           "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool.",
-          "fixed_price": "For the electricity cost with a fixed tariff, in ct/kWh (e.g. 32.5). Used only when no price sensor is chosen.",
+          "fixed_price": "For a fixed tariff, in ct/kWh (e.g. 32.5). When it is set, it counts for all costs and a price sensor is ignored (also for \"cheap power\"). Leave empty with a dynamic tariff.",
           "read_only": "Show all values, but never change anything on the unit from Home Assistant. Operate it with the control panel or the app.",
           "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark.",
           "upper_floor_rooms": "These rooms are shown under \"Upper floor\" on the dashboard and in the pictures, the others (except the basement) on the ground floor. Preselected by the room names (bedrooms, children's rooms …). Choose none for a bungalow.",

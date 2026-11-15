@@ -275,7 +275,7 @@ async def test_cost_per_period_and_forecasts(hass: HomeAssistant, device, freeze
 
 # ---------------- fixed electricity price ----------------
 async def test_fixed_price_for_the_cost(hass: HomeAssistant, device) -> None:
-    """Without a price sensor a fixed price (ct/kWh) from the options counts; a price sensor goes first."""
+    """A fixed price (ct/kWh) from the options counts for the cost; with it a price sensor is ignored altogether."""
     from .test_integration import make_entry
 
     entry = make_entry()
@@ -290,11 +290,16 @@ async def test_fixed_price_for_the_cost(hass: HomeAssistant, device) -> None:
     for minute in range(61):  # one hour at 531.8 W
         cost._add(base + minute * 60)
     assert round(cost.native_value, 3) == round(0.5318 * 0.325, 3)
-    # with a price sensor too, the sensor counts
-    hass.states.async_set("sensor.preis", "0.20", {"unit_of_measurement": "€/kWh"})
+    # with a price sensor too: the fixed price counts, the sensor is ignored (also for "cheap power")
+    hass.states.async_set("sensor.preis", "0.05", {"unit_of_measurement": "€/kWh"})
     hass.config_entries.async_update_entry(entry, options={"fixed_price": 32.5, "price_sensor": "sensor.preis"})
     await hass.async_block_till_done()
-    assert entry.runtime_data.energy.price_ct() == 20.0
+    manager = entry.runtime_data.energy
+    assert manager.price_ct() == 32.5 and manager._price() is None
+    # without the fixed price the sensor counts again
+    hass.config_entries.async_update_entry(entry, options={"price_sensor": "sensor.preis"})
+    await hass.async_block_till_done()
+    assert entry.runtime_data.energy.price_ct() == 5.0
 
 
 async def test_fixed_price_in_the_options(hass: HomeAssistant, device) -> None:
