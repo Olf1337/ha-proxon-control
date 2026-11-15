@@ -1,10 +1,11 @@
 """Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), to paste as it is.
 
-Five tabs, built-in cards only, in the "Proxon Glas" look (frosted glass on a dark gradient; theme installed by an action,
-without it the tabs keep the normal look), one for each thing to do:
-* Home - operate the ventilation (level, operating mode, boost, holiday), the house as a floor plan from above and drawn
-  isometric (tap a room: its thermostat), the key temperatures, the unit, hot water in short, and every room with its target
-  (+/-) and the temperature of the last day. On a phone your own house photo (or the floor plan) comes first.
+Five tabs, built-in cards only, in the "Proxon Bento" look (rounded tiles, light and dark following the device; the theme comes with
+the dashboard, without it the tabs keep the normal look), one for each thing to do:
+* Home - the key figures (outdoor and indoor with their last day, hot water, power right now), operating the ventilation
+  and the automatic functions, the floor plan from above (tap a room: its thermostat) with every room as a tile (temperature,
+  target with -/+, heating element), the unit and hot water. On a phone your own house photo (or the floor plan) comes after
+  the key figures.
 * Hot water - the T300 cut open, everything to set, the last day, what the automatic functions are doing.
 * Optimisation - every automatic function (solar / cheap power, boost, legionella, night cooling, summer/winter, night
   setback) with its switch, what it is doing and its limits.
@@ -29,8 +30,6 @@ from .pictures import (
     TANK_W,
     UNIT_H,
     UNIT_W,
-    house_layout,
-    house_targets,
     plan_targets,
     tank_targets,
     unit_targets,
@@ -51,6 +50,8 @@ TEXT: dict[str, dict[str, Any]] = {
         "season": "Sommer/Winter-Automatik", "night": "Nachtabsenkung", "runtime": "Laufzeit heute",
         "energy": "Strom", "consumption": "Verbrauch", "ventilation": "Lüftung", "temperatures": "Temperaturen", "inside": "Innen (Mittel)",
         "optimize": "Optimierung", "automatic": "Automatik", "legionella": "Legionellenschutz mit Sonne", "last_day_short": "24 h",
+        "target": "Soll-Temperatur", "element": "Heizelement", "inside_short": "Innen",
+        "air_title": "Luft",
         "split": "Aufteilung", "forecast": "Hochrechnung", "auto_names": {"Energiemanager": "Solar / günstiger Strom", "BoostStatus": "Warmwasser-Boost",
                                               "LegionellenStatus": "Legionellenschutz"}, "periods": {"day": "Heute", "week": "Diese Woche", "month": "Dieser Monat",
                                                                      "year": "Dieses Jahr"},
@@ -77,7 +78,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "WarmwasserDuschminuten": "Duschvorrat", "LegionellenSonne": "Legionellenschutz mit Sonne", "LegionellenStatus": "Status",
             "EnergieKompressor": "Kompressor", "EnergieLueftung": "Lüftung und Elektronik", "LeistungKompressor": "Kompressor", "LeistungLueftung": "Lüftung und Elektronik",
             "Stromkosten": "Kosten", "WarmwasserKompressorStartsHeute": "Warmwasser-Kompressor",
-            "GrenzwertFeuchte": "Grenzwert Feuchte", "GrenzwertCO2": "Grenzwert CO₂",
+            "GrenzwertFeuchte": "Grenzwert Feuchte", "GrenzwertCO2": "Grenzwert CO₂", "ZeitprogrammAktiv": "Zeitprogramm",
             "EnergieGesamtMonatPrognose": "Verbrauch Monat", "StromkostenMonatPrognose": "Kosten Monat",
             "EnergieGesamtJahrPrognose": "Verbrauch Jahr", "StromkostenJahrPrognose": "Kosten Jahr",
         },
@@ -100,7 +101,8 @@ TEXT: dict[str, dict[str, Any]] = {
         "season": "Summer/winter automatic", "night": "Night setback", "runtime": "Runtime today",
         "energy": "Power", "consumption": "Consumption", "ventilation": "Ventilation", "temperatures": "Temperatures",
         "inside": "Indoor (average)", "optimize": "Optimisation", "automatic": "Automatic", "legionella": "Legionella protection with solar",
-        "last_day_short": "24 h", "split": "Split", "forecast": "Forecast",
+        "last_day_short": "24 h", "split": "Split", "target": "Target temperature", "element": "Heating element",
+        "inside_short": "Indoor", "air_title": "Air", "forecast": "Forecast",
         "auto_names": {"Energiemanager": "Solar / cheap power", "BoostStatus": "Hot-water boost", "LegionellenStatus": "Legionella protection"},
         "periods": {"day": "Today", "week": "This week", "month": "This month",
                                                                        "year": "This year"},
@@ -127,7 +129,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "WarmwasserDuschminuten": "Shower supply", "LegionellenSonne": "Legionella protection with solar", "LegionellenStatus": "Status",
             "EnergieKompressor": "Compressor", "EnergieLueftung": "Ventilation and electronics", "LeistungKompressor": "Compressor", "LeistungLueftung": "Ventilation and electronics",
             "Stromkosten": "Cost", "WarmwasserKompressorStartsHeute": "Hot-water compressor",
-            "GrenzwertFeuchte": "Humidity limit", "GrenzwertCO2": "CO₂ limit",
+            "GrenzwertFeuchte": "Humidity limit", "GrenzwertCO2": "CO₂ limit", "ZeitprogrammAktiv": "Weekly schedule",
             "EnergieGesamtMonatPrognose": "Consumption month", "StromkostenMonatPrognose": "Cost month",
             "EnergieGesamtJahrPrognose": "Consumption year", "StromkostenJahrPrognose": "Cost year",
         },
@@ -208,12 +210,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     tank_areas = [_area(ids["Warmwasser"], tank_targets()["tank"], (TANK_W, TANK_H))] if "Warmwasser" in ids else []
     rooms = house_rooms(data)
     floors = room_floors(entry.options, data, rooms)
-    layout = house_layout(floors)
-    house_areas = [
-        _area(ids[f"NBE{i}Thermostat"], target, (layout.width, layout.height))
-        for i, target in zip(rooms, house_targets(floors)) if f"NBE{i}Thermostat" in ids
-    ]
-    unit_picture, tank_picture, house_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas), picture("BildHaus", house_areas)
+    unit_picture, tank_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas)
     names_now = [room_name(i, data) for i in rooms]
     plan_areas = [
         _area(ids[f"NBE{i}Thermostat"], target, (PLAN_W, PLAN_H))
@@ -232,37 +229,47 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Betriebsart", FULL, features=[{"type": "select-options"}], features_position="inline"),
         *tile("Intensivlueftung", HALF),
         *tile("Urlaubsmodus", HALF, icon_tap_action={"action": "toggle", "confirmation": {"text": t["holiday_confirm"]}}),
+        *tile("ZeitprogrammAktiv", FULL),
     ]
-    hot_water_short = [
-        heading(t["tank"]),
-        *tile("Warmwasser", HALF, tap_action=go("proxon-hot-water")),
-        *tile("WarmwasserDuschminuten", HALF, tap_action=go("proxon-hot-water")),
-    ]
-    air_rows = [{"entity": ids[k], "name": name} for k, name in t["air"].items() if k in ids]
-    if "RaumMittel" in ids:
-        air_rows.insert(0, {"entity": ids["RaumMittel"], "name": t["inside"]})
-    temperatures: list[dict] = [heading(t["temperatures"])]
-    if "T3Frischluft" in ids:
-        temperatures.append({"type": "sensor", "entity": ids["T3Frischluft"], "name": t["outside"], "graph": "line",
-                             "hours_to_show": 24, "detail": 1, "grid_options": FULL})
-    if air_rows:
-        temperatures.append({"type": "entities", "entities": air_rows, "grid_options": FULL})
-    # the power right now (tap: the power tab)
-    temperatures += tile("LeistungGesamt", FULL, features=[{"type": "trend-graph", "hours_to_show": 1}], features_position="inline",
-                         tap_action=go("proxon-energy"))
+    # the automatic functions with what they are doing ("On · Waiting"); their limits are in the optimisation tab
+    functions = [c for key in ("SolarWarmwasser", "PreisWarmwasser", "WarmwasserBoost", "LegionellenSonne", "Nachtkuehlung", "SaisonAutomatik")
+                 for c in tile(key, FULL, state_content=["state", "status"])]
+    functions = [heading(t["functions"]), *functions] if functions else []
 
-    # every room: target with +/- right on the card, below it the temperature of the last day (tap: the thermostat)
+    # the key figures at the top, side by side in one row (two on a phone): outdoor, indoor and hot water with their last
+    # day, the power right now with its last hour; hot water and power open their tab
+    def figures(columns: int) -> list[dict]:
+        trend = [{"type": "trend-graph", "hours_to_show": 24}]
+        cards = [
+            *tile("T3Frischluft", FULL, name=t["outside"], features=trend),
+            *tile("RaumMittel", FULL, name=t["inside_short"], features=trend),
+            *tile("WarmwasserIstTemperatur", FULL, name=t["tank"], features=trend, tap_action=go("proxon-hot-water")),
+            *tile("LeistungGesamt", FULL, features=[{"type": "trend-graph", "hours_to_show": 1}], tap_action=go("proxon-energy")),
+        ]
+        for card in cards:
+            card.pop("grid_options", None)
+        return [{"type": "grid", "columns": columns, "square": False, "cards": cards, "grid_options": FULL}] if cards else []
+
+    hot_water_short = [*tile("Warmwasser", HALF, tap_action=go("proxon-hot-water")),
+                       *tile("WarmwasserDuschminuten", HALF, tap_action=go("proxon-hot-water"))]
+    air_rows = [{"entity": ids[k], "name": name} for k, name in t["air"].items() if k in ids]
+    air = [{"type": "entities", "entities": air_rows, "grid_options": FULL}] if air_rows else []
+
+    # every room as a tile of its own: the temperature large, the target with - / +, the heating element
+    # (tap on the temperature or the heating element: the room's thermostat)
     def room_card(i: int, grid: dict) -> list[dict]:
-        thermostat, sensor = ids.get(f"NBE{i}Thermostat"), ids.get(f"NBE{i}Temperatur")
+        thermostat, sensor, element = ids.get(f"NBE{i}Thermostat"), ids.get(f"NBE{i}Temperatur"), ids.get(f"NBE{i}Waermeelement")
         if not thermostat:
             return []
-        cards: list[dict] = [{"type": "tile", "entity": thermostat, "name": room_name(i, data),
-                              "state_content": ["current_temperature", "hvac_action"], "features": [{"type": "target-temperature"}]}]
+        more = {"action": "more-info", "entity": thermostat}
+        cards: list[dict] = []
         if sensor:
-            # one flat row: "24 h" with the curve right next to it
-            cards.append({"type": "tile", "entity": sensor, "name": t["last_day_short"], "hide_state": True,
-                          "features": [{"type": "trend-graph", "hours_to_show": 24}], "features_position": "inline",
-                          "tap_action": {"action": "more-info", "entity": thermostat}})
+            cards.append({"type": "entity", "entity": sensor, "name": room_name(i, data), "tap_action": more})
+        cards.append({"type": "tile", "entity": thermostat, "name": t["target"] if sensor else room_name(i, data),
+                      "icon": "mdi:thermometer", "hide_state": bool(sensor), "features": [{"type": "target-temperature"}],
+                      "features_position": "inline"})
+        if element:
+            cards.append({"type": "tile", "entity": element, "name": t["element"], "tap_action": more})
         return [{"type": "vertical-stack", "cards": cards, "grid_options": grid}]
 
     def room_cards(grid: dict) -> list[dict]:
@@ -274,7 +281,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                 out += [heading(title, "subtitle" if any(floors) else "title"), *cards]
         return out
 
-    # ---- 1. home: operate the ventilation, the house (floor plan and drawn), temperatures, the unit, hot water, rooms ----
+    # ---- 1. home: key figures, operate the ventilation, the floor plan and every room, the unit and hot water ----
     photo = entry.options.get(CONF_HOUSE_PHOTO)
     if photo:
         pills = []
@@ -289,15 +296,19 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         hero = [{"type": "picture-elements", "image": photo, "dark_mode_filter": "brightness(0.85)", "elements": pills, "grid_options": FULL}]
     else:
         hero = plan_picture
-    # four columns (computer): ventilation, hot water and the rooms | house and unit (two wide) | temperatures; fewer
-    # columns: the sections fill the gaps. A phone gets the photo (or the floor plan) first.
+    tank_short = [heading(t["tank"]), *hot_water_short] if hot_water_short else []
+    air_block = [heading(t["air_title"]), *air] if air else []
+    # four columns (computer): the key figures over the whole width; then ventilation and functions | floor plan and the
+    # rooms (two wide) | the unit, hot water, the air. Fewer columns: the sections fill the gaps. A phone: key figures,
+    # the photo (or the floor plan), ventilation, the rooms, the rest.
     home: list[dict[str, Any]] = [
-        {"type": "grid", "cards": [*ventilation, *hot_water_short, *room_cards(FULL)], "visibility": WIDE},
-        {"type": "grid", "column_span": 2, "cards": [*plan_picture, *house_picture, *unit_picture], "visibility": WIDE},
-        {"type": "grid", "cards": temperatures, "visibility": WIDE},
-        {"type": "grid", "cards": [*hero, *ventilation], "visibility": NARROW},
-        {"type": "grid", "cards": room_cards(HALF), "visibility": NARROW},
-        {"type": "grid", "cards": [*hot_water_short, *temperatures, *house_picture, *(plan_picture if photo else []), *unit_picture],
+        {"type": "grid", "column_span": 4, "cards": figures(4), "visibility": WIDE},
+        {"type": "grid", "cards": [*ventilation, *functions], "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": [*plan_picture, *room_cards({"columns": 12})], "visibility": WIDE},
+        {"type": "grid", "cards": [*unit_picture, *tank_short, *air_block], "visibility": WIDE},
+        {"type": "grid", "cards": [*figures(2), *hero, *ventilation], "visibility": NARROW},
+        {"type": "grid", "cards": room_cards(FULL), "visibility": NARROW},
+        {"type": "grid", "cards": [*tank_short, *functions, *(plan_picture if photo else []), *unit_picture, *air_block],
          "visibility": NARROW},
     ]
     # at the top: operating mode, ventilation level, connection, fault

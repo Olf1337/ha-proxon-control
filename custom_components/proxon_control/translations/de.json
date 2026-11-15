@@ -915,8 +915,8 @@
       }
     },
     "install_glass_theme": {
-      "name": "Glas-Theme installieren",
-      "description": "Legt das Theme „Proxon Glas“ (Milchglas-Karten auf dunklem Farbverlauf, der Look des fertigen Dashboards) im Ordner themes ab, lädt die Themes neu und stellt die Dashboard-Bilder auf dunkel. Die Antwort sagt, ob Home Assistant das Theme lädt.",
+      "name": "Dashboard-Theme installieren",
+      "description": "Schreibt die Themes „Proxon Bento“ (hell und dunkel, folgt dem Gerät; das Aussehen des fertigen Dashboards) und „Proxon Glas“ in den Ordner themes und lädt sie neu. „Dashboard erstellen“ macht das auch selbst.",
       "fields": {
         "config_entry_id": {
           "name": "Anlage",

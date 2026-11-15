@@ -915,8 +915,8 @@
       }
     },
     "install_glass_theme": {
-      "name": "Install glass theme",
-      "description": "Puts the theme \"Proxon Glas\" (frosted-glass cards on a dark gradient, the look of the ready-made dashboard) into the themes folder, reloads the themes and sets the dashboard pictures to dark. The answer tells whether Home Assistant loads the theme.",
+      "name": "Install dashboard theme",
+      "description": "Writes the themes \"Proxon Bento\" (light and dark, following the device; the look of the ready-made dashboard) and \"Proxon Glas\" into the themes folder and reloads them. \"Create dashboard\" does this by itself as well.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",

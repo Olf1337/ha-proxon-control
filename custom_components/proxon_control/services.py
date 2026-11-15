@@ -16,7 +16,7 @@ from .dashboard import build
 from .dashboard_store import DashboardStoreError, async_store_dashboard
 from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
-from .theme import THEME_FILE, THEME_NAME, async_install_theme
+from .theme import GLASS_THEME_NAME, THEME_FILE, THEME_NAME, async_install_theme
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
 SERVICE_SET_PHASE = "set_schedule_phase"
@@ -155,6 +155,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
         first = not others or entry.entry_id == sorted(e.entry_id for e in hass.config_entries.async_entries(DOMAIN))[0]
         url = DASHBOARD_URL if first else f"{DASHBOARD_URL}-{entry.entry_id[-6:].lower()}"
         try:
+            # its look: the theme comes with it (when Home Assistant doesn't load the themes folder, the normal look stays)
+            await async_install_theme(hass)
+        except OSError:
+            pass
+        try:
             created = await async_store_dashboard(hass, url, "Proxon" if first else f"Proxon {entry.title}", config)
         except DashboardStoreError as err:
             if str(err) == "yaml":
@@ -176,23 +181,23 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return {"url": f"/{url}", "created": created, "message": message}
 
     async def install_glass_theme(call: ServiceCall) -> ServiceResponse:
-        """Write the glass theme into the themes folder, reload the themes, and draw the dashboard pictures dark (they sit
-        on dark glass). Tells whether Home Assistant loads the theme, and what to add to configuration.yaml if not."""
+        """Write the dashboard's themes into the themes folder and reload them; the dashboard pictures follow light and dark
+        of the device like the theme. Tells whether Home Assistant loads the themes, and what to add to configuration.yaml if
+        not. (The action keeps its old name "install_glass_theme", so automations calling it go on working.)"""
         entry_id = call.data.get(ATTR_CONFIG_ENTRY)
         entries = [_entry(hass, entry_id)] if entry_id else [
             e for e in hass.config_entries.async_entries(DOMAIN) if e.state is ConfigEntryState.LOADED
         ]
         installed = await async_install_theme(hass)
-        for entry in entries:
-            if entry.options.get(CONF_PICTURE_THEME) != "dark":
-                hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_PICTURE_THEME: "dark"})
+        for entry in entries:  # pictures: light or dark like the device (an earlier version set them to dark for the glass)
+            if CONF_PICTURE_THEME in entry.options:
+                hass.config_entries.async_update_entry(entry, options={k: v for k, v in entry.options.items() if k != CONF_PICTURE_THEME})
         german = (hass.config.language or "").startswith("de")
         if installed:
-            message = (f"Das Theme „{THEME_NAME}“ ist installiert, die Dashboard-Bilder sind auf dunkel gestellt. Das Dashboard "
-                       "nutzt es auf allen Reitern; für ein Wandtablet kannst du es im Profil auch für das ganze Gerät wählen."
-                       if german else
-                       f"The theme \"{THEME_NAME}\" is installed and the dashboard pictures are set to dark. The dashboard uses it on "
-                       "all tabs; on a wall tablet you can also choose it for the whole device in the profile.")
+            message = (f"Das Theme „{THEME_NAME}“ ist installiert (hell und dunkel, folgt dem Gerät; im Profil fest wählbar), "
+                       f"dazu „{GLASS_THEME_NAME}“ zur Auswahl im Profil." if german else
+                       f"The theme \"{THEME_NAME}\" is installed (light and dark, following the device; can be fixed in the profile), "
+                       f"and \"{GLASS_THEME_NAME}\" to choose in the profile.")
         else:
             message = (f"Die Datei themes/{THEME_FILE} ist geschrieben, aber Home Assistant lädt den Ordner themes nicht. Ergänze in "
                        "configuration.yaml unter frontend: die Zeile „themes: !include_dir_merge_named themes“, starte Home "
