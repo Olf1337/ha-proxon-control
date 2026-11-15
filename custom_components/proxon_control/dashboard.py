@@ -3,9 +3,8 @@
 Five tabs, built-in cards only, in the "Proxon Bento" look (rounded tiles, light and dark following the device; the theme comes with
 the dashboard, without it the tabs keep the normal look), one for each thing to do:
 * Home - the key figures (outdoor and indoor with their last day, hot water, power right now), operating the ventilation
-  and the automatic functions, the floor plan from above (tap a room: its thermostat) with every room as a tile (temperature,
-  target with -/+, heating element), the unit and hot water. On a phone your own house photo (or the floor plan) comes after
-  the key figures.
+  and the automatic functions, every room as a tile (temperature, target with -/+, heating element), the unit and hot
+  water. On a phone your own house photo (if chosen) comes after the key figures.
 * Hot water - the T300 cut open, everything to set, the last day, what the automatic functions are doing.
 * Optimisation - every automatic function (solar / cheap power, boost, legionella, night cooling, summer/winter, night
   setback) with its switch, what it is doing and its limits.
@@ -24,13 +23,10 @@ from homeassistant.helpers import entity_registry as er
 from .const import CONF_HOUSE_PHOTO
 from .entity import house_rooms, room_floors, room_name
 from .pictures import (
-    PLAN_H,
-    PLAN_W,
     TANK_H,
     TANK_W,
     UNIT_H,
     UNIT_W,
-    plan_targets,
     tank_targets,
     unit_targets,
 )
@@ -211,12 +207,6 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     rooms = house_rooms(data)
     floors = room_floors(entry.options, data, rooms)
     unit_picture, tank_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas)
-    names_now = [room_name(i, data) for i in rooms]
-    plan_areas = [
-        _area(ids[f"NBE{i}Thermostat"], target, (PLAN_W, PLAN_H))
-        for i, target in zip(rooms, plan_targets(names_now, floors)) if f"NBE{i}Thermostat" in ids
-    ]
-    plan_picture = picture("BildGrundriss", plan_areas)
 
     # ---- what several tabs use ----
     def go(path: str) -> dict:
@@ -295,20 +285,20 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
             pills.append(pill)
         hero = [{"type": "picture-elements", "image": photo, "dark_mode_filter": "brightness(0.85)", "elements": pills, "grid_options": FULL}]
     else:
-        hero = plan_picture
+        hero = []
     tank_short = [heading(t["tank"]), *hot_water_short] if hot_water_short else []
     air_block = [heading(t["air_title"]), *air] if air else []
-    # four columns (computer): the key figures over the whole width; then ventilation and functions | floor plan and the
-    # rooms (two wide) | the unit, hot water, the air. Fewer columns: the sections fill the gaps. A phone: key figures,
-    # the photo (or the floor plan), ventilation, the rooms, the rest.
+    # four columns (computer): the key figures over the whole width; then ventilation and functions | the rooms (two wide)
+    # | the unit, hot water, the air. Fewer columns: the sections fill the gaps. A phone: key figures, your own house photo
+    # (if chosen), ventilation, the rooms, the rest.
     home: list[dict[str, Any]] = [
         {"type": "grid", "column_span": 4, "cards": figures(4), "visibility": WIDE},
         {"type": "grid", "cards": [*ventilation, *functions], "visibility": WIDE},
-        {"type": "grid", "column_span": 2, "cards": [*plan_picture, *room_cards({"columns": 12})], "visibility": WIDE},
+        {"type": "grid", "column_span": 2, "cards": room_cards({"columns": 12}), "visibility": WIDE},
         {"type": "grid", "cards": [*unit_picture, *tank_short, *air_block], "visibility": WIDE},
         {"type": "grid", "cards": [*figures(2), *hero, *ventilation], "visibility": NARROW},
         {"type": "grid", "cards": room_cards(FULL), "visibility": NARROW},
-        {"type": "grid", "cards": [*tank_short, *functions, *(plan_picture if photo else []), *unit_picture, *air_block],
+        {"type": "grid", "cards": [*tank_short, *functions, *unit_picture, *air_block],
          "visibility": NARROW},
     ]
     # at the top: operating mode, ventilation level, connection, fault
