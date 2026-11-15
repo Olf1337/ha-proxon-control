@@ -1,10 +1,12 @@
 """Ready-made dashboard: built from the entities this unit really has (with their real entity IDs), to paste as it is.
 
-Five tabs, built-in cards only, in the "Proxon Bento" look (rounded tiles, light and dark following the device; the theme comes with
+Six tabs, built-in cards only, in the "Proxon Bento" look (rounded tiles, light and dark following the device; the theme comes with
 the dashboard, without it the tabs keep the normal look), one for each thing to do:
 * Home - the key figures (outdoor and indoor with their last day, hot water, power right now), operating the ventilation
   and the automatic functions, every room as a tile (temperature, target with -/+, heating element), the unit and hot
   water. On a phone your own house photo (if chosen) comes after the key figures.
+* House - the floor plan (every floor) and the drawn house, every room coloured by how warm it is; tap a room for its
+  thermostat.
 * Hot water - the T300 cut open, everything to set, the last day, what the automatic functions are doing.
 * Optimisation - every automatic function (solar / cheap power, boost, legionella, night cooling, summer/winter, night
   setback) with its switch, what it is doing and its limits.
@@ -23,10 +25,15 @@ from homeassistant.helpers import entity_registry as er
 from .const import CONF_HOUSE_PHOTO
 from .entity import house_rooms, room_floors, room_name
 from .pictures import (
+    PLAN_H,
+    PLAN_W,
     TANK_H,
     TANK_W,
     UNIT_H,
     UNIT_W,
+    house_layout,
+    house_targets,
+    plan_targets,
     tank_targets,
     unit_targets,
 )
@@ -34,7 +41,7 @@ from .theme import THEME_NAME
 
 TEXT: dict[str, dict[str, Any]] = {
     "de": {
-        "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus",
+        "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus", "plan": "Grundriss",
         "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss", "Keller"], "now": "Jetzt", "whole": "Gesamt", "elements": "Wärmeelemente",
         "last_day": "Letzte 24 Stunden", "switches": "Schalter", "pills": {"T3Frischluft": "Außen ", "RaumMittel": "Innen ",
                                                                           "WarmwasserIstTemperatur": "Warmwasser "},
@@ -85,7 +92,7 @@ TEXT: dict[str, dict[str, Any]] = {
                  "UhrAbweichung": "Uhrabweichung", "LetzterSchreibfehler": "Letzter Schreibfehler", "FirmwareT300": "Firmware Warmwasser"},
     },
     "en": {
-        "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House",
+        "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House", "plan": "Floor plan",
         "rooms": "Rooms", "floors": ["Ground floor", "Upper floor", "Basement"], "now": "Right now", "whole": "Total", "elements": "Heating elements",
         "last_day": "Last 24 hours", "switches": "Switches", "pills": {"T3Frischluft": "Outdoor ", "RaumMittel": "Indoor ",
                                                                        "WarmwasserIstTemperatur": "Hot water "},
@@ -207,6 +214,16 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     rooms = house_rooms(data)
     floors = room_floors(entry.options, data, rooms)
     unit_picture, tank_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas)
+    # the house tab: the floor plan (every floor, basement too) and the drawn house (ground and upper floor); tapping a room
+    # opens its thermostat
+    plan_areas = [_area(ids[f"NBE{i}Thermostat"], target, (PLAN_W, PLAN_H))
+                  for i, target in zip(rooms, plan_targets([room_name(i, data) for i in rooms], floors))
+                  if f"NBE{i}Thermostat" in ids]
+    drawn = [(i, f) for i, f in zip(rooms, floors) if f >= 0]  # a basement isn't part of the drawn house
+    layout = house_layout([f for _i, f in drawn])
+    house_areas = [_area(ids[f"NBE{i}Thermostat"], target, (layout.width, layout.height))
+                   for (i, _f), target in zip(drawn, house_targets([f for _i, f in drawn])) if f"NBE{i}Thermostat" in ids]
+    plan_picture, house_picture = picture("BildGrundriss", plan_areas), picture("BildHaus", house_areas)
 
     # ---- what several tabs use ----
     def go(path: str) -> dict:
@@ -428,6 +445,10 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     diagnostics = [heading(t["diagnostics"]), {"type": "entities", "entities": diag_rows, "grid_options": FULL}] if diag_rows else []
     settings = [{"type": "grid", "cards": cards} for cards in (limits, schedule, heating, unit, runtime, diagnostics) if len(cards) > 1]
 
+    # (the drawn house has its title in the picture)
+    house_view = [{"type": "grid", "cards": [heading(t["plan"]), *plan_picture] if plan_picture else []},
+                  {"type": "grid", "cards": house_picture}]
+
     def view(title: str, path: str, icon: str, sections: list[dict], columns: int = 3, **extra) -> list[dict]:
         sections = [s for s in sections if s["cards"]]
         if not sections:
@@ -438,6 +459,7 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     return {"views": [
         *view(t["home"], "proxon", "mdi:home-thermometer-outline", home, 4, dense_section_placement=True,
               **({"badges": badges} if badges else {})),
+        *view(t["house"], "proxon-house", "mdi:floor-plan", house_view, 2),
         *view(t["tank"], "proxon-hot-water", "mdi:water-boiler", hot_water),
         *view(t["optimize"], "proxon-optimize", "mdi:leaf", optimize_view),
         *view(t["energy"], "proxon-energy", "mdi:lightning-bolt-outline", energy_view),

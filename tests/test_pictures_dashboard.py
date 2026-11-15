@@ -268,9 +268,10 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert parse_yaml(dump(dashboard)) == dashboard
     views = dashboard["views"]
     # one tab for each thing to do: home, hot water, optimisation, power, settings
-    assert [v["path"] for v in views] == ["proxon", "proxon-hot-water", "proxon-optimize", "proxon-energy", "proxon-settings"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-optimize", "proxon-energy",
+                                         "proxon-settings"]
     assert all(v["type"] == "sections" for v in views)
-    home, water, optimize, energy, settings = views
+    home, house_tab, water, optimize, energy, settings = views
 
     def cards(view: dict) -> list[dict]:
         out = []
@@ -280,11 +281,18 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
 
     assert all(v["theme"] == "Proxon Bento" for v in views)  # the bento look (normal look until the theme is installed)
     pictures = {c["image_entity"]: c for v in views for c in cards(v) if c["type"] == "picture-elements" and "image_entity" in c}
-    assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser")}  # no floor plan, no drawn house
+    assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser", "BildGrundriss", "BildHaus")}
     # tapping: the unit opens the ventilation, the tank the hot water, every room its thermostat (house and floor plan)
     targets = {k: [e["entity"] for e in c["elements"]] for k, c in pictures.items()}
     assert targets[eid(hass, "image", "BildAnlage")] == [eid(hass, "fan", "Lueftung")]
     assert targets[eid(hass, "image", "BildWarmwasser")] == [eid(hass, "water_heater", "Warmwasser")]
+    thermostats = [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1, 4)]
+    assert sorted(targets[eid(hass, "image", "BildGrundriss")]) == sorted(thermostats)
+    assert sorted(targets[eid(hass, "image", "BildHaus")]) == sorted(thermostats)
+    # the house tab: the floor plan with its heading, then the drawn house (its title is in the picture)
+    assert house_tab["max_columns"] == 2
+    assert [[c.get("image_entity") or c["heading"] for c in s["cards"]] for s in house_tab["sections"]] == [
+        ["Floor plan", eid(hass, "image", "BildGrundriss")], [eid(hass, "image", "BildHaus")]]
     assert all(e["type"] == "image" and e["tap_action"]["action"] == "more-info" for c in pictures.values() for e in c["elements"])
 
     # ---- home ----
@@ -492,7 +500,8 @@ async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant,
     assert proxon["title"] == "Proxon" and proxon["show_in_sidebar"] is True and proxon["mode"] == "storage"
     await client.send_json_auto_id({"type": "lovelace/config", "url_path": "proxon-dashboard"})
     views = (await client.receive_json())["result"]["views"]
-    assert [v["path"] for v in views] == ["proxon", "proxon-hot-water", "proxon-optimize", "proxon-energy", "proxon-settings"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-optimize", "proxon-energy",
+                                         "proxon-settings"]
     # the next run writes it anew instead of creating a second one
     answer = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
     assert answer["created"] is False and "replaced" in answer["message"]
@@ -543,6 +552,10 @@ async def test_basement_in_the_options_and_on_the_dashboard(hass: HomeAssistant,
     assert headings == ["Ground floor", "Upper floor", "Basement"]
     last = [c for c in rooms["cards"] if c["type"] == "vertical-stack"][-1]
     assert last["cards"][0]["entity"] == eid(hass, "sensor", "NBE4Temperatur")  # the bathroom, now in the basement
+    # the house tab: the basement on the floor plan, not in the drawn house (it isn't drawn there)
+    plan, house = (s["cards"][-1] for s in dashboard["views"][1]["sections"])
+    assert eid(hass, "climate", "NBE4Thermostat") in [e["entity"] for e in plan["elements"]]
+    assert [e["entity"] for e in house["elements"]] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1)]
 
 
 def test_room_chosen_for_both_floors_counts_as_upstairs() -> None:
