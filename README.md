@@ -29,6 +29,10 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.19.0:** the dashboard in the "Proxon Bento" look (rounded tiles, light and dark following the device); the
+start page with the key figures in one row and every room as a tile (temperature, target -/+, heating element); the theme
+comes with "create dashboard".
+
 **New in 0.18.0:** the weekly ventilation schedule can be switched on and off as a whole; the year forecast follows the
 season (the compressor weighted by the typical heating of each month); the unit as large as the house on the start page.
 
@@ -84,7 +88,7 @@ nobody home).
 
 ---
 
-# Proxon Control – Integration für Home Assistant (Version 0.18.0)
+# Proxon Control – Integration für Home Assistant (Version 0.19.0)
 
 Bringt die Proxon-Anlage (Frischluft-Wärmetechnik) als eigenes Gerät in Home Assistant – mit derselben
 Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
@@ -109,6 +113,26 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.19.0: Dashboard im Bento-Look
+
+* **Theme „Proxon Bento“** mit hellem und dunklem Modus: helle, stark gerundete Kacheln mit grünem Akzent, nachts
+  Graphit. Es folgt automatisch dem Hell/Dunkel des Geräts; im Profil lässt es sich fest wählen (z. B. für ein
+  Wandtablet). „Proxon Glas“ bleibt zur Auswahl im Profil. „Dashboard erstellen“ installiert die Themes selbst; die Bilder
+  folgen jetzt ebenfalls dem Gerät (die frühere feste Einstellung „dunkel“ wird dabei zurückgesetzt).
+* **Startseite „Zuhause“ neu:**
+  * oben die wichtigsten Werte in einer Reihe: Außen, Innen und Warmwasser mit dem Verlauf des letzten Tages, die
+    Leistung jetzt (auf dem Handy zu zweit),
+  * die Lüftung (Stufe, Betriebsart, Intensivlüftung, Urlaubsmodus, Zeitprogramm) und die Automatiken mit ihrem Status,
+  * **jeder Raum als eigene Kachel:** die Temperatur groß, das Soll mit − / +, das Heizelement; antippen öffnet den
+    Thermostat,
+  * die Anlage, Warmwasser kurz und die Luft.
+
+  Grundriss und gezeichnetes Haus stehen nicht mehr auf der Startseite (die Bilder gibt es weiter als Entitäten).
+* Die Aktion „Glas-Theme installieren“ heißt jetzt „Dashboard-Theme installieren“ (der Name für Automationen bleibt
+  `install_glass_theme`).
+
+Zum Übernehmen nach dem Update „Dashboard erstellen“ ausführen.
 
 ## Neu in Version 0.18.0
 
