@@ -109,7 +109,7 @@ async def test_counters_and_runtime_sensors(hass: HomeAssistant, device) -> None
     entry = await setup(hass)
     assert state(hass, "sensor", "StundenKompressorHeizen").state == "18000"  # 2-hour steps
     assert state(hass, "sensor", "StundenStufe2").state == "40000"
-    assert state(hass, "sensor", "T300StundenKompressor").state == "10000.0"
+    assert entry.runtime_data.data["T300StundenKompressor"] == 10000.0  # still read (the sensor is hidden: unchecked)
     assert state(hass, "sensor", "T300StundenHeizstab").state == "1000.0"
     assert state(hass, "sensor", "KompressorStartsHeute").state == "0"
     assert state(hass, "sensor", "HeizstabLaufzeitHeute").state == "0.0"
@@ -163,11 +163,15 @@ async def test_t300_filter_reminder_is_no_fault(hass: HomeAssistant, device) -> 
 
 # ---------------- 0.12: room heat demand, heating elements, device type, compressor power ----------------
 def test_room_demand_and_heating() -> None:
-    v = {"NBE1LED": 6.0, "NBE1PTC": 1.0, "NBE2LED": 6.0, "NBE2PTC": 0.0, "NBE3LED": 5.0, "NBE3PTC": 1.0}
+    room = {"MittelTemperatur": 20.0, "OffsetTemperatur": 2.0}  # target 22 °C
+    v = {f"NBE{n}{k}": x for n in (1, 2, 3) for k, x in room.items()}
+    v |= {"NBE1Temperatur": 21.0, "NBE1PTC": 1.0, "NBE2Temperatur": 21.0, "NBE2PTC": 0.0, "NBE3Temperatur": 22.1, "NBE3PTC": 1.0}
+    v |= {"NBE1LED": 1540.0, "NBE3LED": 1540.0}  # the panel's "LED" value (offset + 4 in the high byte) doesn't decide
     assert R.room_demand(v, 1) == "too_cold" and R.room_heating(v, 1)
     assert R.room_demand(v, 2) == "too_cold" and not R.room_heating(v, 2)  # element not released
     assert R.room_demand(v, 3) == "at_target" and not R.room_heating(v, 3)
-    # central panel: no LED level, temperature against target
+    assert R.room_demand({**v, "NBE3Temperatur": 22.5}, 3) == "warmer"
+    # central panel: its own target
     assert R.room_demand({"NBE0Temperatur": 20.0, "NBE0MittelTemperatur": 22.0}, 0) == "too_cold"
     assert R.room_demand({"NBE0Temperatur": 22.1, "NBE0MittelTemperatur": 22.0}, 0) == "at_target"
     assert R.heating_channels({"HeizmodulRelais": float(0b1000000101)}) == ["K1", "K3", "K10"]
@@ -175,10 +179,10 @@ def test_room_demand_and_heating() -> None:
 
 async def test_room_heat_demand_in_the_thermostat(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    bedroom = hass.states.get(eid(hass, "climate", "NBE1Thermostat"))  # LED 6, element released
+    bedroom = hass.states.get(eid(hass, "climate", "NBE1Thermostat"))  # 21 °C, target 22 °C, element released
     assert bedroom.attributes["heat_demand"] == "too_cold" and bedroom.attributes["heating_element_heats"] is True
     assert bedroom.attributes["hvac_action"] == "heating"
-    bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))  # LED 5
+    bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))  # 19 °C, target 19 °C
     assert bath.attributes["heat_demand"] == "at_target" and bath.attributes["heating_element_heats"] is False
     elements = state(hass, "binary_sensor", "HeizmodulRelais")
     assert elements.state == "on" and elements.attributes["active_channels"] == ["K3", "K10"]
@@ -262,9 +266,10 @@ def test_key_file_is_private(tmp_path) -> None:
 
 # ---------------- 0.12.2: heating element per room ----------------
 def test_element_state() -> None:
-    assert R.element_state({"NBE1PTC": 0.0, "NBE1LED": 6.0}, 1) == "off"
-    assert R.element_state({"NBE1PTC": 1.0, "NBE1LED": 5.0}, 1) == "ready"
-    assert R.element_state({"NBE1PTC": 1.0, "NBE1LED": 6.0}, 1) == "heating"
+    room = {"NBE1MittelTemperatur": 21.0, "NBE1OffsetTemperatur": 0.0}
+    assert R.element_state({**room, "NBE1PTC": 0.0, "NBE1Temperatur": 20.0}, 1) == "off"
+    assert R.element_state({**room, "NBE1PTC": 1.0, "NBE1Temperatur": 21.0}, 1) == "ready"
+    assert R.element_state({**room, "NBE1PTC": 1.0, "NBE1Temperatur": 20.0}, 1) == "heating"
     assert R.element_state({}, 1) is None
 
 
@@ -272,7 +277,7 @@ async def test_heating_element_sensor(hass: HomeAssistant, device) -> None:
     from homeassistant.helpers import entity_registry as er
 
     await setup(hass)
-    assert state(hass, "sensor", "NBE1Waermeelement").state == "heating"  # released, LED: too cold
+    assert state(hass, "sensor", "NBE1Waermeelement").state == "heating"  # released, 1 K too cold
     assert state(hass, "sensor", "NBE4Waermeelement").state == "ready"  # released, at target
     assert state(hass, "sensor", "NBE0Waermeelement").state == "off"  # living room: not released
     bedroom = er.async_get(hass).async_get(eid(hass, "sensor", "NBE1Waermeelement"))
@@ -291,8 +296,8 @@ def test_heating_tracker_switches_like_the_unit() -> None:
     assert tr.update({**base, "NBE1Temperatur": 20.6}) == {"NBE1Heizt": 1.0}  # 0.4 K: stays on
     assert tr.update({**base, "NBE1Temperatur": 20.7}) == {"NBE1Heizt": 0.0}  # 0.3 K: off
     assert tr.update({**base, "NBE1Temperatur": 20.0, "NBE1PTC": 0.0}) == {"NBE1Heizt": 0.0}  # not released
-    assert tr.update({**base, "PTCEinschaltSchwelle": 21.0, "NBE1Temperatur": 20.0}) == {}  # not a difference: LED decides
-    v = {**base, "NBE1Temperatur": 20.0, "NBE1LED": 5.0}
+    assert tr.update({**base, "PTCEinschaltSchwelle": 21.0, "NBE1Temperatur": 20.0}) == {}  # not a difference: temperature decides
+    v = {**base, "NBE1Temperatur": 21.0}
     assert R.room_heating({**v, "NBE1Heizt": 1.0}, 1) and not R.room_heating(v, 1)
 
 

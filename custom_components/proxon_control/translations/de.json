@@ -223,7 +223,7 @@
         "name": "T13 Kompressor"
       },
       "t14_suction_gas": {
-        "name": "T14 Sauggas"
+        "name": "T14 Sauggas (ungeprüft)"
       },
       "t300_suction": {
         "name": "Warmwasser-Wärmepumpe Saugleitung"
@@ -356,9 +356,6 @@
       "hours_stufe4": {
         "name": "Betriebsstunden Lüftungsstufe 4"
       },
-      "hours_t300stundenkompressor": {
-        "name": "Betriebsstunden Warmwasser-Kompressor"
-      },
       "hours_t300stundenheizstab": {
         "name": "Betriebsstunden Heizstab"
       },
@@ -453,6 +450,9 @@
       },
       "energy_total_forecast_year": {
         "name": "Energieverbrauch Hochrechnung Jahr"
+      },
+      "hours_t300_compressor_unchecked": {
+        "name": "Betriebsstunden Warmwasser-Kompressor (ungeprüft)"
       }
     },
     "select": {

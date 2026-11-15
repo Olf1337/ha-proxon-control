@@ -140,7 +140,12 @@ SENSORS: list[ProxonSensorDescription] = [
     # diagnostics of the heat pump / air paths
     _temp("T12VorKondensator", "t12_pre_condenser", diag=True),
     _temp("T13Kompressor", "t13_compressor", diag=True),
-    _temp("T14Sauggas", "t14_suction_gas", diag=True),
+    # "suction gas": exactly 52.2 °C on two real units, too warm for suction gas - not a measurement it seems; hidden
+    ProxonSensorDescription(
+        key="T14Sauggas", translation_key="t14_suction_gas", native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=False,
+    ),
     _temp("T300Saugleitung", "t300_suction", diag=True),
     _rpm("T300LuefterDrehzahl", "t300_fan_rpm"),
     ProxonSensorDescription(
@@ -161,8 +166,15 @@ SENSORS: list[ProxonSensorDescription] = [
             device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        for key in (*HOUR_COUNTERS, "T300StundenKompressor", "T300StundenHeizstab")
+        for key in (*HOUR_COUNTERS, "T300StundenHeizstab")
     ],
+    # hours of the hot-water compressor as read: implausible on two real units (about twice the hours of the whole unit),
+    # so hidden unless switched on and named "unchecked"; the runtime of today is counted in Home Assistant instead
+    ProxonSensorDescription(
+        key="T300StundenKompressor", translation_key="hours_t300_compressor_unchecked", native_unit_of_measurement=UnitOfTime.HOURS,
+        device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
+        entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=False,
+    ),
     # today (counted in Home Assistant, yesterday as attribute)
     *[
         ProxonSensorDescription(

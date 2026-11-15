@@ -173,7 +173,8 @@ async def test_no_cost_without_price_sensor(hass: HomeAssistant, device) -> None
 
 # ---------------- FWT 3.0 ----------------
 def test_fwt3_led_values_fall_back_to_the_temperature() -> None:
-    """FWT 3.0, firmware 12: the LED field holds two bytes (high byte = offset + 4), not the 4/5/6 demand level."""
+    """FWT 3.0 and an older unit: the LED field holds the target at the panel (high byte = offset + 4); the demand comes from
+    the temperature against the target."""
     base = {"NBE0MittelTemperatur": 23.0}
     room = {"NBE1MittelTemperatur": 20.0, "NBE1OffsetTemperatur": 2.0}  # target 22 °C
     assert R.room_demand({**base, **room, "NBE1LED": 1540.0, "NBE1Temperatur": 24.1}, 1) == "warmer"
@@ -350,3 +351,14 @@ async def test_year_forecast_by_the_season(hass: HomeAssistant, device, freezer)
     assert float(hass.states.get(eid(hass, "sensor", "StromkostenJahrPrognose")).state) == 829.5
     # the month stays linear: 44 kWh in 4 days -> 330 kWh in November
     assert float(hass.states.get(eid(hass, "sensor", "EnergieGesamtMonatPrognose")).state) == 330.0
+
+
+async def test_unchecked_sensors_are_hidden(hass: HomeAssistant, device) -> None:
+    """Hot-water compressor hours (implausible on two real units) and T14 (52.2 °C on both): hidden, named "unchecked"."""
+    from homeassistant.helpers import entity_registry as er
+
+    await setup(hass)
+    reg = er.async_get(hass)
+    for key in ("T300StundenKompressor", "T14Sauggas"):
+        ent = reg.async_get(reg.async_get_entity_id("sensor", "proxon_control", f"abc123_{key}"))
+        assert ent.disabled_by is er.RegistryEntryDisabler.INTEGRATION and ent.entity_category == "diagnostic"

@@ -223,7 +223,7 @@
         "name": "T13 compressor"
       },
       "t14_suction_gas": {
-        "name": "T14 suction gas"
+        "name": "T14 suction gas (unchecked)"
       },
       "t300_suction": {
         "name": "Hot-water heat pump suction line"
@@ -356,9 +356,6 @@
       "hours_stufe4": {
         "name": "Operating hours ventilation level 4"
       },
-      "hours_t300stundenkompressor": {
-        "name": "Operating hours hot-water compressor"
-      },
       "hours_t300stundenheizstab": {
         "name": "Operating hours immersion heater"
       },
@@ -453,6 +450,9 @@
       },
       "energy_total_forecast_year": {
         "name": "Energy consumption forecast this year"
+      },
+      "hours_t300_compressor_unchecked": {
+        "name": "Hot-water compressor hours (unchecked)"
       }
     },
     "select": {

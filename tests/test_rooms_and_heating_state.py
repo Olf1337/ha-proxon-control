@@ -70,7 +70,7 @@ async def test_heating_state_comes_from_the_compressor(hass: HomeAssistant, devi
     coordinator = hass.config_entries.async_entries("proxon_control")[0].runtime_data
     # compressor stopped: only ventilating - even though the room's own status value says 1 (as on the real unit)
     # (room 1 at its target, so its heating element doesn't heat either)
-    coordinator.async_set_updated_data({**coordinator.data, "DrehzahlKompressor": 0.0, "NBE1Status": 1.0, "NBE1LED": 5.0})
+    coordinator.async_set_updated_data({**coordinator.data, "DrehzahlKompressor": 0.0, "NBE1Status": 1.0, "NBE1Temperatur": 22.0})
     await hass.async_block_till_done()
     assert hass.states.get(living).attributes["hvac_action"] == "fan"
     assert hass.states.get(eid(hass, "climate", "NBE1Thermostat")).attributes["hvac_action"] == "fan"

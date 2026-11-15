@@ -255,8 +255,8 @@ def _room_registers(n: int) -> list[Reg]:
         Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
         Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
         Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
-        # how the room stands against its target, as the panel's LED shows it: 6 too cold, 5 at target, 4 warmer
-        # (Modbus list "NBE LEDsetpointlevel"; meaning found on a real unit by the ha-modbus-proxon project)
+        # Modbus list "NBE LEDsetpointlevel": on real units the high byte is the room's offset + 4 (the target shown on the
+        # panel); read for the diagnostics only
         Reg(f"NBE{n}LED", False, (2, 16 + 3 * n)),
     ]
 
@@ -652,18 +652,10 @@ def room_base(values: dict, i: int) -> float | None:
     return values.get(f"NBE{i}MittelTemperatur")
 
 
-LED_DEMAND = {6: "too_cold", 5: "at_target", 4: "warmer"}
-# An FWT 3.0 (firmware 12) reports two bytes here instead, e.g. 0x0504 / 0x0604: the high byte followed the room's offset
-# (+4) in every room, so it seems to be the target shown on the panel, not the heat demand. Such values aren't in
-# LED_DEMAND, so the demand is worked out from the room's temperature and target there.
-
-
 def room_demand(values: dict, i: int) -> str | None:
-    """Too cold / at target / warmer: from the room panel's LED level, for the central panel (no LED level) from its
-    temperature against its target."""
-    led = values.get(f"NBE{i}LED")
-    if isinstance(led, (int, float)) and int(led) in LED_DEMAND:
-        return LED_DEMAND[int(led)]
+    """Too cold / at target / warmer: the room's temperature against its target (±0.3 K).
+    (The room panels' "LED" value is not used for this: on two real units, an FWT 3.0 and an older one, its high byte was the
+    room's offset + 4 in every room - the target shown on the panel, not the heat demand.)"""
     temp, target = values.get(f"NBE{i}Temperatur"), room_target(values, i)
     if not isinstance(temp, (int, float)) or not isinstance(target, (int, float)):
         return None
@@ -674,7 +666,7 @@ def room_demand(values: dict, i: int) -> str | None:
 
 def room_heating(values: dict, i: int) -> bool:
     """The room's electric heating element is heating: released and the room too cold. "Too cold" as the unit decides it
-    (its switch-on / switch-off thresholds, worked out by HeatingTracker), else as the room panel's LED shows it."""
+    (its switch-on / switch-off thresholds, worked out by HeatingTracker), else by the temperature against the target."""
     if not values.get(f"NBE{i}PTC"):
         return False
     if f"NBE{i}Heizt" in values:
@@ -682,7 +674,7 @@ def room_heating(values: dict, i: int) -> bool:
     return room_demand(values, i) == "too_cold"
 
 
-MAX_PTC_THRESHOLD = 5.0  # K: larger values are not a difference to the target (then the LED level is used)
+MAX_PTC_THRESHOLD = 5.0  # K: larger values are not a difference to the target (then temperature against target decides)
 
 
 def ptc_thresholds(values: dict) -> tuple[float, float] | None:
