@@ -29,6 +29,11 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.20.0:** a button to set the unit's clock from Home Assistant; a notice under *Repairs* when the hot water has
+gone a week without 60 °C and no legionella protection is on; a "House" tab with the floor plan and the drawn house; rooms in
+the basement as a third floor; a fixed electricity price now replaces the price sensor completely; fixes from the diagnostics
+of three real units.
+
 **New in 0.19.0:** the dashboard in the "Proxon Bento" look (rounded tiles, light and dark following the device); the
 start page with the key figures in one row and every room as a tile (temperature, target -/+, heating element); the theme
 comes with "create dashboard".
@@ -105,14 +110,38 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Thermostate | **Jeder angeschlossene Raum als eigenes Gerät mit Thermostat und Temperatur** (einem Bereich zuordenbar) (bis zu 20 Nebenräume, wie die Anlage sie meldet): Ist- und Soll-Temperatur, Modus „Wärmeelement aus“ oder „Wärmeelement freigegeben“, Sensor „Wärmeelement“ (nicht freigegeben / bereit / heizt), und was die Anlage gerade macht (Heizen / Kühlen / Lüften). Wohnzimmer 10–30 °C in 0,5-°C-Schritten, andere Räume 14–26 °C in ganzen Grad (± 3 °C um den eigenen Grundwert des Raums) |
 | Lüftung | **Als Ventilator**: Stufe 1–4 als Geschwindigkeit (25/50/75/100 %), Intensivlüftung als Voreinstellung „Intensivlüftung“. Passt zu den Ventilator-Karten und zu Sprachassistenten. Ausschalten geht nur über die Betriebsart „Aus“ (das würde die ganze Anlage ausschalten) |
 | Warmwasser | **Als Warmwasserbereiter**: Ist- und Soll-Temperatur (20–55 °C) und Betriebsart Aus / Wärmepumpe / Wärmepumpe + E-Heizstab / nur E-Heizstab (nur mit Warmwasser-Wärmepumpe T300) |
-| Wochenprogramm | **Lüftungs-Zeitprogramm der Anlage**: je Wochentag ein Sensor („06:00–08:00 Stufe 2 · 17:00–22:00 Stufe 3“, die drei Phasen als Attribute), „Zeitprogramm aktiv“, Uhr der Anlage. Bearbeiten direkt in den Geräten „Proxon Zeitprogramm Montag“ … „Sonntag“ (je Phase Beginn, Ende, Lüftungsstufe), Knöpfe „Montag → Di–Fr / alle Tage“, oder über die Aktionen *Zeitprogramm-Phase setzen* und *Zeitprogramm-Tag kopieren* |
+| Wochenprogramm | **Lüftungs-Zeitprogramm der Anlage**: je Wochentag ein Sensor („06:00–08:00 Stufe 2 · 17:00–22:00 Stufe 3“, die drei Phasen als Attribute), „Zeitprogramm aktiv“, Uhr der Anlage und der Knopf „Uhr der Anlage stellen“. Bearbeiten direkt in den Geräten „Proxon Zeitprogramm Montag“ … „Sonntag“ (je Phase Beginn, Ende, Lüftungsstufe), Knöpfe „Montag → Di–Fr / alle Tage“, oder über die Aktionen *Zeitprogramm-Phase setzen* und *Zeitprogramm-Tag kopieren* |
 | Auswahl | Betriebsart (ECO Komfort, Winter, Sommer, Ofenbetrieb, Aus; Urlaub wird angezeigt) |
 | Zahlen (Schieberegler) | Lüftungsstufe 1–4, Grenzwert CO₂ 400–1500 ppm (nur mit CO₂-Sensor), Grenzwert Feuchte 0–100 %, Warmwasser 20–55 °C, E-Heizstab 20–70 °C, Dauer der Intensivlüftung |
 | Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab, Legionellenschaltung |
 | Sensoren | Raumtemperaturen, Innen (Mittel aller Räume), Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter (nach der an der Anlage eingestellten Standzeit), Betriebsstunden, 4-Wegeventil, Firmware, Warmwasser unten, Warmwasser-Ladezustand, Duschvorrat, Aktueller Betrieb, Wärmerückgewinnung, Stromkosten (mit Preis-Sensor) |
-| Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen* |
+| Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.20.0: Uhr stellen, Legionellen-Hinweis, Haus-Tab, Keller
+
+* **Uhr der Anlage stellen:** Der Knopf **„Uhr der Anlage stellen“** (unter *Konfiguration* des Geräts) überträgt Datum und
+  Uhrzeit von Home Assistant auf die Anlage. Geschrieben wird nur, was abweicht; kurz vor einem Minutenwechsel wartet er die
+  neue Minute ab. Wichtig, weil Wochenprogramm und Nachtabsenkung nach der Uhr der Anlage laufen. Der Hinweis „Die Uhr der
+  Anlage geht falsch“ unter *Reparaturen* verweist jetzt auf den Knopf.
+* **Hinweis zum Legionellenschutz:** War das Warmwasser 7 Tage lang nicht mindestens 60 °C heiß und ist weder die
+  Legionellenschaltung der Anlage noch „Legionellenschutz mit Sonne“ eingeschaltet, erscheint ein Hinweis unter
+  *Einstellungen → Reparaturen*. Er verschwindet von selbst, sobald eine der beiden eingeschaltet ist oder das Wasser heiß
+  genug war. Besonders wichtig mit einer Zirkulationspumpe. Die 7 Tage zählen ab dem Update.
+* **Neuer Tab „Haus“** im Dashboard: oben der Grundriss (alle Geschosse), darunter das gezeichnete Haus; jeder Raum
+  gefärbt nach Ist gegenüber Soll, antippen öffnet seinen Thermostat. Zum Übernehmen „Dashboard erstellen“ ausführen.
+* **Keller:** Unter *Proxon Control → Konfigurieren* gibt es **„Räume im Keller“**. Räume mit Namen wie Keller,
+  Hobbyraum oder Werkstatt werden dort vorausgewählt. Kellerräume stehen auf der Startseite unter eigener Überschrift und im
+  Grundriss als drittes Geschoss (im gezeichneten Haus nicht).
+* **Fester Strompreis hat Vorrang:** Ist ein fester Preis eingetragen, gilt er für alle Kosten; ein Strompreis-Sensor wird
+  dann ganz ignoriert (auch für „Warmwasser mit günstigem Strom“, ein fester Tarif hat keine günstigen Stunden).
+* **Korrekturen aus den Diagnosedateien dreier Anlagen** (danke an alle, die eine geschickt haben):
+  * „Wärmebedarf“ der Räume (zu kalt / passt / wärmer) kommt jetzt nur aus Ist gegenüber Soll. Der „LED“-Wert der
+    Raumbedienteile ist das am Bedienteil eingestellte Soll, kein Wärmebedarf.
+  * **„Betriebsstunden Warmwasser-Kompressor“** (auf allen Anlagen etwa doppelt so viele Stunden wie die ganze Anlage) und
+    **„T14 Sauggas“** sind standardmäßig ausgeblendet und tragen „(ungeprüft)“ im Namen. Sie lassen sich unter den
+    Entitäten wieder einblenden.
 
 ## Neu in Version 0.19.0: Dashboard im Bento-Look
 
