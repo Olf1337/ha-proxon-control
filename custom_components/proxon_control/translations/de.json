@@ -830,6 +830,7 @@
           "read_only": "Nur lesen",
           "picture_theme": "Dashboard-Bilder",
           "upper_floor_rooms": "Räume im Obergeschoss",
+          "basement_rooms": "Räume im Keller",
           "house_photo": "Hausfoto (optional)"
         },
         "data_description": {
@@ -842,7 +843,8 @@
           "fixed_price": "Für die Stromkosten bei einem festen Tarif, in ct/kWh (z. B. 32,5). Gilt nur, wenn kein Strompreis-Sensor gewählt ist.",
           "read_only": "Alle Werte anzeigen, aber nichts an der Anlage über Home Assistant ändern. Bedienung über das Bedienteil oder die App.",
           "picture_theme": "Hell oder dunkel wie das anzeigende Gerät (automatisch), oder immer hell / immer dunkel.",
-          "upper_floor_rooms": "Für das Hausbild: Diese Räume werden im Obergeschoss gezeichnet, alle anderen im Erdgeschoss. Vorausgewählt nach den Raumnamen (Schlaf-, Kinderzimmer …). Nichts auswählen bei einem Bungalow.",
+          "upper_floor_rooms": "Diese Räume stehen im Dashboard und in den Bildern unter „Obergeschoss“, die übrigen (ohne Keller) im Erdgeschoss. Vorausgewählt nach den Raumnamen (Schlaf-, Kinderzimmer …). Nichts auswählen bei einem Bungalow.",
+          "basement_rooms": "Diese Räume stehen im Dashboard und im Grundriss unter „Keller“. Vorausgewählt nach den Raumnamen (Keller, UG, Hobbyraum, Werkstatt …). Nichts auswählen, wenn es keinen Keller gibt.",
           "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: das gezeichnete Haus wird gezeigt."
         }
       }

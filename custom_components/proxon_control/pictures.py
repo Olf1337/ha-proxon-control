@@ -29,7 +29,7 @@ TEXT = {
         "solar": "Solar", "price": "Günstiger Strom", "boost": "Boost", "legionella": "Legionellenschutz: heizt auf 60 °C", "cooling": "Nachtkühlung", "tap": "antippen zum Einstellen",
         "ground": "Erdgeschoss", "upper": "Obergeschoss", "technik": "Technik", "charge": "Ladezustand", "shower": "reicht für ≈ {m} Min. Duschen", "middle": "Mitte",
         "bottom": "Unten", "supply_short": "Zuluft", "extract_short": "Abluft", "inside": "Innen", "vent_unit": "Lüftungsanlage",
-        "floor_names": ["Erdgeschoss", "Obergeschoss"],
+        "floor_names": ["Erdgeschoss", "Obergeschoss", "Keller"],  # by floor: 0, 1, -1
         "heats": "heizt",
         "status": {
             "off": "aus", "waiting": "wartet", "starting": "startet gleich", "heating_solar": "heizt", "heating_price": "heizt",
@@ -48,7 +48,7 @@ TEXT = {
         "solar": "Solar", "price": "Cheap power", "boost": "Boost", "legionella": "Legionella protection: heating to 60 °C", "cooling": "Night cooling", "tap": "tap to adjust",
         "ground": "Ground floor", "upper": "Upper floor", "technik": "Utility room", "charge": "Charge", "shower": "≈ {m} min of showering", "middle": "Middle",
         "bottom": "Bottom", "supply_short": "Supply air", "extract_short": "Extract air", "inside": "Indoor", "vent_unit": "Ventilation unit",
-        "floor_names": ["Ground floor", "Upper floor"],
+        "floor_names": ["Ground floor", "Upper floor", "Basement"],  # by floor: 0, 1, -1
         "heats": "heating",
         "status": {
             "off": "off", "waiting": "waiting", "starting": "starting", "heating_solar": "heating", "heating_price": "heating",
@@ -442,8 +442,15 @@ LABELS = (("full", 160.0, 54.0, 20), ("compact", 116.0, 44.0, 18), ("mini", 86.0
 _UPPER = re.compile(r"schlaf|kind|eltern|ankleide|ober|dach|oben|\bog\b|\bdg\b|bed|kid|child|nursery|upstairs|upper|attic|loft", re.I)
 
 
+# room names that usually lie in the basement
+_BASEMENT = re.compile(r"keller|\bug\b|untergeschoss|souterrain|hobby|werkstatt|vorrat|basement|cellar|workshop", re.I)
+
+
 def guess_floor(name: str) -> int:
-    """1 for rooms that usually lie upstairs (bedrooms, children's rooms, "… oben"), else 0."""
+    """-1 for rooms that usually lie in the basement ("Keller", "UG", hobby room, workshop), 1 for rooms that usually lie
+    upstairs (bedrooms, children's rooms, "… oben"), else 0."""
+    if _BASEMENT.search(name or ""):
+        return -1
     return 1 if _UPPER.search(name or "") else 0
 
 
@@ -613,6 +620,7 @@ def house_svg(rooms: list[Room], outside: float | None, lang: str = "de", theme:
     target, with its temperature and a flame while its heating element heats; in the utility room the ventilation unit and
     the T300, from there the supply air ducts into the rooms and the extract duct back (moving while the ventilation runs)."""
     t = _t(lang)
+    rooms = [r for r in rooms if r.floor >= 0]  # drawn: ground and upper floor (a basement isn't part of this picture)
     lay = house_layout([r.floor for r in rooms])
 
     def pts(corners: list[tuple[float, float, float]], f: int) -> str:
@@ -804,13 +812,17 @@ def plan_layout(names: list[str], floors: list[int]) -> PlanLayout:
     Only names and floors count, so the dashboard gets the same tap areas as the picture."""
     kinds = [room_kind(n) for n in names]
     x0, y0, w, h = PLAN_PAD, PLAN_PAD, PLAN_W_M * PLAN_M, PLAN_H_M * PLAN_M
-    drawn = sorted(set(floors)) or [0]
-    if len(drawn) > 1:
-        weight = {f: sum(k[1] for k, fl in zip(kinds, floors) if fl == f) for f in drawn}
-        share = min(0.67, max(0.33, weight[0] / (weight[0] + weight[1])))
-        bands = [(0, y0, y0 + h * share), (1, y0 + h * share, y0 + h)]
-    else:
-        bands = [(drawn[0], y0, y0 + h)]
+    # the floors from the top: ground floor, upper floor, basement; each band as high as its rooms need, at least a fifth
+    drawn: list[int] = [f for f in (0, 1, -1) if f in floors] or [0]
+    weight = {f: sum(k[1] for k, fl in zip(kinds, floors) if fl == f) for f in drawn}
+    share = {f: max(0.2, weight[f] / (sum(weight.values()) or 1)) for f in drawn}
+    total = sum(share.values())
+    bands: list[tuple[int, float, float]] = []
+    top = y0
+    for f in drawn:
+        bottom = top + h * share[f] / total
+        bands.append((f, top, bottom))
+        top = bottom
     rooms: list[tuple[float, float, float, float]] = [(x0, y0, w, h)] * len(names)
     for floor, top, bottom in bands:
         order = sorted((i for i, f in enumerate(floors) if f == floor), key=lambda i: -kinds[i][1])
@@ -956,7 +968,7 @@ def _furniture(kind: str, name: str, x: float, y: float, w: float, h: float) -> 
 def plan_svg(rooms: list[Room], lang: str = "de", theme: str = "auto") -> str:
     """The rooms as a schematic floor plan from above: floors (wood, tiles, stone) and furniture by the kind of room,
     walls with doors and windows; on every room its temperature, target and a flame while its heating element heats,
-    tinted blue while too cold and orange while too warm. Two floors: ground floor at the top, upper floor below."""
+    tinted blue while too cold and orange while too warm. Floors from the top: ground floor, upper floor, basement."""
     t = _t(lang)
     lay = plan_layout([r.name for r in rooms], [r.floor for r in rooms])
     x0, y0, W, H = PLAN_PAD, PLAN_PAD, PLAN_W_M * PLAN_M, PLAN_H_M * PLAN_M

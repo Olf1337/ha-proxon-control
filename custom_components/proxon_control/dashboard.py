@@ -35,7 +35,7 @@ from .theme import THEME_NAME
 TEXT: dict[str, dict[str, Any]] = {
     "de": {
         "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus",
-        "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss"], "now": "Jetzt", "whole": "Gesamt", "elements": "Wärmeelemente",
+        "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss", "Keller"], "now": "Jetzt", "whole": "Gesamt", "elements": "Wärmeelemente",
         "last_day": "Letzte 24 Stunden", "switches": "Schalter", "pills": {"T3Frischluft": "Außen ", "RaumMittel": "Innen ",
                                                                           "WarmwasserIstTemperatur": "Warmwasser "},
         "outside": "Außen", "power_today": "Strom heute",
@@ -86,7 +86,7 @@ TEXT: dict[str, dict[str, Any]] = {
     },
     "en": {
         "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House",
-        "rooms": "Rooms", "floors": ["Ground floor", "Upper floor"], "now": "Right now", "whole": "Total", "elements": "Heating elements",
+        "rooms": "Rooms", "floors": ["Ground floor", "Upper floor", "Basement"], "now": "Right now", "whole": "Total", "elements": "Heating elements",
         "last_day": "Last 24 hours", "switches": "Switches", "pills": {"T3Frischluft": "Outdoor ", "RaumMittel": "Indoor ",
                                                                        "WarmwasserIstTemperatur": "Hot water "},
         "outside": "Outdoor", "power_today": "Power today",
@@ -264,11 +264,12 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
 
     def room_cards(grid: dict) -> list[dict]:
         out: list[dict] = []
-        for floor in (0, 1):
+        several = len(set(floors)) > 1
+        for floor in (0, 1, -1):  # ground floor, upper floor, basement (the names by floor: 0, 1, -1)
             cards = [c for i, f in zip(rooms, floors) if f == floor for c in room_card(i, grid)]
             if cards:
-                title = t["floors"][floor] if any(floors) else t["rooms"]
-                out += [heading(title, "subtitle" if any(floors) else "title"), *cards]
+                title = t["floors"][floor] if several else t["rooms"]
+                out += [heading(title, "subtitle" if several else "title"), *cards]
         return out
 
     # ---- 1. home: key figures, operate the ventilation, the floor plan and every room, the unit and hot water ----

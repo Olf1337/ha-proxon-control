@@ -508,3 +508,38 @@ async def test_create_dashboard_without_dashboards(hass: HomeAssistant, device) 
     await setup(hass)
     with pytest.raises(ServiceValidationError, match="paste only"):
         await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+
+
+# ---------------- basement ----------------
+def test_basement_by_name_and_in_the_plan() -> None:
+    from custom_components.proxon_control.pictures import Room, guess_floor, house_svg, plan_layout, plan_svg
+
+    assert [guess_floor(n) for n in ("Keller", "Hobbyraum", "UG Werkstatt", "Schlafen", "Wohnen", "Basement")] == [-1, -1, -1, 1, 0, -1]
+    names = ["Wohnen", "Küche", "Schlafen", "Kind", "Hobbyraum", "Keller"]
+    floors = [0, 0, 1, 1, -1, -1]
+    lay = plan_layout(names, floors)
+    # three bands from the top: ground floor, upper floor, basement, filling the plan without gaps
+    assert [b[0] for b in lay.bands] == [0, 1, -1]
+    assert all(abs(a[2] - b[1]) < 0.01 for a, b in zip(lay.bands, lay.bands[1:]))
+    hobby = lay.rooms[4]
+    assert lay.bands[2][1] - 0.01 <= hobby[1] < lay.bands[2][2]
+    rooms = [Room(n, 21.0, 21.0, False, f) for n, f in zip(names, floors)]
+    assert ">Keller<" in plan_svg(rooms, "de")  # the band's name tag
+    # the drawn house shows ground and upper floor only
+    assert "Hobbyraum" not in house_svg(rooms, 5.0, "de") and "Schlafen" in house_svg(rooms, 5.0, "de")
+
+
+async def test_basement_in_the_options_and_on_the_dashboard(hass: HomeAssistant, device) -> None:
+    entry = await setup(hass)  # rooms Wohnzimmer (0), Schlafzimmer (1), Bad (4)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert "basement_rooms" in {str(k) for k in result["data_schema"].schema}
+    await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "basement_rooms": ["4"]})
+    await hass.async_block_till_done()
+    assert entry.options["basement_rooms"] == ["4"]
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
+    home = dashboard["views"][0]
+    rooms = next(s for s in home["sections"] if s.get("column_span") == 2)
+    headings = [c["heading"] for c in rooms["cards"] if c["type"] == "heading"]
+    assert headings == ["Ground floor", "Upper floor", "Basement"]
+    last = [c for c in rooms["cards"] if c["type"] == "vertical-stack"][-1]
+    assert last["cards"][0]["entity"] == eid(hass, "sensor", "NBE4Temperatur")  # the bathroom, now in the basement

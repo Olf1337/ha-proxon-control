@@ -31,6 +31,7 @@ PICTURE_THEMES = ["auto", "light", "dark"]
 DEFAULT_PICTURE_THEME = "auto"
 # house picture: the rooms on the upper floor (room numbers; guessed from the names until chosen), the user's own house photo
 CONF_UPPER_FLOOR = "upper_floor_rooms"
+CONF_BASEMENT = "basement_rooms"
 CONF_HOUSE_PHOTO = "house_photo"
 CONF_TOKEN = "token"  # access key of the bridge (optional)
 # how the integration reaches the unit when logged in with Device ID + password:

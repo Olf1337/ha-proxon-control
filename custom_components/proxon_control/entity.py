@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_DEVICE_ID, CONF_UPPER_FLOOR, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL, ROOM_MODEL
+from .const import CONF_BASEMENT, CONF_DEVICE_ID, CONF_UPPER_FLOOR, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL, ROOM_MODEL
 from .coordinator import ProxonCoordinator
 from .pictures import guess_floor
 from .registers import ROOM_COUNT, room_connected, room_name_from_unit, room_target
@@ -28,11 +28,16 @@ def house_rooms(data: dict) -> list[int]:
 
 
 def room_floors(options: Mapping[str, Any], data: dict, rooms: Iterable[int]) -> list[int]:
-    """Floor of each room for the house picture (0 ground, 1 upper): as chosen in the options, else guessed from the name."""
-    chosen = options.get(CONF_UPPER_FLOOR)
-    if chosen is not None:
-        return [1 if str(i) in chosen else 0 for i in rooms]
-    return [guess_floor(room_name(i, data)) for i in rooms]
+    """Floor of each room (0 ground, 1 upper, -1 basement): the upper floor and the basement as chosen in the options, each
+    guessed from the room names while not chosen. A room chosen for both counts as upstairs."""
+    upper, basement = options.get(CONF_UPPER_FLOOR), options.get(CONF_BASEMENT)
+    out = []
+    for i in rooms:
+        guess = guess_floor(room_name(i, data))
+        up = str(i) in upper if upper is not None else guess == 1
+        down = str(i) in basement if basement is not None else guess == -1
+        out.append(1 if up else -1 if down else 0)
+    return out
 
 
 def base_id(coordinator: ProxonCoordinator) -> str:

@@ -24,6 +24,7 @@ import voluptuous as vol
 
 from .api import MODE_LOCAL, AuthError, BridgeApi, HybridApi, ProxonError, TokenError, connect
 from .const import (
+    CONF_BASEMENT,
     CONF_CONNECTION,
     CONF_DEVICE_ID,
     CONF_FEED_IN_NEGATIVE,
@@ -84,10 +85,11 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
             if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
                 data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
             rooms = self._rooms()
-            if rooms and CONF_UPPER_FLOOR in user_input:  # kept only when it differs from the guess by the room names
-                chosen = sorted(set(user_input[CONF_UPPER_FLOOR]) & set(rooms), key=int)
-                if chosen != self._guess(rooms):
-                    data[CONF_UPPER_FLOOR] = chosen
+            for key, floor in ((CONF_UPPER_FLOOR, 1), (CONF_BASEMENT, -1)):  # kept only when it differs from the guess
+                if rooms and key in user_input:
+                    chosen = sorted(set(user_input[key]) & set(rooms), key=int)
+                    if chosen != self._guess(rooms, floor):
+                        data[key] = chosen
             if photo := (user_input.get(CONF_HOUSE_PHOTO) or "").strip():
                 if not photo.startswith(("/", "http://", "https://")):
                     errors = {CONF_HOUSE_PHOTO: "photo_path"}
@@ -114,11 +116,12 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         )
         rooms = self._rooms()
         house: dict[Any, Any] = {}
-        if rooms:  # the house picture: which rooms lie upstairs
-            house[vol.Optional(CONF_UPPER_FLOOR)] = SelectSelector(SelectSelectorConfig(
-                options=[SelectOptionDict(value=i, label=name) for i, name in rooms.items()], multiple=True,
-                mode=SelectSelectorMode.LIST,
-            ))
+        if rooms:  # which rooms lie upstairs and in the basement (rooms on the dashboard, the pictures)
+            for key in (CONF_UPPER_FLOOR, CONF_BASEMENT):
+                house[vol.Optional(key)] = SelectSelector(SelectSelectorConfig(
+                    options=[SelectOptionDict(value=i, label=name) for i, name in rooms.items()], multiple=True,
+                    mode=SelectSelectorMode.LIST,
+                ))
         house[vol.Optional(CONF_HOUSE_PHOTO)] = TextSelector()
         schema = vol.Schema(
             {
@@ -145,8 +148,9 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         )
         current = {**self.config_entry.data, **self.config_entry.options}
         current.pop(CONF_PASSWORD, None)
-        if rooms and CONF_UPPER_FLOOR not in current:
-            current[CONF_UPPER_FLOOR] = self._guess(rooms)
+        for key, floor in ((CONF_UPPER_FLOOR, 1), (CONF_BASEMENT, -1)):
+            if rooms and key not in current:
+                current[key] = self._guess(rooms, floor)
         if user_input:
             current.update(user_input)
         return self.async_show_form(step_id="init", data_schema=self.add_suggested_values_to_schema(schema, current), errors=errors)
@@ -157,8 +161,8 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         data = getattr(coordinator, "data", None) or {}
         return {str(i): room_name(i, data) for i in house_rooms(data)} if data else {}
 
-    def _guess(self, rooms: dict[str, str]) -> list[str]:
-        return [i for i, name in rooms.items() if guess_floor(name)]
+    def _guess(self, rooms: dict[str, str], floor: int = 1) -> list[str]:
+        return [i for i, name in rooms.items() if guess_floor(name) == floor]
 
     @property
     def _login(self) -> bool:

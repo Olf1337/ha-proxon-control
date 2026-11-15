@@ -830,6 +830,7 @@
           "read_only": "Read only",
           "picture_theme": "Dashboard pictures",
           "upper_floor_rooms": "Rooms on the upper floor",
+          "basement_rooms": "Rooms in the basement",
           "house_photo": "House photo (optional)"
         },
         "data_description": {
@@ -842,7 +843,8 @@
           "fixed_price": "For the electricity cost with a fixed tariff, in ct/kWh (e.g. 32.5). Used only when no price sensor is chosen.",
           "read_only": "Show all values, but never change anything on the unit from Home Assistant. Operate it with the control panel or the app.",
           "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark.",
-          "upper_floor_rooms": "For the house picture: these rooms are drawn on the upper floor, all others on the ground floor. Preselected by the room names (bedroom, children's room …). Select none for a bungalow.",
+          "upper_floor_rooms": "These rooms are shown under \"Upper floor\" on the dashboard and in the pictures, the others (except the basement) on the ground floor. Preselected by the room names (bedrooms, children's rooms …). Choose none for a bungalow.",
+          "basement_rooms": "These rooms are shown under \"Basement\" on the dashboard and in the floor plan. Preselected by the room names (Keller, UG, hobby room, workshop …). Choose none if there is no basement.",
           "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown."
         }
       }
