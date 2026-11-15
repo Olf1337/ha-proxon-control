@@ -543,3 +543,27 @@ async def test_basement_in_the_options_and_on_the_dashboard(hass: HomeAssistant,
     assert headings == ["Ground floor", "Upper floor", "Basement"]
     last = [c for c in rooms["cards"] if c["type"] == "vertical-stack"][-1]
     assert last["cards"][0]["entity"] == eid(hass, "sensor", "NBE4Temperatur")  # the bathroom, now in the basement
+
+
+def test_room_chosen_for_both_floors_counts_as_upstairs() -> None:
+    """A room in both lists of the options (upper floor and basement) is drawn and listed upstairs."""
+    from custom_components.proxon_control.entity import room_floors
+
+    data = {f"NBE{n}name": name for n, name in ((1, "Arbeitszimmer"), (2, "Hobbyraum"), (3, "Schlafen"))}
+    both = {"upper_floor_rooms": ["1"], "basement_rooms": ["1", "2"]}
+    assert room_floors(both, data, [1, 2, 3]) == [1, -1, 0]  # 1 in both: upstairs; 3 not chosen upstairs: ground floor
+    # without a choice the names decide; a basement name wins over an upstairs one
+    assert room_floors({}, data, [1, 2, 3]) == [0, -1, 1]
+    assert room_floors({}, {"NBE1name": "Kinderzimmer Keller"}, [1]) == [-1]
+
+
+async def test_all_rooms_upstairs_get_one_heading(hass: HomeAssistant, device) -> None:
+    """With all rooms on one floor (here all upstairs) the dashboard shows one heading "Rooms", not the floor's name."""
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"upper_floor_rooms": ["0", "1", "4"], "basement_rooms": []})
+    await setup(hass, entry)
+    dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
+    rooms = next(s for s in dashboard["views"][0]["sections"] if s.get("column_span") == 2)
+    headings = [c for c in rooms["cards"] if c["type"] == "heading"]
+    assert [(h["heading"], h["heading_style"]) for h in headings] == [("Rooms", "title")]
