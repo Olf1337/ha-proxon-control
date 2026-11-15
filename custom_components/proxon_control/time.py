@@ -1,4 +1,5 @@
-"""Weekly ventilation schedule: start and end of each phase as time settings, one device per weekday.
+"""Weekly ventilation schedule: start and end of each phase as time settings, one device per weekday. Also the night
+setback's start and end, and when the legionella protection with solar heats without sun.
 
 Changes are checked against the unit's rules first (see schedule.py): times only for phases that start at least 2 hours
 from now, a running phase only in its level, no overlaps. A phase that is off can be prepared freely.
@@ -13,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity
+from .entity import ProxonEnergyEntity, ProxonEntity
 from .registers import SCHEDULE_PHASES
 from .schedule import read_day
 from .services import async_set_phase, schedule_day_device
@@ -25,6 +26,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     entities: list[TimeEntity] = []
     if all(k in data for k in NIGHT_KEYS[False] + NIGHT_KEYS[True]):
         entities += [ProxonNightTime(coordinator, end) for end in (False, True)]
+    if coordinator.energy.legionella.supported:
+        entities.append(ProxonLegionellaTime(coordinator))
     if read_day(data, 0) is not None:
         entities += [
             ProxonPhaseTime(hass, coordinator, day, phase, end)
@@ -98,3 +101,21 @@ class ProxonPhaseTime(ProxonEntity, TimeEntity):
             self.hass, self.coordinator, self._day, self._phase,
             None if self._end else minutes, minutes if self._end else None, None,
         )
+
+
+class ProxonLegionellaTime(ProxonEnergyEntity, TimeEntity):
+    """Legionella protection with solar: when it heats without sun, on the day a week is over (a setting of the
+    integration, nothing is written to the unit)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:clock-alert-outline"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "LegionellenZeit", "legionella_due_time", coordinator.energy.legionella)
+
+    @property
+    def native_value(self) -> time:
+        return self.manager.state.due_time
+
+    async def async_set_value(self, value: time) -> None:
+        await self.manager.async_set_due_time(value)

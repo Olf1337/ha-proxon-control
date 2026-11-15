@@ -4,7 +4,8 @@ Once a week the hot water has to get hot enough against legionella (60 °C). Ins
 (which heats at a fixed time, often from the grid), the immersion heater does it on a day with solar surplus:
   * from DAYS_SUN days after the last time the water was that hot, a sunny moment is looked for: the surplus has to stay above
     the limit of "solar hot water" for START_DELAY,
-  * after INTERVAL it heats anyway (at the latest after a week, sun or not),
+  * without sun it heats anyway on the day a week is over, at DUE_TIME (a time of the user's choice, e.g. midday for the
+    last bit of sun or the night for a cheap tariff; so between 6 and 8 days after the last time),
   * heating: the heater's target is set to TEMP and the heater switched on; it ends when the middle of the tank reached TEMP,
     or after MAX_RUN (then it tries again after RETRY), and the heater's target and switch are put back as they were,
   * any time the water gets that hot by itself, that counts as done,
@@ -14,7 +15,7 @@ While the function is on, the unit's own legionella function is switched off (an
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 TEMP = 60.0
 REACHED = TEMP - 0.5  # the sensor sits in the middle of the tank: half a degree below counts
@@ -23,6 +24,7 @@ DAYS_SUN = timedelta(days=5)
 START_DELAY = timedelta(minutes=10)
 MAX_RUN = timedelta(hours=4)
 RETRY = timedelta(hours=12)
+DUE_TIME = time(13, 0)  # default time of the heating without sun
 
 SOLAR = "solar"
 DUE = "due"
@@ -50,6 +52,7 @@ class State:
     saved_heater_on: bool | None = None
     unit_function_was_on: bool = False  # the unit's own legionella function was on when this was switched on
     watching_since: datetime | None = None  # since when the water temperature is watched (for the legionella notice)
+    due_time: time = DUE_TIME  # when it heats without sun, on the day a week is over
 
     def to_dict(self) -> dict:
         def iso(v):
@@ -58,7 +61,7 @@ class State:
             "on": self.on, "reference": iso(self.reference), "last_done": iso(self.last_done), "active": self.active,
             "since": iso(self.since), "last_try": iso(self.last_try), "saved_heater_target": self.saved_heater_target,
             "saved_heater_on": self.saved_heater_on, "unit_function_was_on": self.unit_function_was_on,
-            "watching_since": iso(self.watching_since),
+            "watching_since": iso(self.watching_since), "due_time": self.due_time.strftime("%H:%M"),
         }
 
     @classmethod
@@ -69,14 +72,26 @@ class State:
             on=bool(d.get("on")), reference=dt(d.get("reference")), last_done=dt(d.get("last_done")), active=d.get("active"),
             since=dt(d.get("since")), last_try=dt(d.get("last_try")), saved_heater_target=d.get("saved_heater_target"),
             saved_heater_on=d.get("saved_heater_on"), unit_function_was_on=bool(d.get("unit_function_was_on")),
-            watching_since=dt(d.get("watching_since")),
+            watching_since=dt(d.get("watching_since")), due_time=_time(d.get("due_time")),
         )
+
+
+def _time(v) -> time:
+    try:
+        return time.fromisoformat(v) if v else DUE_TIME
+    except (TypeError, ValueError):
+        return DUE_TIME
+
+
+def _due(ref: datetime, at: time) -> datetime:
+    """The heating without sun: on the day INTERVAL after ref is over, at the chosen time."""
+    return datetime.combine((ref + INTERVAL).date(), at, tzinfo=ref.tzinfo)
 
 
 def next_due(st: State) -> datetime | None:
     """When it heats at the latest (sun or not)."""
     ref = st.last_done or st.reference
-    return None if ref is None else ref + INTERVAL
+    return None if ref is None else _due(ref, st.due_time)
 
 
 def decide(now: datetime, st: State, *, water: float | None, surplus_w: float | None, surplus_limit: float,
@@ -100,7 +115,7 @@ def decide(now: datetime, st: State, *, water: float | None, surplus_w: float | 
     if st.last_try is not None and now - st.last_try < RETRY:
         st.want_since = None
         return None, WAITING
-    if now - ref >= INTERVAL:
+    if now >= _due(ref, st.due_time):
         return "start_due", HEATING_DUE
     if now - ref < DAYS_SUN:
         st.want_since = None

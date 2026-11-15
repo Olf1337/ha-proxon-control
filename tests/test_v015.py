@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from datetime import time as clock
 import time
 
 from homeassistant.core import HomeAssistant
@@ -55,23 +56,35 @@ def test_waits_a_few_days_then_looks_for_sun() -> None:
 
 
 def test_no_sun_for_a_week_heats_anyway() -> None:
-    st = L.State(on=True, reference=T0)
+    st = L.State(on=True, reference=T0)  # Tuesday 12:00
     assert run(st, T0 + timedelta(days=6), 0, surplus=200)[-1] == (None, L.LOOKING)
-    assert run(st, T0 + timedelta(days=7), 0, surplus=None)[-1] == ("start_due", L.HEATING_DUE)
+    # a week later at the chosen time (13:00 by default), not at the minute the week is over
+    assert run(st, T0 + timedelta(days=7, minutes=59), 0, surplus=None)[-1] == (None, L.LOOKING)
+    assert run(st, T0 + timedelta(days=7, hours=1), 0, surplus=None)[-1] == ("start_due", L.HEATING_DUE)
+    assert L.next_due(st) == datetime(2026, 11, 17, 13, 0)
+
+
+def test_time_of_the_heating_without_sun() -> None:
+    st = L.State(on=True, reference=T0, due_time=clock(3, 30))  # at night, e.g. for a cheap tariff
+    assert L.next_due(st) == datetime(2026, 11, 17, 3, 30)  # on the day the week is over: a bit before the full week
+    assert run(st, datetime(2026, 11, 17, 3, 29), 0)[-1] == (None, L.LOOKING)
+    assert run(st, datetime(2026, 11, 17, 3, 30), 0)[-1] == ("start_due", L.HEATING_DUE)
+    assert L.State.from_dict(st.to_dict()).due_time == clock(3, 30)
+    assert L.State.from_dict({}).due_time == L.DUE_TIME == L.State.from_dict({"due_time": "nonsense"}).due_time
 
 
 def test_heating_ends_when_hot_and_counts_as_done() -> None:
     st = L.State(on=True, reference=T0)
-    start = T0 + timedelta(days=7)
+    start = T0 + timedelta(days=7, hours=1)  # 13:00
     ds = run(st, start, 75, water=lambda m: 50.0 if m < 75 else 60.0)  # 60 °C after 75 minutes
     assert ds[0][0] == "start_due" and ds[75] == ("stop", L.WAITING)
     assert st.active is None and st.last_done == start + timedelta(minutes=75) and st.last_try is None
-    assert L.next_due(st) == start + timedelta(minutes=75) + L.INTERVAL
+    assert L.next_due(st) == start + L.INTERVAL  # a week later at 13:00 again
 
 
 def test_gives_up_after_four_hours_and_tries_again_later() -> None:
     st = L.State(on=True, reference=T0)
-    start = T0 + timedelta(days=7)
+    start = T0 + timedelta(days=7, hours=1)
     ds = run(st, start, 4 * 60, water=50.0, step=10)
     assert ds[-1] == ("stop", L.WAITING) and st.last_try == start + timedelta(hours=4)
     assert run(st, start + timedelta(hours=10), 0)[-1] == (None, L.WAITING)
@@ -107,7 +120,7 @@ async def test_legionella_in_home_assistant(hass: HomeAssistant, device) -> None
     assert device.writes[-1] == {"obj": 1, "address": 25, "value": 0}  # the unit's own function off
     assert hass.states.get(eid(hass, "sensor", "LegionellenStatus")).state == "waiting"
     # a week later without sun: heats anyway, heater target 60 °C and heater on
-    later = dt_util.now() + timedelta(days=7, minutes=1)
+    later = dt_util.now() + timedelta(days=8)  # the next day of the week at 13:00 is past by then
     device.writes.clear()
     await manager.async_evaluate(later)
     await hass.async_block_till_done()
@@ -168,13 +181,23 @@ async def test_legionella_notice(hass: HomeAssistant, device) -> None:
     assert ir.async_get(hass).async_get_issue("proxon_control", issue_id) is None
 
 
+async def test_legionella_time_entity(hass: HomeAssistant, device) -> None:
+    entry = await setup_with_sensors(hass)
+    entity = eid(hass, "time", "LegionellenZeit")
+    assert hass.states.get(entity).state == "13:00:00"
+    await call(hass, "time", "set_value", entity_id=entity, time="21:15")
+    assert hass.states.get(entity).state == "21:15:00"
+    assert entry.runtime_data.energy.legionella.state.due_time == clock(21, 15)
+    assert device.writes == [] or all(w["address"] != 25 for w in device.writes)  # nothing written to the unit
+
+
 async def test_boost_leaves_the_heater_on_for_legionella(hass: HomeAssistant, device) -> None:
     entry = await setup_with_sensors(hass)
     manager, comfort = entry.runtime_data.energy, entry.runtime_data.comfort
     await call(hass, "number", "set_value", entity_id=eid(hass, "number", "BoostGrenze"), value=42)
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "WarmwasserBoost"))  # boost: heater on
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "LegionellenSonne"))
-    await manager.async_evaluate(dt_util.now() + timedelta(days=7, minutes=1))  # legionella heats too
+    await manager.async_evaluate(dt_util.now() + timedelta(days=8))  # legionella heats too
     assert manager.legionella.state.active == L.DUE and manager.legionella.state.saved_heater_on is False
     set_raw(device, WarmwasserIstTemperatur=1450, **{"E-Heizstab": 1})  # 45 °C: the boost is done
     await entry.runtime_data.async_refresh()

@@ -741,6 +741,9 @@
       },
       "night_setback_end": {
         "name": "Night setback end"
+      },
+      "legionella_due_time": {
+        "name": "Legionella protection: without sun at"
       }
     },
     "button": {

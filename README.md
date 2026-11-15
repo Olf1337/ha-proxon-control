@@ -30,7 +30,8 @@ Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
 **New in 0.20.0:** a button to set the unit's clock from Home Assistant; a notice under *Repairs* when the hot water has
-gone a week without 60 °C and no legionella protection is on; a "House" tab with the floor plan and the drawn house; rooms in
+gone a week without 60 °C and no legionella protection is on; a time of your choice for the legionella heating when a week
+brought no sun (13:00 by default); a "House" tab with the floor plan and the drawn house; rooms in
 the basement as a third floor; a fixed electricity price now replaces the price sensor completely; fixes from the diagnostics
 of three real units.
 
@@ -129,6 +130,10 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
   Legionellenschaltung der Anlage noch „Legionellenschutz mit Sonne“ eingeschaltet, erscheint ein Hinweis unter
   *Einstellungen → Reparaturen*. Er verschwindet von selbst, sobald eine der beiden eingeschaltet ist oder das Wasser heiß
   genug war. Besonders wichtig mit einer Zirkulationspumpe. Die 7 Tage zählen ab dem Update.
+* **Legionellenschutz mit Sonne – Uhrzeit ohne Sonne:** Kam eine Woche lang keine Sonne, heizt er jetzt nicht mehr zu
+  der Minute, in der die Woche um ist (das konnte mitten in der Nacht sein), sondern an diesem Tag zu einer wählbaren
+  Uhrzeit: **„Legionellenschutz: ohne Sonne um“**, voreingestellt 13:00 (mittags reicht oft noch etwas Sonne; nachts
+  passt für einen günstigen Nachttarif). Im Dashboard unter *Optimierung → Legionellenschutz mit Sonne*.
 * **Neuer Tab „Haus“** im Dashboard: oben der Grundriss (alle Geschosse), darunter das gezeichnete Haus; jeder Raum
   gefärbt nach Ist gegenüber Soll, antippen öffnet seinen Thermostat. Zum Übernehmen „Dashboard erstellen“ ausführen.
 * **Keller:** Unter *Proxon Control → Konfigurieren* gibt es **„Räume im Keller“**. Räume mit Namen wie Keller,

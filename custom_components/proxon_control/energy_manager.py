@@ -6,7 +6,7 @@ restart of Home Assistant. The decision rules are in energy.py.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import logging
 from typing import Any
 
@@ -273,6 +273,12 @@ class LegionellaFeature:
             if was_on and UNIT_LEGIONELLA_KEY in data:
                 await m.coordinator.async_write(UNIT_LEGIONELLA_KEY, 1)
         await m.async_evaluate()
+
+    async def async_set_due_time(self, at: time) -> None:
+        """The time of the heating without sun (a setting of this function only: nothing is written to the unit)."""
+        self.state.due_time = at.replace(second=0, microsecond=0)
+        await self._manager._save()
+        await self._manager.async_evaluate()
 
     def _num(self, key: str) -> float | None:
         v = (self._manager.coordinator.data or {}).get(key)
