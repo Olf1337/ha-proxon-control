@@ -49,6 +49,7 @@ class State:
     saved_heater_target: float | None = None
     saved_heater_on: bool | None = None
     unit_function_was_on: bool = False  # the unit's own legionella function was on when this was switched on
+    watching_since: datetime | None = None  # since when the water temperature is watched (for the legionella notice)
 
     def to_dict(self) -> dict:
         def iso(v):
@@ -57,6 +58,7 @@ class State:
             "on": self.on, "reference": iso(self.reference), "last_done": iso(self.last_done), "active": self.active,
             "since": iso(self.since), "last_try": iso(self.last_try), "saved_heater_target": self.saved_heater_target,
             "saved_heater_on": self.saved_heater_on, "unit_function_was_on": self.unit_function_was_on,
+            "watching_since": iso(self.watching_since),
         }
 
     @classmethod
@@ -67,6 +69,7 @@ class State:
             on=bool(d.get("on")), reference=dt(d.get("reference")), last_done=dt(d.get("last_done")), active=d.get("active"),
             since=dt(d.get("since")), last_try=dt(d.get("last_try")), saved_heater_target=d.get("saved_heater_target"),
             saved_heater_on=d.get("saved_heater_on"), unit_function_was_on=bool(d.get("unit_function_was_on")),
+            watching_since=dt(d.get("watching_since")),
         )
 
 
@@ -120,3 +123,12 @@ def stopped(st: State, now: datetime, reached: bool) -> None:
     st.active, st.since, st.want_since = None, None, None
     if not reached:
         st.last_try = now
+
+
+def days_without_heat(now: datetime, st: State, *, protected: bool) -> int | None:
+    """For the notice under Repairs: the whole days the hot water hasn't reached TEMP, once that is INTERVAL or longer and
+    nothing protects against legionella (neither this function nor the unit's own one is on); else None."""
+    since = st.last_done or st.watching_since
+    if protected or since is None or now - since < INTERVAL:
+        return None
+    return (now - since).days

@@ -749,6 +749,9 @@
       },
       "copy_monday_all": {
         "name": "Zeitprogramm: Montag → alle Tage"
+      },
+      "set_clock": {
+        "name": "Uhr der Anlage stellen"
       }
     }
   },
@@ -965,11 +968,15 @@
     },
     "clock_drift": {
       "title": "Proxon: Die Uhr der Anlage geht falsch",
-      "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung richtet sich nach dieser Uhr. Bitte die Uhr am Bedienpanel der Anlage oder in der Proxon-App stellen – über das Netz lässt sie sich nicht stellen. Häufige Ursache: Die Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
+      "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung und die Nachtabsenkung richten sich nach dieser Uhr. Stellen lässt sie sich mit dem Knopf „Uhr der Anlage stellen“ (Gerät Proxon, Bereich Konfiguration), am Bedienpanel oder in der Proxon-App. Häufige Ursache: Die automatische Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
     },
     "compressor_cycling": {
       "title": "Proxon: Der Kompressor startet sehr oft",
       "description": "Der Kompressor ist heute schon {starts}-mal angelaufen. Eine Inverter-Wärmepumpe läuft normalerweise lang und gleichmäßig; sehr häufiges Ein- und Ausschalten (Takten) verschleißt den Kompressor. Mögliche Ursachen: verschmutzte Filter, zu geringe Luftmenge, Einstellungen der Anlage. Bitte beobachten und gegebenenfalls den Service fragen. Der Hinweis verschwindet am nächsten Tag von selbst."
+    },
+    "legionella_risk": {
+      "title": "Proxon: Warmwasser seit {days} Tagen nicht auf {temperature} °C",
+      "description": "Das Warmwasser war seit {days} Tagen nicht mindestens {temperature} °C heiß, und kein Legionellenschutz ist eingeschaltet. Empfohlen ist, das Wasser regelmäßig (etwa einmal pro Woche) auf {temperature} °C aufzuheizen – besonders mit einer Zirkulationspumpe, weil lauwarmes Wasser in der Zirkulationsleitung Legionellen begünstigt. Schalte dazu „Legionellenschutz mit Sonne“ oder die Legionellenschaltung der Anlage ein. Der Hinweis verschwindet von selbst, sobald eine der beiden eingeschaltet ist oder das Wasser heiß genug war."
     }
   }
 }

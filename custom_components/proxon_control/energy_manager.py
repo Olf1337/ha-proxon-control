@@ -14,6 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
@@ -299,6 +300,24 @@ class LegionellaFeature:
             await self._stop(now, water is not None and water >= L.REACHED)
         elif self.state.last_done != before and (before is None or now - before > timedelta(hours=1)):
             await m._save()  # the water was hot enough: remember it across restarts (not with every reading)
+        await self._notice(now)
+
+    async def _notice(self, now: datetime) -> None:
+        """A notice under Repairs while the hot water hasn't reached 60 °C for a week and no legionella protection is on
+        (this function or the unit's own one); it goes away by itself."""
+        m = self._manager
+        if self.state.watching_since is None:
+            self.state.watching_since = now
+            await m._save()
+        protected = self.state.on or bool(self._num(UNIT_LEGIONELLA_KEY))
+        days = L.days_without_heat(now, self.state, protected=protected)
+        issue_id = f"legionella_risk_{m.entry.entry_id}"
+        if days is None:
+            ir.async_delete_issue(m.hass, DOMAIN, issue_id)
+        else:
+            ir.async_create_issue(m.hass, DOMAIN, issue_id, is_fixable=False, is_persistent=False,
+                                  severity=ir.IssueSeverity.WARNING, translation_key="legionella_risk",
+                                  translation_placeholders={"days": str(days), "temperature": f"{L.TEMP:g}"})
 
     async def _start(self, now: datetime, source: str) -> None:
         m = self._manager

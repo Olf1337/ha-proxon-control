@@ -128,6 +128,46 @@ async def test_legionella_in_home_assistant(hass: HomeAssistant, device) -> None
     assert device.writes[-1] == {"obj": 1, "address": 25, "value": 1}
 
 
+def test_days_without_heat() -> None:
+    st = L.State(watching_since=T0)
+    assert L.days_without_heat(T0 + timedelta(days=6, hours=23), st, protected=False) is None  # not a week yet
+    assert L.days_without_heat(T0 + timedelta(days=7), st, protected=False) == 7
+    assert L.days_without_heat(T0 + timedelta(days=9, hours=5), st, protected=True) is None  # a protection is on
+    st.last_done = T0 + timedelta(days=5)  # the water was hot: counts from then
+    assert L.days_without_heat(T0 + timedelta(days=9), st, protected=False) is None
+    assert L.days_without_heat(T0 + timedelta(days=12), st, protected=False) == 7
+    assert L.days_without_heat(T0, L.State(), protected=False) is None  # not watched yet
+    st = L.State(watching_since=T0)
+    assert L.State.from_dict(st.to_dict()) == st
+
+
+async def test_legionella_notice(hass: HomeAssistant, device) -> None:
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = await setup_with_sensors(hass)  # hot water 36 °C, neither legionella protection on
+    manager = entry.runtime_data.energy
+    issue_id = f"legionella_risk_{entry.entry_id}"
+    start = manager.legionella.state.watching_since
+    assert start is not None
+    await manager.async_evaluate(start + timedelta(days=6))
+    assert ir.async_get(hass).async_get_issue("proxon_control", issue_id) is None
+    await manager.async_evaluate(start + timedelta(days=8))
+    issue = ir.async_get(hass).async_get_issue("proxon_control", issue_id)
+    assert issue and issue.translation_key == "legionella_risk" and issue.translation_placeholders["days"] == "8"
+    set_raw(device, Legionellenfunktion=1)  # the unit's own legionella function switched on: the notice goes away
+    await entry.runtime_data.async_refresh()
+    await manager.async_evaluate(start + timedelta(days=8, minutes=1))
+    assert ir.async_get(hass).async_get_issue("proxon_control", issue_id) is None
+    set_raw(device, Legionellenfunktion=0)
+    await entry.runtime_data.async_refresh()
+    await manager.async_evaluate(start + timedelta(days=8, minutes=2))
+    assert ir.async_get(hass).async_get_issue("proxon_control", issue_id) is not None
+    set_raw(device, WarmwasserIstTemperatur=1600)  # the water was hot enough
+    await entry.runtime_data.async_refresh()
+    await manager.async_evaluate(start + timedelta(days=8, minutes=3))
+    assert ir.async_get(hass).async_get_issue("proxon_control", issue_id) is None
+
+
 async def test_boost_leaves_the_heater_on_for_legionella(hass: HomeAssistant, device) -> None:
     entry = await setup_with_sensors(hass)
     manager, comfort = entry.runtime_data.energy, entry.runtime_data.comfort

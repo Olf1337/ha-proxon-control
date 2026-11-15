@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
 from custom_components.proxon_control import energy as E
 
@@ -136,7 +137,7 @@ async def test_solar_surplus_raises_and_restores_the_hot_water_target(hass: Home
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "SolarWarmwasser"))
     await call(hass, "number", "set_value", entity_id=eid(hass, "number", "SolarSchwelle"), value=1000)
     hass.states.async_set("sensor.netz", "-1800", {"unit_of_measurement": "W"})  # 1.8 kW fed in (negative = feed-in)
-    now = datetime(2026, 11, 10, 12, 0)
+    now = datetime(2026, 11, 10, 12, 0, tzinfo=dt_util.get_default_time_zone())  # as Home Assistant passes it
     await manager.async_evaluate(now)
     assert hass.states.get(eid(hass, "sensor", "Energiemanager")).state == "starting"
     assert device.writes == []
@@ -161,7 +162,7 @@ async def test_cheap_price_heats_and_user_target_is_kept(hass: HomeAssistant, de
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PreisWarmwasser"))
     await call(hass, "number", "set_value", entity_id=eid(hass, "number", "PreisSchwelle"), value=12)
     hass.states.async_set("sensor.preis", "0.09", {"unit_of_measurement": "€/kWh"})  # 9 ct
-    now = datetime(2026, 11, 10, 2, 0)
+    now = datetime(2026, 11, 10, 2, 0, tzinfo=dt_util.get_default_time_zone())
     await manager.async_evaluate(now)
     await hass.async_block_till_done()
     assert device.writes[-1] == {"obj": 1, "address": 0, "value": 550}
@@ -180,7 +181,7 @@ async def test_switching_off_restores_right_away(hass: HomeAssistant, device) ->
     manager = entry.runtime_data.energy
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PreisWarmwasser"))
     hass.states.async_set("sensor.preis", "0.05", {"unit_of_measurement": "€/kWh"})
-    await manager.async_evaluate(datetime(2026, 11, 10, 2, 0))
+    await manager.async_evaluate(datetime(2026, 11, 10, 2, 0, tzinfo=dt_util.get_default_time_zone()))
     await call(hass, "switch", "turn_off", entity_id=eid(hass, "switch", "PreisWarmwasser"))
     await hass.async_block_till_done()
     assert device.writes[-1] == {"obj": 1, "address": 0, "value": 340}
