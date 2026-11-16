@@ -90,6 +90,9 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
         # "weekly schedule active" was a read-only sensor; it is a switch since 0.18.0
         elif ent.domain == "binary_sensor" and ent.unique_id.endswith("_ZeitprogrammAktiv"):
             reg.async_remove(ent.entity_id)
+        # the button "set the unit's clock" of 0.20.0: the unit refuses writing its clock over the network (NO_ACCESS)
+        elif ent.domain == "button" and ent.unique_id.endswith("_UhrStellen"):
+            reg.async_remove(ent.entity_id)
 
 
 @callback

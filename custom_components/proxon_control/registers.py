@@ -181,10 +181,8 @@ def _registers() -> list[Reg]:
         Reg("T300VorVerdampfer", False, (3, 11), None, "t300"),
         Reg("T300Verdampfer", False, (3, 12), None, "t300"),
         Reg("T300Kompressor", False, (3, 15), None, "t300"),
-        # clock of the unit (set point object 3): needed for the rules of the weekly schedule. Written like every other set
-        # point (Modbus list 4x0450 - 4x0456 "Datum & Uhrzeit": write address 2 x register + 10); the summer time flag
-        # means "switch to summer time automatically" and is never written
-        *[Reg(k, True, (3, 56 + i), (0, 910 + 2 * i)) for i, k in enumerate(CLOCK_KEYS)],
+        # clock of the unit (set point object 3): needed for the rules of the weekly schedule
+        *[Reg(k, True, (3, 56 + i)) for i, k in enumerate(CLOCK_KEYS)],
         # weekly ventilation schedule switched on at the unit (read only)
         # weekly schedule on/off ("Zeitprogramm An/Aus", Modbus 4x0613): written like the schedule's other values
         Reg("ZeitprogrammAktiv", True, (5, 106), (0, 1236), "bool"),
@@ -489,7 +487,7 @@ def heat_recovery(values: dict) -> float | None:
 # level and room temperatures. (Same idea as the write guard of the ha-lan-proxon project.)
 _OFF_KEYS = {"Intensivlueftung", "E-Heizstab", "GlobalKuehlungFreigabe", "Legionellenfunktion", "T300Betriebsart", "Betriebsart",
              "NachtabsenkungAktiv"}
-_HARMLESS_KEYS = {"Luefterstufe", "NBE0MittelTemperatur", *CLOCK_KEYS}  # (setting the unit's clock is harmless too)
+_HARMLESS_KEYS = {"Luefterstufe", "NBE0MittelTemperatur"}
 
 
 def allowed_during_fault(key: str, value: float) -> bool:

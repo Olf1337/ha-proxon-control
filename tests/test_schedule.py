@@ -234,45 +234,8 @@ async def test_old_schedule_sensor_is_removed(hass: HomeAssistant, device) -> No
     entry.add_to_hass(hass)
     reg = er.async_get(hass)
     old = reg.async_get_or_create("binary_sensor", "proxon_control", "abc123_ZeitprogrammAktiv", config_entry=entry)
+    clock = reg.async_get_or_create("button", "proxon_control", "abc123_UhrStellen", config_entry=entry)  # 0.20.0
     await setup(hass, entry)
     assert reg.async_get(old.entity_id) is None
+    assert reg.async_get(clock.entity_id) is None  # the unit refuses writing its clock (NO_ACCESS)
     assert eid(hass, "switch", "ZeitprogrammAktiv")
-
-
-# ---------------- setting the unit's clock ----------------
-def test_clock_writes_only_what_differs() -> None:
-    from custom_components.proxon_control.schedule import clock_writes
-
-    unit = {"UhrMinute": 0, "UhrStunde": 10, "UhrWochentag": 1, "UhrTag": 9, "UhrMonat": 11, "UhrJahr": 26}
-    now = datetime(2026, 11, 15, 21, 31, 5)  # a Sunday
-    assert clock_writes(unit, now) == [("UhrTag", 15), ("UhrWochentag", 7), ("UhrStunde", 21), ("UhrMinute", 31)]
-    assert clock_writes({**unit, "UhrTag": 15, "UhrWochentag": 7, "UhrStunde": 21, "UhrMinute": 31}, now) == []
-    assert clock_writes(unit, datetime(2027, 1, 1, 0, 0))[:2] == [("UhrJahr", 27), ("UhrMonat", 1)]
-
-
-async def test_set_clock_button(hass: HomeAssistant, device, freezer) -> None:
-    """Writes day, weekday, hour and minute (Modbus 4x0451 - 4x0456: write address 2 x register + 10), never the summer
-    time flag; waits for a new minute when pressed late in one."""
-    from unittest.mock import AsyncMock, patch
-
-    from homeassistant.helpers import issue_registry as ir
-
-    from .test_integration import call
-
-    await hass.config.async_set_time_zone("Europe/Berlin")
-    freezer.move_to("2026-11-15 21:31:05+01:00")
-    entry = await setup(hass)  # the unit's clock: Monday 9 November 2026, 10:00
-    assert ir.async_get(hass).async_get_issue(DOMAIN, f"clock_drift_{entry.entry_id}")
-    device.writes.clear()
-    await call(hass, "button", "press", entity_id=eid(hass, "button", "UhrStellen"))
-    assert [(w["obj"], w["address"], w["value"]) for w in device.writes] == [
-        (0, 918, 15), (0, 916, 7), (0, 914, 21), (0, 912, 31)]
-    assert all(w["address"] != 910 for w in device.writes)  # summer time flag untouched
-    await entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
-    assert ir.async_get(hass).async_get_issue(DOMAIN, f"clock_drift_{entry.entry_id}") is None  # notice gone
-    # pressed at second 50: waits 11 seconds for the next minute first
-    freezer.move_to("2026-11-15 21:40:50+01:00")
-    with patch("custom_components.proxon_control.button.asyncio.sleep", new=AsyncMock()) as sleep:
-        await call(hass, "button", "press", entity_id=eid(hass, "button", "UhrStellen"))
-    sleep.assert_awaited_once_with(11)

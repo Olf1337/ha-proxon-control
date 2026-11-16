@@ -80,14 +80,6 @@ def unit_clock(values: dict) -> datetime | None:
         return None
 
 
-def clock_writes(values: dict, now: datetime) -> list[tuple[str, int]]:
-    """What to write to set the unit's clock to `now` (local time): year, month, day, weekday, hour, minute - only the values
-    that differ from what the unit holds. (Its summer time flag means "switch automatically" and stays as it is.)"""
-    wanted = [("UhrJahr", now.year % 100), ("UhrMonat", now.month), ("UhrTag", now.day), ("UhrWochentag", now.isoweekday()),
-              ("UhrStunde", now.hour), ("UhrMinute", now.minute)]
-    return [(key, value) for key, value in wanted if values.get(key) != value]
-
-
 def clock_drift(values: dict, now: datetime) -> int | None:
     """How many minutes the unit's clock is ahead (+) or behind (-) of `now` (local time). The unit's clock has whole minutes."""
     clock = unit_clock(values)
