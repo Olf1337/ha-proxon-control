@@ -116,14 +116,14 @@ async def test_legionella_in_home_assistant(hass: HomeAssistant, device) -> None
     entry = await setup_with_sensors(hass)  # hot water 36 °C, heater off, heater target 56 °C
     manager = entry.runtime_data.energy
     await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "LegionellenSonne"))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert device.writes[-1] == {"obj": 1, "address": 25, "value": 0}  # the unit's own function off
     assert hass.states.get(eid(hass, "sensor", "LegionellenStatus")).state == "waiting"
     # a week later without sun: heats anyway, heater target 60 °C and heater on
     later = dt_util.now() + timedelta(days=8)  # the next day of the week at 13:00 is past by then
     device.writes.clear()
     await manager.async_evaluate(later)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert device.writes == [{"obj": 1, "address": 3, "value": 600}, {"obj": 1, "address": 1, "value": 1}]
     assert hass.states.get(eid(hass, "sensor", "LegionellenStatus")).state == "heating_due"
     assert hass.states.get(eid(hass, "switch", "LegionellenSonne")).attributes["status"] == "heating_due"
@@ -131,13 +131,13 @@ async def test_legionella_in_home_assistant(hass: HomeAssistant, device) -> None
     set_raw(device, WarmwasserIstTemperatur=1600)
     device.writes.clear()
     await entry.runtime_data.async_refresh()  # the new reading is checked right away
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert device.writes == [{"obj": 1, "address": 3, "value": 560}, {"obj": 1, "address": 1, "value": 0}]
     status = hass.states.get(eid(hass, "sensor", "LegionellenStatus"))
     assert status.state == "waiting" and status.attributes["last_done"]
     # switched off: the unit's own function on again
     await call(hass, "switch", "turn_off", entity_id=eid(hass, "switch", "LegionellenSonne"))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert device.writes[-1] == {"obj": 1, "address": 25, "value": 1}
 
 
@@ -203,7 +203,7 @@ async def test_boost_leaves_the_heater_on_for_legionella(hass: HomeAssistant, de
     await entry.runtime_data.async_refresh()
     device.writes.clear()
     await comfort.async_evaluate(dt_util.now() + timedelta(minutes=11))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert {"obj": 1, "address": 1, "value": 0} not in device.writes  # the heater stays on for legionella
 
 
@@ -264,7 +264,7 @@ async def test_energy_per_period(hass: HomeAssistant, device, freezer) -> None:
     assert eid(hass, "sensor", "EnergieKompressorHeute") and eid(hass, "sensor", "EnergieLueftungJahr")
     async def refresh() -> None:
         entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
-        await hass.async_block_till_done()
+        await hass.async_block_till_done(wait_background_tasks=True)
 
     total._kwh = 0.0  # nothing counted yet (the test unit's first readings are dropped)
     await refresh()
@@ -312,7 +312,7 @@ async def test_cost_per_period_and_forecasts(hass: HomeAssistant, device, freeze
 
     async def refresh() -> None:
         entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
-        await hass.async_block_till_done()
+        await hass.async_block_till_done(wait_background_tasks=True)
 
     await refresh()  # counting starts now (12:00), within the month
     month = eid(hass, "sensor", "EnergieGesamtMonatPrognose")
@@ -356,12 +356,12 @@ async def test_fixed_price_for_the_cost(hass: HomeAssistant, device) -> None:
     # with a price sensor too: the fixed price counts, the sensor is ignored (also for "cheap power")
     hass.states.async_set("sensor.preis", "0.05", {"unit_of_measurement": "€/kWh"})
     hass.config_entries.async_update_entry(entry, options={"fixed_price": 32.5, "price_sensor": "sensor.preis"})
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     manager = entry.runtime_data.energy
     assert manager.price_ct() == 32.5 and manager._price() is None
     # without the fixed price the sensor counts again
     hass.config_entries.async_update_entry(entry, options={"price_sensor": "sensor.preis"})
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert entry.runtime_data.energy.price_ct() == 5.0
 
 
@@ -370,11 +370,11 @@ async def test_fixed_price_in_the_options(hass: HomeAssistant, device) -> None:
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert "fixed_price" in {str(k) for k in result["data_schema"].schema}
     await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "fixed_price": 29.9})
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert entry.options == {"scan_interval": 10, "fixed_price": 29.9}
     result = await hass.config_entries.options.async_init(entry.entry_id)
     await hass.config_entries.options.async_configure(result["flow_id"], {"scan_interval": 10, "fixed_price": 0})
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert "fixed_price" not in entry.options  # 0: no fixed price
 
 
@@ -404,7 +404,7 @@ async def test_year_forecast_by_the_season(hass: HomeAssistant, device, freezer)
 
     async def refresh() -> None:
         entry.runtime_data.async_set_updated_data(dict(entry.runtime_data.data))
-        await hass.async_block_till_done()
+        await hass.async_block_till_done(wait_background_tasks=True)
 
     await refresh()  # counting starts on 10 November
     # four days: the compressor 10 kWh a day, ventilation and electronics 1 kWh a day
