@@ -13,7 +13,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.start import async_at_started
@@ -93,6 +93,14 @@ class EnergyManager:
 
     # ---- settings (switches and number entities) ----
     async def async_set(self, **changes: Any) -> None:
+        # switching on without what the function needs is refused with a hint, instead of a switch that is on and never heats
+        if changes.get("solar_on") and not self.settings.solar_on and not self.entry.options.get(CONF_SURPLUS_SENSOR):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="solar_needs_sensor")
+        if changes.get("price_on") and not self.settings.price_on:
+            if self._fixed_price() is not None:
+                raise ServiceValidationError(translation_domain=DOMAIN, translation_key="price_fixed")
+            if not self.entry.options.get(CONF_PRICE_SENSOR):
+                raise ServiceValidationError(translation_domain=DOMAIN, translation_key="price_needs_sensor")
         for key, value in changes.items():
             setattr(self.settings, key, value)
         await self._save()

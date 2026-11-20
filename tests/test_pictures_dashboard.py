@@ -243,12 +243,27 @@ async def test_picture_theme_option(hass: HomeAssistant, device, hass_client) ->
     assert "--fg:#e6eaee" in body and "prefers-color-scheme" not in body
 
 
-async def test_function_tiles_show_what_is_going_on(hass: HomeAssistant, device) -> None:
-    await setup(hass)
-    solar = eid(hass, "switch", "SolarWarmwasser")
+async def test_switching_on_without_a_sensor_is_refused(hass: HomeAssistant, device) -> None:
+    """Without the sensor it needs, a function isn't switched on (it would be on and never heat): a message says where to
+    choose the sensor. With a fixed electricity price there are no cheap hours."""
+    from homeassistant.exceptions import ServiceValidationError
+    import pytest
+
+    entry = await setup(hass)
+    solar, cheap = eid(hass, "switch", "SolarWarmwasser"), eid(hass, "switch", "PreisWarmwasser")
     assert "status" not in hass.states.get(solar).attributes  # off: just "off"
-    await call(hass, "switch", "turn_on", entity_id=solar)
-    assert hass.states.get(solar).attributes["status"] == "no_source"  # on, but no surplus sensor chosen
+    with pytest.raises(ServiceValidationError) as err:
+        await call(hass, "switch", "turn_on", entity_id=solar)
+    assert err.value.translation_key == "solar_needs_sensor"
+    with pytest.raises(ServiceValidationError) as err:
+        await call(hass, "switch", "turn_on", entity_id=cheap)
+    assert err.value.translation_key == "price_needs_sensor"
+    assert hass.states.get(solar).state == "off" and hass.states.get(cheap).state == "off"
+    hass.config_entries.async_update_entry(entry, options={**entry.options, "fixed_price": 32.5, "price_sensor": "sensor.preis"})
+    await hass.async_block_till_done()
+    with pytest.raises(ServiceValidationError) as err:
+        await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PreisWarmwasser"))
+    assert err.value.translation_key == "price_fixed"
 
 
 async def test_status_is_right_from_the_start(hass: HomeAssistant, device, hass_storage) -> None:

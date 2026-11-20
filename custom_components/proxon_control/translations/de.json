@@ -832,6 +832,15 @@
     },
     "season_limits": {
       "message": "„Sommer über“ muss höher sein als „Winter unter“ – der Abstand verhindert, dass ständig hin- und hergeschaltet wird."
+    },
+    "solar_needs_sensor": {
+      "message": "Für „Warmwasser mit PV-Überschuss“ fehlt der Sensor für den Überschuss (Einspeisung). Wähle ihn unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren, dann lässt sich die Funktion einschalten."
+    },
+    "price_needs_sensor": {
+      "message": "Für „Warmwasser mit günstigem Strom“ fehlt der Strompreis-Sensor (dynamischer Tarif). Wähle ihn unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren, dann lässt sich die Funktion einschalten."
+    },
+    "price_fixed": {
+      "message": "Mit einem festen Strompreis gibt es keine günstigen Stunden, deshalb lässt sich „Warmwasser mit günstigem Strom“ nicht einschalten. Für einen dynamischen Tarif den festen Preis unter Konfigurieren leeren und einen Strompreis-Sensor wählen."
     }
   },
   "options": {

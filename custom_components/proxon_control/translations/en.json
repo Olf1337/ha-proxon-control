@@ -832,6 +832,15 @@
     },
     "season_limits": {
       "message": "\"Summer above\" has to be higher than \"winter below\" – the gap keeps it from switching back and forth."
+    },
+    "solar_needs_sensor": {
+      "message": "Hot water with solar surplus needs the sensor for the surplus (feed-in). Choose it under Settings → Devices & services → Proxon Control → Configure, then the function can be switched on."
+    },
+    "price_needs_sensor": {
+      "message": "Hot water with cheap power needs the electricity price sensor (dynamic tariff). Choose it under Settings → Devices & services → Proxon Control → Configure, then the function can be switched on."
+    },
+    "price_fixed": {
+      "message": "With a fixed electricity price there are no cheap hours, so hot water with cheap power can't be switched on. For a dynamic tariff, clear the fixed price under Configure and choose an electricity price sensor."
     }
   },
   "options": {
