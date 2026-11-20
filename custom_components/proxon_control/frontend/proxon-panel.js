@@ -7,7 +7,7 @@
 const TEXT = {
   de: {
     title: "Zuhause", outside: "Außen", op: "Betrieb", ok: "Alles in Ordnung", fault: "Störung", filter: "Filter bald wechseln",
-    unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", level: "Stufe", levelBoost: "4 (Intensiv)",
+    unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", leftSoon: "endet gleich", level: "Stufe", levelBoost: "4 (Intensiv)",
     tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
@@ -59,7 +59,7 @@ const TEXT = {
   },
   en: {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
-    unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", level: "Level", levelBoost: "4 (boost)",
+    unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", leftSoon: "ending now", level: "Level", levelBoost: "4 (boost)",
     tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
     water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
@@ -325,7 +325,8 @@ button.card:active, .card.pressed { transform: scale(.985); }
 .pill-switch { display: inline-flex; align-items: center; gap: 10px; padding: 5px 6px 5px 12px; border-radius: 999px; border: 1px solid var(--line);
   background: var(--surface-solid); cursor: pointer; font-size: .875rem; font-weight: 600; transition: transform 100ms ease-out; }
 .pill-switch:active { transform: scale(.96); }
-.pill-switch small { font-weight: 500; color: var(--fg-3); }
+.pill-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.pill-text small { font-size: .75rem; font-weight: 500; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .switch { position: relative; width: 52px; height: 32px; border-radius: 16px; border: 0; background: var(--line); cursor: pointer; flex: none; transition: background 200ms ease; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform 320ms cubic-bezier(.3,1.4,.5,1); }
@@ -517,7 +518,7 @@ class ProxonPanel extends HTMLElement {
         <section class="top">
           <section class="card" aria-label="${t.unit}">
             <div class="card-head"><span class="label">${t.unit}</span>
-              <button class="pill-switch" id="boost">${t.boost} <small id="boost-left" hidden></small><span class="switch" id="boost-sw" aria-hidden="true" aria-checked="false"></span></button></div>
+              <button class="pill-switch" id="boost"><span class="pill-text">${t.boost}<small id="boost-left" hidden></small></span><span class="switch" id="boost-sw" aria-hidden="true" aria-checked="false"></span></button></div>
             <button class="unit-tap" id="unit">
               <div class="hint" style="margin-top:4px">${t.level} <b class="num" id="u-level">–</b> · ${t.tapUnit}</div>
               <svg class="diagram" viewBox="0 0 400 236" aria-hidden="true">
@@ -643,7 +644,9 @@ class ProxonPanel extends HTMLElement {
     this.$("boost").hidden = !this.st("Intensivlueftung");
     this.$("boost").setAttribute("aria-pressed", boost); this.$("boost-sw").setAttribute("aria-checked", boost);
     const left = this.num("IntensivlueftungsRestDauer");
-    this.$("boost-left").hidden = !(boost && left); this.$("boost-left").textContent = fill(t.left, { m: left });
+    // the time left, small below the name, while boost ventilation runs
+    this.$("boost-left").hidden = !boost || left === null;
+    this.$("boost-left").textContent = left > 0 ? fill(t.left, { m: this.fmt(left, 0) }) : t.leftSoon;
     const lvl = this.num("IstLuefterstufe") ?? this.num("Luefterstufe");
     this.$("u-level").textContent = boost ? t.levelBoost : lvl === null ? "–" : Math.round(lvl);
     const rec = this.num("Waermerueckgewinnung");
