@@ -39,6 +39,7 @@ def panel_config(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     return {
         "entities": entity_ids(hass, entry),
         "rooms": [{"n": i, "floor": f} for i, f in zip(rooms, floors)],
+        "device_id": getattr(coordinator, "device_id", None),  # for "open the device in Home Assistant"
     }
 
 

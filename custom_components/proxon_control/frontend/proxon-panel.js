@@ -10,7 +10,8 @@ const TEXT = {
     unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", level: "Stufe", levelBoost: "4 (Intensiv)",
     tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
-    water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", bottom: "Unten", target: "Soll", charge: "Ladezustand",
+    water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
+    litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei 40 °C", bottom: "Unten", target: "Soll", charge: "Ladezustand",
     floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
     allOff: "Wärmeelemente aller Räume aus", allOnDone: "Wärmeelemente aller Räume an",
     element: { off: "Heizpanel aus", ready: "Heizpanel bereit", heating: "Heizpanel heizt" },
@@ -18,7 +19,8 @@ const TEXT = {
     pump: "Wärmepumpe", pumpSub: "heizt das Wasser sparsam", heater: "Heizstab", heaterSub: "schneller, braucht mehr Strom",
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
-    more: "Alle Werte", close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
+    more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
+    close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
     end: "{f} beenden", unavailable: "nicht erreichbar", home: "Zuhause", settings: "Einstellungen", status: "Status",
     days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis", lvl: "Stufe",
     daysShort: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
@@ -60,7 +62,8 @@ const TEXT = {
     unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", level: "Level", levelBoost: "4 (boost)",
     tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
-    water: "Hot water", shower: "Enough for about {m} min of showering", bottom: "Bottom", target: "Target", charge: "Charge",
+    water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
+    litersSub: "of warm water in the tank", showerSub: "of showering at 40 °C", bottom: "Bottom", target: "Target", charge: "Charge",
     floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
     allOff: "Heating elements of all rooms off", allOnDone: "Heating elements of all rooms on",
     element: { off: "Heating panel off", ready: "Heating panel ready", heating: "Heating panel heating" },
@@ -68,7 +71,8 @@ const TEXT = {
     pump: "Heat pump", pumpSub: "heats the water efficiently", heater: "Immersion heater", heaterSub: "faster, uses more power",
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
     releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
-    more: "All values", close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
+    more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
+    close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
     end: "End {f}", unavailable: "unavailable", home: "Home", settings: "Settings", status: "Status",
     days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to", lvl: "level",
     daysShort: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -245,6 +249,8 @@ const STYLE = `
   --scrim: rgba(10,18,28,.32); --shadow: 0 1px 2px rgba(20,32,45,.06), 0 8px 24px rgba(20,32,45,.06); --sheet-shadow: 0 -10px 40px rgba(10,18,28,.18);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
+  --glass: rgba(255,255,255,.55); --glass-strong: rgba(255,255,255,.78); --edge: rgba(255,255,255,.85); --edge-low: rgba(20,32,45,.07);
+  --blob-a: #ffb27a; --blob-b: #8fc3ff; --blob-c: #b9e6d3;
   display: block; min-height: 100%; background: var(--bg); color: var(--fg); font: 16px/1.45 var(--font); -webkit-tap-highlight-color: transparent;
 }
 :host([dark]) {
@@ -252,13 +258,29 @@ const STYLE = `
   --fg-3: #6f7c89; --accent: #3cc3ab; --fresh: #5aa8ec; --supply: #f0a056; --extract: #d98a9a; --exhaust: #7d8a97; --cold: #5c9ceb;
   --fine: #3cc08a; --warm: #f07b4a; --flame: #ff7a3d; --water-hot: #f58a4c; --water-cool: #7a5236; --danger: #f06a6a;
   --scrim: rgba(0,0,0,.5); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); --sheet-shadow: 0 -10px 40px rgba(0,0,0,.5);
+  --glass: rgba(34,42,52,.55); --glass-strong: rgba(40,49,60,.82); --edge: rgba(255,255,255,.16); --edge-low: rgba(255,255,255,.05);
+  --blob-a: #7a3a14; --blob-b: #14365c; --blob-c: #134437;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
 .num { font-variant-numeric: tabular-nums; }
-.page { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+/* liquid glass: translucent surfaces over a soft coloured backdrop, a bright edge where light catches them, a highlight on top */
+.backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.backdrop i { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .5; }
+.backdrop i:nth-child(1) { width: 46vw; height: 46vw; left: -8vw; top: 4vh; background: var(--blob-a); }
+.backdrop i:nth-child(2) { width: 40vw; height: 40vw; right: -10vw; top: 36vh; background: var(--blob-b); }
+.backdrop i:nth-child(3) { width: 34vw; height: 34vw; left: 22vw; bottom: -10vh; background: var(--blob-c); }
+.card, .chip, .fn, .toast { background: var(--glass) !important; border: 0 !important; backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
+.chip, .fn { position: relative; }
+.card::before, .chip::before, .fn::before, .toast::before, .sheet::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(160deg, var(--edge), var(--edge-low) 40%, var(--edge-low) 70%, var(--edge));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.card::after, .fn::after { content: ""; position: absolute; inset: 0 0 60% 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.14), transparent); }
+.card { border-radius: 28px !important; }
+.page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
 .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .head h1 { font: 700 1.6rem/1.1 var(--font-display); letter-spacing: -.02em; margin: 0 auto 0 0; display: flex; align-items: center; gap: 6px; }
 .tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--line); }
@@ -287,7 +309,7 @@ button { font: inherit; color: inherit; }
   font-size: .875rem; color: var(--fg-2); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 .chip b { color: var(--fg); font-weight: 600; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fine); }
-.top { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: 20px; }
+.top { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 20px; }
 @media (max-width: 820px) { .top { grid-template-columns: minmax(0,1fr); } }
 .card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow);
   backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); padding: 18px 18px 16px; text-align: left;
@@ -322,12 +344,30 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .zone { font: 600 10px var(--font); letter-spacing: .08em; text-transform: uppercase; fill: var(--fg-3); }
 .unit-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: .875rem; color: var(--fg-2); }
 .unit-meta b { color: var(--fg); font-weight: 600; }
-.water-body { display: flex; gap: 18px; align-items: center; margin-top: 10px; }
-.tank { flex: none; width: 74px; height: 170px; }
-.water-big { font: 700 3rem/1 var(--font-display); letter-spacing: -.03em; }
-.water-big small { font-size: 1.4rem; font-weight: 600; color: var(--fg-2); }
-.water-lines { display: grid; gap: 6px; margin-top: 10px; font-size: .875rem; color: var(--fg-2); }
-.water-lines b { color: var(--fg); font-weight: 600; }
+#water { container-type: inline-size; }
+.a-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin-top: 12px; }
+.tankA { position: relative; width: 132px; height: 290px; }
+.tankA svg { width: 100%; height: 100%; overflow: visible; }
+.sensor { position: absolute; left: 100%; display: flex; align-items: center; gap: 8px; white-space: nowrap; transform: translateY(-50%);
+  font-size: .8125rem; color: var(--fg-2); }
+.sensor::before { content: ""; width: 16px; height: 1px; background: var(--fg-3); }
+.sensor b { color: var(--fg); font-weight: 600; }
+.a-facts { display: grid; gap: 16px; padding-left: 112px; min-width: 0; }
+.fact { min-width: 0; }
+.fact .huge { display: block; font: 700 2.5rem/1.05 var(--font-display); letter-spacing: -.03em; }
+.fact > span:not(.huge) { color: var(--fg-2); font-size: .9375rem; }
+.fact b { color: var(--fg); font-weight: 600; }
+/* narrower card: the two sensor values sit on the tank itself */
+@container (max-width: 500px) {
+  .a-facts { padding-left: 0; }
+  .tankA { width: 112px; height: 250px; }
+  .sensor { left: 50%; transform: translate(-50%, -50%); flex-direction: column; gap: 0; color: rgba(255,255,255,.88); text-shadow: 0 1px 2px rgba(0,0,0,.3); font-size: .75rem; }
+  .sensor::before { display: none; }
+  .sensor b { color: #fff; }
+  .fact .huge { font-size: 2rem; }
+}
+@container (max-width: 300px) { .a-body { grid-template-columns: 1fr; justify-items: center; } .a-facts { justify-items: center; text-align: center; } }
+.card-head .working { margin-top: 0; }
 .working { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
   background: color-mix(in srgb, var(--water-hot) 14%, transparent); font-size: .8125rem; font-weight: 600; }
 .water-set { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; font-size: .875rem; color: var(--fg-2); position: relative; }
@@ -378,7 +418,7 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .elem.off { opacity: .28; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); opacity: 0; pointer-events: none; z-index: 20; }
 .sheet { position: fixed; left: 50%; bottom: 0; z-index: 21; width: min(560px, 100%); max-height: 86%; overflow: auto; transform: translate(-50%, 110%);
-  background: var(--surface-solid); border-radius: 26px 26px 0 0; box-shadow: var(--sheet-shadow); touch-action: none; overscroll-behavior: contain;
+  background: var(--glass-strong); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 26px 26px 0 0; box-shadow: var(--sheet-shadow); touch-action: none; overscroll-behavior: contain;
   padding: 8px max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); }
 .grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--fg-3); opacity: .5; margin: 4px auto 14px; }
 .sheet h3 { font: 700 1.4rem/1.15 var(--font-display); letter-spacing: -.02em; margin: 0 0 4px; }
@@ -414,7 +454,10 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .toast span { overflow: hidden; text-overflow: ellipsis; }
 .toast button { flex: none; border: 0; background: var(--line); padding: 7px 12px; border-radius: 10px; font-weight: 600; color: var(--accent); cursor: pointer; }
 [hidden] { display: none !important; }
-@media (prefers-reduced-transparency: reduce) { .card, .chip, .fn, .toast { background: var(--surface-solid); backdrop-filter: none; -webkit-backdrop-filter: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .card, .chip, .fn, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .backdrop { display: none; }
+}
 @media (prefers-reduced-motion: reduce) { button.card, .switch::after, .stepper button, .unit-tap, .pill-switch { transition: none; } }
 `;
 
@@ -422,6 +465,7 @@ const FAN = '<circle r="12" fill="var(--surface-solid)" stroke="var(--line)"/><p
 const FLAME = '<path d="M14 0C20 12 28 16 26 28 24 37 4 37 2 28 0 19 8 14 14 0Z" fill="var(--flame)"/><path d="M14 13C16 19 21 22 19 28 18 32 10 32 9 28 8 23 13 20 14 13Z" fill="#ffd166"/>';
 const RADIATOR = '<path d="M5 6v12M9.5 6v12M14 6v12M18.5 6v12M3 8h18M3 16h18" stroke="var(--fg-2)" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
 const svgNS = "http://www.w3.org/2000/svg";
+const TANK_L = 300;  // the hot-water heat pump T300 holds 300 litres
 
 class ProxonPanel extends HTMLElement {
   constructor() {
@@ -457,6 +501,7 @@ class ProxonPanel extends HTMLElement {
     this._built = true;
     const t = this.t;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style>
+      <div class="backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="page">
         <header class="head">
           <h1><button class="menu" id="menu" aria-label="Menu" ${this._narrow ? "" : "hidden"}><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><span id="h-title">${t.home}</span></h1>
@@ -497,18 +542,30 @@ class ProxonPanel extends HTMLElement {
             </button>
           </section>
           <button class="card" id="water" aria-label="${t.water}">
-            <div class="card-head"><span class="label">${t.water}</span><span class="hint">${t.tapUnit}</span></div>
-            <div class="water-body">
-              <svg class="tank" viewBox="0 0 74 170" aria-hidden="true">
-                <defs><clipPath id="tank-clip"><rect x="4" y="4" width="66" height="162" rx="30"/></clipPath>
-                  <linearGradient id="wg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--water-cool)"/><stop offset="1" stop-color="var(--water-hot)"/></linearGradient></defs>
-                <rect x="4" y="4" width="66" height="162" rx="30" fill="var(--line)"/>
-                <g clip-path="url(#tank-clip)"><rect id="w-fill" x="0" y="170" width="74" height="170" fill="url(#wg)"/></g>
-              </svg>
-              <div><div class="water-big num" id="w-temp">–</div>
-                <div class="water-lines"><span id="w-shower"></span><span>${t.bottom} <b class="num" id="w-bottom">–</b></span>
-                  <span id="w-charge-wrap">${t.charge} <b class="num" id="w-charge">–</b></span></div>
-                <span class="working" id="w-working" hidden><svg width="14" height="14" viewBox="0 0 28 37" aria-hidden="true">${FLAME}</svg><span id="w-who"></span></span></div>
+            <div class="card-head"><span class="label">${t.water}</span>
+              <span class="working" id="w-working" hidden><svg width="14" height="14" viewBox="0 0 28 37" aria-hidden="true">${FLAME}</svg><span id="w-who"></span></span>
+              <span class="hint" id="w-hint">${t.tapUnit}</span></div>
+            <div class="a-body">
+              <div class="tankA">
+                <svg viewBox="0 0 150 330" aria-hidden="true">
+                  <defs><clipPath id="tank-clip"><rect x="6" y="6" width="138" height="318" rx="56"/></clipPath>
+                    <linearGradient id="wg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--water-cool)"/><stop offset=".55" stop-color="var(--supply)"/><stop offset="1" stop-color="var(--water-hot)"/></linearGradient>
+                    <linearGradient id="wglass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".18" stop-color="#fff" stop-opacity=".05"/>
+                      <stop offset=".82" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/></linearGradient></defs>
+                  <rect x="6" y="6" width="138" height="318" rx="56" fill="var(--line)"/>
+                  <g clip-path="url(#tank-clip)"><path id="w-wave" fill="url(#wg)"/></g>
+                  <rect x="6" y="6" width="138" height="318" rx="56" fill="url(#wglass)"/>
+                  <rect x="6.5" y="6.5" width="137" height="317" rx="55.5" fill="none" stroke="var(--edge)" stroke-width="1.2"/>
+                  <text x="75" y="40" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" opacity=".85">${TANK_L} l</text>
+                </svg>
+                <span class="sensor" style="top: 50%">${t.middle} <b class="num" id="w-mid">–</b></span>
+                <span class="sensor" style="top: 84%">${t.bottom} <b class="num" id="w-bottom">–</b></span>
+              </div>
+              <div class="a-facts">
+                <div class="fact" id="w-liters-wrap"><span class="huge num" id="w-liters">–</span><span>${t.litersSub}</span></div>
+                <div class="fact" id="w-shower-wrap"><span class="huge num" id="w-shower">–</span><span>${t.showerSub}</span></div>
+                <div class="fact"><span class="huge num" id="w-temp">–</span><span>${t.middle}<span id="w-charge-wrap"> · ${t.charge} <b class="num" id="w-charge">–</b></span></span></div>
+              </div>
             </div>
             <div id="w-set-wrap"><div class="water-set"><span>${t.target} <b class="num" id="w-target">–</b></span><span class="saved" id="w-saved">${t.sent}</span></div>
               <div class="track" id="w-track" aria-hidden="true"><span class="now-mark" id="w-now"></span><span class="mark" id="w-mark"></span></div></div>
@@ -537,7 +594,7 @@ class ProxonPanel extends HTMLElement {
       },
       done: () => { const s = this.$("w-saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400); },
     });
-    this._fill = new Spring(0, v => this.$("w-fill").setAttribute("y", (170 * (1 - v)).toFixed(1)));
+    this._fill = new Spring(0, () => {});  // the level of the tank; its surface is drawn with the air (one loop)
     this._wrapH = new Spring(0, v => { this.$("active-wrap").style.height = `${v.toFixed(1)}px`; });
     this._buildSheet();
     this._buildToast();
@@ -596,9 +653,10 @@ class ProxonPanel extends HTMLElement {
     this.$("water").hidden = !hasWater;
     if (hasWater) {
       const w = this.num("WarmwasserIstTemperatur");
-      this.$("w-temp").innerHTML = w === null ? "–" : `${this.fmt(w)}<small>°</small>`;
+      this.$("w-temp").textContent = w === null ? "–" : `${this.fmt(w)}°`;
+      this.$("w-mid").textContent = w === null ? "–" : `${this.fmt(w)}°`;
       const sh = this.num("WarmwasserDuschminuten");
-      this.$("w-shower").hidden = sh === null; this.$("w-shower").innerHTML = fill(t.shower, { m: `<b class="num">${this.fmt(sh, 0)}</b>` });
+      this.$("w-shower-wrap").hidden = sh === null; this.$("w-shower").textContent = `${this.fmt(sh, 0)} ${t.min}`;
       this.$("w-bottom").textContent = deg("WarmwasserUntenTemperatur");
       const wt = this.num("SollWassertemperatur"), wn = this.st("SollWassertemperatur");
       this.$("w-set-wrap").hidden = !wn;
@@ -606,6 +664,7 @@ class ProxonPanel extends HTMLElement {
       this._wCtl.sync();
       const ch = this.num("WarmwasserLadezustand");
       this.$("w-charge-wrap").hidden = ch === null; this.$("w-charge").textContent = `${this.fmt(ch, 0)} %`;
+      this.$("w-liters-wrap").hidden = ch === null; this.$("w-liters").textContent = `≈ ${this.fmt(Math.round(TANK_L * ch / 100 / 10) * 10, 0)} l`;
       const level = ch !== null ? ch / 100 : w !== null && wt ? clamp((w - 20) / Math.max(1, wt - 20), 0, 1) : 0;
       if (Math.abs((this._fill.target || 0) - level) > 0.001) this._fill.to(level, { damping: 1, response: 0.8 });
     }
@@ -644,6 +703,10 @@ class ProxonPanel extends HTMLElement {
       if (moving) this._angle = (this._angle + this._speed.x / 60 * 360 * dt * 0.08) % 360;
       this.$("fan-s").setAttribute("transform", `rotate(${this._angle.toFixed(1)})`);
       this.$("fan-e").setAttribute("transform", `rotate(${this._angle.toFixed(1)})`);
+      const lvl = clamp(this._fill.x, 0, 1), top = 324 - 318 * lvl, amp = moving && lvl > 0.02 ? 2 : 0, ts = t / 1000;
+      let d = `M0 ${top.toFixed(1)}`;
+      for (let x = 0; x <= 150; x += 6) d += ` L${x} ${(top + Math.sin(x / 22 + ts * 1.4) * amp + Math.sin(x / 9 - ts) * amp * 0.4).toFixed(1)}`;
+      this.$("w-wave").setAttribute("d", `${d} L150 330 L0 330 Z`);
       this._air = requestAnimationFrame(step);
     };
     this._air = requestAnimationFrame(step);
@@ -663,7 +726,7 @@ class ProxonPanel extends HTMLElement {
       else if (!running && card && !card.leaving) this._hideFn(f.k);
       if (running) this._fnDetail(f);
     }
-    this.$("w-working").hidden = !who; this.$("w-who").textContent = who;
+    this.$("w-working").hidden = !who; this.$("w-who").textContent = who; this.$("w-hint").hidden = !!who;
   }
   _fnDetail(f) {
     const card = this._fnCards.get(f.k); if (!card) return;
@@ -1067,7 +1130,7 @@ class ProxonPanel extends HTMLElement {
       ${sel ? `<div class="row"><span class="row-label">${t.mode}</span><div class="seg" id="mode">${opts.map(o => `<button data-o="${o}">${label(o)}</button>`).join("")}</div></div>` : ""}
       ${this.id("Intensivlueftung") ? this._sw("s-boost", t.boost, this.num("IntensivlueftungsDauer") ? fill(t.boostSub, { m: this.fmt(this.num("IntensivlueftungsDauer"), 0) }) : "") : ""}
       <button class="link" id="v-more">${t.more}</button>`, from, () => {
-      this.$("v-more").addEventListener("click", () => { this._closeSheet(); this.moreInfo(this.id("Lueftung") || this.id("Luefterstufe")); });
+      this.$("v-more").addEventListener("click", () => this._sheetAll("unit", from));
       const sb = this.$("s-boost"); if (sb) sb.addEventListener("click", () => this._toggle("Intensivlueftung"));
       this.shadowRoot.querySelectorAll("#mode button").forEach(b => b.addEventListener("click", () => {
         this.call("select", "select_option", { entity_id: this.id("Betriebsart"), option: b.dataset.o }).catch(() => {});
@@ -1135,7 +1198,7 @@ class ProxonPanel extends HTMLElement {
       <button class="link" id="w-more">${t.more}</button>`, from, () => {
       this._sheetCtl = n ? [this._numberSlider(this.$("wt-row"), "SollWassertemperatur", v => `${this.fmt(v, 0)} °C`)] : [];
       ["s-pump", "s-heater"].forEach((id, i) => { const b = this.$(id); if (b) b.addEventListener("click", () => this._toggle(i ? "E-Heizstab" : "T300Betriebsart")); });
-      this.$("w-more").addEventListener("click", () => { this._closeSheet(); this.moreInfo(this.id("Warmwasser") || this.id("WarmwasserIstTemperatur")); });
+      this.$("w-more").addEventListener("click", () => this._sheetAll("water", from));
     }, () => {
       this.$("w-sub").textContent = `${this.$("w-temp").textContent} · ${t.bottom} ${this.$("w-bottom").textContent}`;
       (this._sheetCtl || []).forEach(c => c.sync());
@@ -1168,6 +1231,42 @@ class ProxonPanel extends HTMLElement {
       this.$("r-sub").textContent = `${t.now} ${this.fmt(cur.temp)}° · ${t.element[cur.element] || ""}`;
       (this._sheetCtl || []).forEach(c => c.sync());
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
+    });
+  }
+
+  // ---------- all values of the unit or the hot water: every entity of that part, grouped, live; tap for its history ----------
+  _sheetAll(kind, from) {
+    const t = this.t, ents = (this._config || {}).entities || {};
+    const skip = /^(NBE\d|ZP\d|Zeitprogramm|Urlaub|Waermeelemente|Bild|Saison|Nachtkuehl|Kuehl|Nachtabsenkung|Stromkosten|Energie|Leistung)/;
+    const water = /^(Warmwasser|T300|E-Heizstab|Soll-E-Heizstab|SollWasser|Legionell|PVSignal|PVFreigabe|Speicher|Solar|Preis|Boost|Energiemanager|FirmwareT300|Heizstab)/;
+    const keys = Object.keys(ents).filter(k => !skip.test(k) && (kind === "water" ? water.test(k) : !water.test(k)) && this._hass.states[ents[k]]);
+    const domain = k => ents[k].split(".")[0];
+    const group = k => {
+      const st = this._hass.states[ents[k]], d = domain(k);
+      if (d === "sensor" && (st.attributes.unit_of_measurement || "") === "°C") return "temp";
+      if (d === "sensor") return "meas";
+      if (d === "binary_sensor") return "state";
+      return ["button", "image"].includes(d) ? null : "set";
+    };
+    const name = k => (this._hass.states[ents[k]].attributes.friendly_name || k).replace(/^Proxon\s+/, "");
+    const groups = ["temp", "meas", "state", "set"].map(g => [g, keys.filter(k => group(k) === g).sort((a, b) => name(a).localeCompare(name(b)))]).filter(([, l]) => l.length);
+    const device = (this._config || {}).device_id;
+    this._openSheet(`<h3>${kind === "water" ? t.water : t.unit}</h3><p class="sub">${t.more}</p>
+      ${groups.map(([g, list]) => `<div class="label" style="margin-top:14px">${t.groups[g]}</div>
+        ${list.map(k => `<button class="day" data-e="${ents[k]}"><span>${name(k)}</span><span class="num" data-v="${ents[k]}"></span></button>`).join("")}`).join("")}
+      ${device ? `<button class="link" id="all-device">${t.device}</button>` : ""}`, from, () => {
+      this.shadowRoot.querySelectorAll("#sheet-body [data-e]").forEach(b => b.addEventListener("click", () => this.moreInfo(b.dataset.e)));
+      const dev = this.$("all-device");
+      if (dev) dev.addEventListener("click", () => {
+        this._closeSheet();
+        history.pushState(null, "", `/config/devices/device/${device}`);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+      });
+    }, () => {
+      this.shadowRoot.querySelectorAll("#sheet-body [data-v]").forEach(el => {
+        const st = this._hass.states[el.dataset.v];
+        el.textContent = !st ? "–" : this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state;
+      });
     });
   }
 

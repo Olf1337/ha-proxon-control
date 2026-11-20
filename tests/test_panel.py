@@ -20,6 +20,7 @@ async def test_panel_config(hass: HomeAssistant, device) -> None:
     assert entities["Urlaubsmodus"] == eid(hass, "switch", "Urlaubsmodus")
     # rooms with their floor: living room and bath downstairs, bedroom upstairs (guessed from the names)
     assert config["rooms"] == [{"n": 0, "floor": 0}, {"n": 1, "floor": 1}, {"n": 4, "floor": 0}]
+    assert config["device_id"] == entry.runtime_data.device_id and config["device_id"]
 
 
 async def test_panel_registered_and_removed(hass: HomeAssistant, device) -> None:
