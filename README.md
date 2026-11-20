@@ -29,6 +29,10 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.22.2:** switches on the page "Proxon" flip at once and wait for the unit (a second tap no longer switches
+holiday mode back); holiday mode is switched on there only with departure and return; after an update the browser always
+loads the new page; the version shows at the bottom of the settings tab.
+
 **New in 0.22.1:** on the page "Proxon", the settings sections no longer overlap on wide screens (the weekly schedule
 pushed into the column next to it); a day's phases now show below its name.
 
@@ -133,6 +137,18 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.22.2
+
+* **Schalter auf der Seite „Proxon“:** Ein Schalter springt beim Tippen sofort um und zeigt „wird eingeschaltet …“, bis
+  die Anlage es bestätigt; weitere Tipps werden solange ignoriert. Bisher zeigte er bis zur Bestätigung den alten Zustand –
+  beim Urlaubsmodus, der viele Werte schreibt und an einer echten Anlage eine Weile braucht, schaltete ein zweites Tippen
+  ihn wieder zurück.
+* **Urlaubsmodus nur mit Abreise und Rückkehr:** Auf der Seite „Proxon“ lässt er sich erst einschalten, wenn Abreise und
+  Rückkehr eingetragen sind (Rückkehr in der Zukunft, nach der Abreise); sonst ein Hinweis, und das fehlende Feld ist
+  gleich ausgewählt. Automationen und die Urlaubs-Vorlagen schalten weiter wie bisher.
+* **Nach einem Update lädt der Browser sicher die neue Seite** (bisher konnte er die alte behalten, so dass z. B. die
+  Korrektur aus 0.22.1 nicht ankam). Unten im Tab „Einstellungen“ steht jetzt die installierte Version.
 
 ## Neu in Version 0.22.1
 
