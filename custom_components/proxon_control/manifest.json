@@ -2,7 +2,10 @@
   "domain": "proxon_control",
   "name": "Proxon Control",
   "after_dependencies": [
-    "lovelace"
+    "frontend",
+    "http",
+    "lovelace",
+    "panel_custom"
   ],
   "codeowners": [
     "@Olf1337"

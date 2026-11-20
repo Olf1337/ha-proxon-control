@@ -35,6 +35,8 @@ from .energy_manager import EnergyManager
 from .entity import room_identifier, room_name
 from .holiday import HolidayMode
 from .nabto import library_supported
+from .panel import async_register as async_register_panel
+from .panel import async_unregister as async_unregister_panel
 from .registers import ROOM_COUNT
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
@@ -142,12 +144,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     # summer night cooling and hot-water boost
     coordinator.comfort.async_start()
     entry.async_on_unload(coordinator.comfort.async_stop)
+    # the "Proxon" page in the sidebar (our own interface)
+    await async_register_panel(hass, entry)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bool:
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if ok:
+        async_unregister_panel(hass, entry)
         remove_issues(hass, entry)
         await hass.async_add_executor_job(entry.runtime_data.api.close)
     return ok

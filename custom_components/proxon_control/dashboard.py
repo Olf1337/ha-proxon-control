@@ -165,7 +165,7 @@ PILL_STYLE = {
 }
 
 
-def _ids(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, str]:
+def entity_ids(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, str]:
     """unique-id suffix -> entity ID, for this unit's entities (left out when disabled)."""
     base = f"{entry.unique_id or entry.entry_id}_"
     out = {}
@@ -189,7 +189,7 @@ def _area(entity_id: str, target: tuple[float, float, float, float], picture: tu
 
 def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     t = TEXT["de" if (hass.config.language or "").startswith("de") else "en"]
-    ids = _ids(hass, entry)
+    ids = entity_ids(hass, entry)
     names = t["names"]
     coordinator = getattr(entry, "runtime_data", None)
     data: dict = getattr(coordinator, "data", None) or {}
