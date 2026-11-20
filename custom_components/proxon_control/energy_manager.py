@@ -247,6 +247,7 @@ class LegionellaFeature:
         return {
             "last_done": self.state.last_done.isoformat() if self.state.last_done else None,
             "due_at_the_latest": due.isoformat() if due and self.state.on else None,
+            "planned_next": L.next_slot(dt_util.now(), self.state).isoformat() if self.state.plan_on else None,
             "heating_since": self.state.since.isoformat() if self.state.since else None,
             "temperature": L.TEMP,
         }
@@ -260,27 +261,54 @@ class LegionellaFeature:
         for update in list(self._updates):
             update()
 
-    async def async_set(self, on: bool) -> None:
-        m = self._manager
+    async def async_set(self, on: bool | None = None, plan_on: bool | None = None) -> None:
+        """Switch "with solar" (`on`) or "planned" (`plan_on`); only one of them is on: switching one on switches the other off."""
+        m, st = self._manager, self.state
+        want_on = st.on if on is None else on
+        want_plan = st.plan_on if plan_on is None else plan_on
+        if on:
+            want_plan = False
+        if plan_on:
+            want_on = False
         # read only: switching it either way would write the unit's own legionella function, so it is refused before
         # anything is saved (it would show "on" without doing anything)
-        if on != self.state.on and m.coordinator.read_only:
+        if (want_on, want_plan) != (st.on, st.plan_on) and m.coordinator.read_only:
             raise HomeAssistantError(translation_domain=DOMAIN, translation_key="legionella_read_only")
-        data = m.coordinator.data or {}
-        if on and not self.state.on:
-            self.state.on, self.state.reference = True, dt_util.now()
-            self.state.unit_function_was_on = bool(data.get(UNIT_LEGIONELLA_KEY))
+        # "with solar" without a surplus sensor would never use the sun: refused with a hint (planned works without one)
+        if want_on and not st.on and not m.entry.options.get(CONF_SURPLUS_SENSOR):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="legionella_needs_sensor")
+        data, now = m.coordinator.data or {}, dt_util.now()
+        was_any, any_now = st.on or st.plan_on, want_on or want_plan
+        if want_on and not st.on:
+            st.reference = now
+        if want_plan and not st.plan_on:
+            st.plan_slot = L.last_slot(now, st.plan_day, st.plan_time)  # from the next planned time on, not one just past
+        st.on, st.plan_on = want_on, want_plan
+        if any_now and not was_any:
+            st.unit_function_was_on = bool(data.get(UNIT_LEGIONELLA_KEY))
             await m._save()
-            if self.state.unit_function_was_on:  # the unit's own function would heat at its fixed time as well
-                _LOGGER.info("Legionella protection with solar power on: the unit's own legionella function off")
+            if st.unit_function_was_on:  # the unit's own function would heat at its fixed time as well
+                _LOGGER.info("Legionella protection on: the unit's own legionella function off")
                 await m.coordinator.async_write(UNIT_LEGIONELLA_KEY, 0)
-        elif not on and self.state.on:
-            self.state.on = False
-            was_on, self.state.unit_function_was_on = self.state.unit_function_was_on, False
+        elif was_any and not any_now:
+            was_on, st.unit_function_was_on = st.unit_function_was_on, False
             await m._save()
             if was_on and UNIT_LEGIONELLA_KEY in data:
                 await m.coordinator.async_write(UNIT_LEGIONELLA_KEY, 1)
+        else:
+            await m._save()
         await m.async_evaluate()
+
+    async def async_set_plan(self, day: int | None = None, at: time | None = None) -> None:
+        """Weekday and time of the planned heating (settings of this function only: nothing is written to the unit)."""
+        st = self.state
+        if day is not None:
+            st.plan_day = day
+        if at is not None:
+            st.plan_time = at.replace(second=0, microsecond=0)
+        st.plan_slot = L.last_slot(dt_util.now(), st.plan_day, st.plan_time)  # a time just past waits for next week
+        await self._manager._save()
+        await self._manager.async_evaluate()
 
     async def async_set_due_time(self, at: time) -> None:
         """The time of the heating without sun (a setting of this function only: nothing is written to the unit)."""
@@ -308,8 +336,8 @@ class LegionellaFeature:
         before = self.state.last_done
         action, self.status = L.decide(now, self.state, water=water, surplus_w=m._surplus(),
                                        surplus_limit=float(m.settings.surplus_w), blocked=blocked)
-        if action in ("start_solar", "start_due"):
-            await self._start(now, L.SOLAR if action == "start_solar" else L.DUE)
+        if action in ("start_solar", "start_due", "start_plan"):
+            await self._start(now, {"start_solar": L.SOLAR, "start_plan": L.PLAN}.get(action, L.DUE))
         elif action == "stop":
             await self._stop(now, water is not None and water >= L.REACHED)
         elif self.state.last_done != before and (before is None or now - before > timedelta(hours=1)):
@@ -323,7 +351,7 @@ class LegionellaFeature:
         if self.state.watching_since is None:
             self.state.watching_since = now
             await m._save()
-        protected = self.state.on or bool(self._num(UNIT_LEGIONELLA_KEY))
+        protected = self.state.on or self.state.plan_on or bool(self._num(UNIT_LEGIONELLA_KEY))
         days = L.days_without_heat(now, self.state, protected=protected)
         issue_id = f"legionella_risk_{m.entry.entry_id}"
         if days is None:

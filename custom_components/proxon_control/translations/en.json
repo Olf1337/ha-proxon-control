@@ -421,7 +421,9 @@
           "starting": "Sun there, starting soon",
           "heating_solar": "Heating with solar power",
           "heating_due": "Heating (week is up)",
-          "blocked": "Paused (holiday)"
+          "blocked": "Paused (holiday)",
+          "planned": "Planned",
+          "heating_planned": "Heating (planned)"
         }
       },
       "energy_cost": {
@@ -475,6 +477,18 @@
           "2": "Level 2",
           "3": "Level 3",
           "4": "Level 4"
+        }
+      },
+      "legionella_plan_day": {
+        "name": "Legionella protection: day",
+        "state": {
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday",
+          "sunday": "Sunday"
         }
       }
     },
@@ -644,6 +658,9 @@
       },
       "all_heating_elements": {
         "name": "Heating elements of all rooms"
+      },
+      "legionella_planned": {
+        "name": "Plan legionella protection"
       }
     },
     "binary_sensor": {
@@ -750,6 +767,9 @@
       },
       "legionella_due_time": {
         "name": "Legionella protection: without sun at"
+      },
+      "legionella_plan_time": {
+        "name": "Legionella protection: time"
       }
     },
     "button": {
@@ -841,6 +861,9 @@
     },
     "price_fixed": {
       "message": "With a fixed electricity price there are no cheap hours, so hot water with cheap power can't be switched on. For a dynamic tariff, clear the fixed price under Configure and choose an electricity price sensor."
+    },
+    "legionella_needs_sensor": {
+      "message": "Legionella protection with solar needs the sensor for the surplus (feed-in). Choose it under Settings → Devices & services → Proxon Control → Configure, or use “Plan legionella protection” with a fixed day and time."
     }
   },
   "options": {

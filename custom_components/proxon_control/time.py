@@ -27,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if all(k in data for k in NIGHT_KEYS[False] + NIGHT_KEYS[True]):
         entities += [ProxonNightTime(coordinator, end) for end in (False, True)]
     if coordinator.energy.legionella.supported:
-        entities.append(ProxonLegionellaTime(coordinator))
+        entities += [ProxonLegionellaTime(coordinator), ProxonLegionellaPlanTime(coordinator)]
     if read_day(data, 0) is not None:
         entities += [
             ProxonPhaseTime(hass, coordinator, day, phase, end)
@@ -119,3 +119,20 @@ class ProxonLegionellaTime(ProxonEnergyEntity, TimeEntity):
 
     async def async_set_value(self, value: time) -> None:
         await self.manager.async_set_due_time(value)
+
+
+class ProxonLegionellaPlanTime(ProxonEnergyEntity, TimeEntity):
+    """Planned legionella protection: the time on its weekday (a setting of the integration, nothing written to the unit)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "LegionellenPlanZeit", "legionella_plan_time", coordinator.energy.legionella)
+
+    @property
+    def native_value(self) -> time:
+        return self.manager.state.plan_time
+
+    async def async_set_value(self, value: time) -> None:
+        await self.manager.async_set_plan(at=value)

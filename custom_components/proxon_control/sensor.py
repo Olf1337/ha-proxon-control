@@ -301,7 +301,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if coordinator.energy.legionella.supported:
         entities.append(ProxonFeatureStatus(coordinator, coordinator.energy.legionella, "LegionellenStatus", "legionella_status",
                                             "mdi:bacteria-outline", [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
-                                                                     L.HEATING_DUE, L.BLOCKED]))
+                                                                     L.HEATING_DUE, L.BLOCKED, L.PLANNED, L.HEATING_PLANNED]))
     # electricity cost: with a price sensor (dynamic tariff) or a fixed price
     if (entry.options.get(CONF_PRICE_SENSOR) or entry.options.get(CONF_FIXED_PRICE)) and "LeistungGesamt" in data:
         cost = ProxonEnergyCost(coordinator, hass.config.currency)

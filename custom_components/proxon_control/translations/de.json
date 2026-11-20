@@ -421,7 +421,9 @@
           "starting": "Sonne da, startet gleich",
           "heating_solar": "Heizt mit Sonnenstrom",
           "heating_due": "Heizt (Woche um)",
-          "blocked": "Pausiert (Urlaub)"
+          "blocked": "Pausiert (Urlaub)",
+          "planned": "Geplant",
+          "heating_planned": "Heizt (geplant)"
         }
       },
       "energy_cost": {
@@ -475,6 +477,18 @@
           "2": "Stufe 2",
           "3": "Stufe 3",
           "4": "Stufe 4"
+        }
+      },
+      "legionella_plan_day": {
+        "name": "Legionellenschutz: Tag",
+        "state": {
+          "monday": "Montag",
+          "tuesday": "Dienstag",
+          "wednesday": "Mittwoch",
+          "thursday": "Donnerstag",
+          "friday": "Freitag",
+          "saturday": "Samstag",
+          "sunday": "Sonntag"
         }
       }
     },
@@ -644,6 +658,9 @@
       },
       "all_heating_elements": {
         "name": "Wärmeelemente aller Räume"
+      },
+      "legionella_planned": {
+        "name": "Legionellenschutz planen"
       }
     },
     "binary_sensor": {
@@ -750,6 +767,9 @@
       },
       "legionella_due_time": {
         "name": "Legionellenschutz: ohne Sonne um"
+      },
+      "legionella_plan_time": {
+        "name": "Legionellenschutz: Uhrzeit"
       }
     },
     "button": {
@@ -841,6 +861,9 @@
     },
     "price_fixed": {
       "message": "Mit einem festen Strompreis gibt es keine günstigen Stunden, deshalb lässt sich „Warmwasser mit günstigem Strom“ nicht einschalten. Für einen dynamischen Tarif den festen Preis unter Konfigurieren leeren und einen Strompreis-Sensor wählen."
+    },
+    "legionella_needs_sensor": {
+      "message": "Für „Legionellenschutz mit Sonne“ fehlt der Sensor für den Überschuss (Einspeisung). Wähle ihn unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren – oder nimm „Legionellenschutz planen“ mit festem Tag und fester Uhrzeit."
     }
   },
   "options": {

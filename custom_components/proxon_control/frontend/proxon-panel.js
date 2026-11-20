@@ -21,10 +21,17 @@ const TEXT = {
     more: "Alle Werte", close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
     end: "{f} beenden", unavailable: "nicht erreichbar", home: "Zuhause", settings: "Einstellungen", status: "Status",
     days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis", lvl: "Stufe",
+    daysShort: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    hint: {
+      GrenzwertCO2: "Darüber lüftet die Anlage im ECO-Komfortbetrieb stärker (nur mit CO₂-Fühler).",
+      GrenzwertFeuchte: "Darunter lüftet die Anlage im ECO-Komfortbetrieb schwächer, damit die Luft nicht zu trocken wird.",
+      LegionellenGeplant: "Heizt jede Woche am gewählten Tag zur gewählten Uhrzeit auf 60 °C, mit oder ohne Sonne.",
+      LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
+    },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     s: {
       vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
-      store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz mit Sonne", cooling: "Sommer-Nachtkühlung",
+      store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
       season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
       ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
@@ -33,7 +40,8 @@ const TEXT = {
       Legionellenfunktion: "Legionellenschaltung der Anlage", WarmwasserBoost: "Boost an", BoostGrenze: "Boost unter",
       SolarWarmwasser: "Mit PV-Überschuss heizen", SolarSchwelle: "Überschuss ab", PreisWarmwasser: "Mit günstigem Strom heizen",
       PreisSchwelle: "Strompreis unter", SpeicherTemperatur: "Speichern bis", LegionellenSonne: "Legionellenschutz mit Sonne",
-      LegionellenZeit: "Ohne Sonne um", Nachtkuehlung: "Nachtkühlung an", KuehlWunsch: "Wunschtemperatur innen", KuehlStufe: "Kühlstufe",
+      LegionellenZeit: "Ohne Sonne um", LegionellenGeplant: "Legionellenschutz planen", LegionellenTag: "Tag",
+      LegionellenPlanZeit: "Uhrzeit", Nachtkuehlung: "Nachtkühlung an", KuehlWunsch: "Wunschtemperatur innen", KuehlStufe: "Kühlstufe",
       SaisonAutomatik: "Automatisch umschalten", SaisonWinterUnter: "Winter unter", SaisonSommerUeber: "Sommer über",
       NachtabsenkungAktiv: "Nachtabsenkung an", NachtabsenkungTemperatur: "Nachttemperatur", NachtabsenkungStart: "Beginn",
       NachtabsenkungEnde: "Ende", WaermeelementeAlle: "Wärmeelemente aller Räume",
@@ -63,10 +71,17 @@ const TEXT = {
     more: "All values", close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
     end: "End {f}", unavailable: "unavailable", home: "Home", settings: "Settings", status: "Status",
     days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to", lvl: "level",
+    daysShort: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    hint: {
+      GrenzwertCO2: "Above it the unit ventilates more in ECO comfort mode (only with a CO₂ sensor).",
+      GrenzwertFeuchte: "Below it the unit ventilates less in ECO comfort mode, so the air doesn't get too dry.",
+      LegionellenGeplant: "Heats to 60 °C every week on the chosen day at the chosen time, sun or not.",
+      LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
+    },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
     s: {
       vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
-      store: "Solar surplus and cheap power", legionella: "Legionella protection with solar", cooling: "Summer night cooling",
+      store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
       season: "Summer/winter automatic", night: "Night setback", heating: "Heating",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
       ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
@@ -75,7 +90,8 @@ const TEXT = {
       Legionellenfunktion: "Unit's legionella function", WarmwasserBoost: "Boost on", BoostGrenze: "Boost below",
       SolarWarmwasser: "Heat with solar surplus", SolarSchwelle: "Surplus from", PreisWarmwasser: "Heat with cheap power",
       PreisSchwelle: "Price below", SpeicherTemperatur: "Store up to", LegionellenSonne: "Legionella protection with solar",
-      LegionellenZeit: "Without sun at", Nachtkuehlung: "Night cooling on", KuehlWunsch: "Wanted indoor temperature", KuehlStufe: "Cooling level",
+      LegionellenZeit: "Without sun at", LegionellenGeplant: "Plan legionella protection", LegionellenTag: "Day",
+      LegionellenPlanZeit: "Time", Nachtkuehlung: "Night cooling on", KuehlWunsch: "Wanted indoor temperature", KuehlStufe: "Cooling level",
       SaisonAutomatik: "Switch automatically", SaisonWinterUnter: "Winter below", SaisonSommerUeber: "Summer above",
       NachtabsenkungAktiv: "Night setback on", NachtabsenkungTemperatur: "Night temperature", NachtabsenkungStart: "Start",
       NachtabsenkungEnde: "End", WaermeelementeAlle: "Heating elements of all rooms",
@@ -102,7 +118,7 @@ const FUNCS = [
     icon: "M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.7 7 7.6c0 4.8 10 2.6 10 7.8 0 2-2.2 3.1-5 3.1s-5-1.2-5-3.1" },
   { k: "boostww", sw: "WarmwasserBoost", run: st => st.attributes.status === "heating", tint: "--warm", temp: "BoostGrenze",
     icon: "M13 2L4 14h7l-1 8 9-12h-7z" },
-  { k: "legionella", sw: "LegionellenSonne", run: st => String(st.attributes.status || "").startsWith("heating"), tint: "--water-hot",
+  { k: "legionella", sw: "LegionellenStatus", off: ["LegionellenSonne", "LegionellenGeplant"], run: st => String(st.state || "").startsWith("heating"), tint: "--water-hot",
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
   { k: "cooling", sw: "Nachtkuehlung", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
@@ -116,7 +132,8 @@ const SETTINGS = [
   { id: "water", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
   { id: "boost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
   { id: "store", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
-  { id: "legionella", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"]] },
+  { id: "legionella", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
+    ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
   { id: "cooling", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
   { id: "season", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
   { id: "night", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
@@ -368,7 +385,8 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .sheet h3 { font: 700 1.4rem/1.15 var(--font-display); letter-spacing: -.02em; margin: 0 0 4px; }
 .sub { color: var(--fg-2); font-size: .9375rem; margin: 0 0 18px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
-.row-label { font-weight: 600; }
+.row-label { font-weight: 600; flex: 1 1 140px; min-width: 0; }
+.row > .switch { flex: none; }
 .row-label small { display: block; font-weight: 400; color: var(--fg-3); font-size: .8125rem; }
 .close { position: absolute; top: 14px; right: max(16px, env(safe-area-inset-right, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 0;
   background: var(--line); cursor: pointer; font-size: 1rem; color: var(--fg-2); }
@@ -682,7 +700,7 @@ class ProxonPanel extends HTMLElement {
       <span class="fn-text"><div class="fn-title">${t.fn[f.k][0]}</div><div class="fn-detail"></div></span>
       <button class="switch" role="switch" aria-checked="true" aria-label="${fill(t.end, { f: t.fn[f.k][0] })}"></button>`;
     el.querySelector(".switch").addEventListener("click", () => {
-      const entity = this.id(f.sw);
+      const entity = this.id((f.off || [f.sw]).find(k => (this.st(k) || {}).state === "on") || f.sw);
       this._ending.set(f.k, Date.now());
       this.call("switch", "turn_off", { entity_id: entity }).then(
         () => this._toast(fill(t.off, { f: t.fn[f.k][0] }), () => { this._ending.delete(f.k); return this.call("switch", "turn_on", { entity_id: entity }); }),
@@ -866,10 +884,16 @@ class ProxonPanel extends HTMLElement {
       const rows = sec.rows.filter(r => r[0] === "days" ? has("Zeitprogramm0") : has(r[1]));
       if (!rows.length) return "";
       const body = rows.map(([kind, key]) => {
-        if (kind === "switch") return this._sw(`set-${key}`, this._label(key));
+        const hint = (t.hint || {})[key];
+        if (kind === "switch") return this._sw(`set-${key}`, this._label(key), hint);
+        if (kind === "select") {
+          const st = this.st(key), opts = st ? st.attributes.options || [] : [];
+          const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
+          return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
+        }
         if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
           <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
-        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key));
+        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint);
         if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
@@ -891,6 +915,8 @@ class ProxonPanel extends HTMLElement {
       if (kind === "time" && time) time.addEventListener("change", () => { if (time.value) this.call("time", "set_value", { entity_id: this.id(key), time: `${time.value}:00` }).catch(() => this._updateSettings()); });
       const dt = v.querySelector(`#dt-${CSS.escape(key)}`);
       if (kind === "datetime" && dt) dt.addEventListener("change", () => { if (dt.value) this.call("datetime", "set_value", { entity_id: this.id(key), datetime: new Date(dt.value).toISOString() }).catch(() => this._updateSettings()); });
+      if (kind === "select") v.querySelectorAll(`#sel-${CSS.escape(key)} button`).forEach(b => b.addEventListener("click", () =>
+        this.call("select", "select_option", { entity_id: this.id(key), option: b.dataset.o }).catch(() => {})));
       const btn = v.querySelector(`#btn-${CSS.escape(key)}`);
       if (kind === "button" && btn) this._confirmButton(btn, () => this.call("button", "press", { entity_id: this.id(key) }).catch(() => {}));
     }
@@ -926,6 +952,7 @@ class ProxonPanel extends HTMLElement {
       for (const [kind, key] of sec.rows) {
         const st = this.st(key);
         if (kind === "switch") { const b = v.querySelector(`#set-${CSS.escape(key)}`); if (b && st) b.setAttribute("aria-checked", st.state === "on"); }
+        if (kind === "select") v.querySelectorAll(`#sel-${CSS.escape(key)} button`).forEach(b => b.setAttribute("aria-pressed", !!st && b.dataset.o === st.state));
         if (kind === "time") {
           const i = v.querySelector(`#time-${CSS.escape(key)}`);
           if (i && st && i !== focused) i.value = /^\d\d:\d\d/.test(st.state) ? st.state.slice(0, 5) : "";

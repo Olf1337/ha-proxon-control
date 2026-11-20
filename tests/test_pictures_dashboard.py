@@ -377,8 +377,11 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
 
     # ---- optimisation: every function with its switch, status and limits ----
     blocks = {s["cards"][0]["heading"]: [c.get("entity") for c in s["cards"][1:]] for s in optimize["sections"]}
-    assert list(blocks) == ["Hot-water store (solar / price)", "Hot-water boost", "Legionella protection with solar",
+    assert list(blocks) == ["Hot-water store (solar / price)", "Hot-water boost", "Legionella protection",
                             "Summer night cooling", "Summer/winter automatic", "Night setback"]
+    # legionella: with solar or planned (weekday and time)
+    assert blocks["Legionella protection"][:2] == [eid(hass, "switch", "LegionellenSonne"), eid(hass, "switch", "LegionellenGeplant")]
+    assert eid(hass, "select", "LegionellenTag") in blocks["Legionella protection"]
     assert blocks["Hot-water boost"] == [eid(hass, "switch", "WarmwasserBoost"), eid(hass, "number", "BoostGrenze"),
                                          eid(hass, "number", "Soll-E-Heizstab-Temperatur")]
     solar = next(c for c in cards(optimize) if c.get("entity") == eid(hass, "switch", "SolarWarmwasser"))

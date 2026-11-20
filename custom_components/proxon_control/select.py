@@ -1,4 +1,5 @@
-"""Operating mode (Betriebsart), and the ventilation level of each phase of the weekly schedule."""
+"""Operating mode (Betriebsart), the ventilation level of each phase of the weekly schedule, and the weekday of the planned
+legionella protection."""
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
@@ -7,17 +8,20 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity
+from .entity import ProxonEnergyEntity, ProxonEntity
 from .registers import MODE_CHOICES, MODE_HOLIDAY, MODE_KEYS, SCHEDULE_PHASES
 from .schedule import read_day
 from .services import async_set_phase, schedule_day_device
 
 LEVEL_OPTIONS = ["off", "1", "2", "3", "4"]
+WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     entities: list[SelectEntity] = [ProxonModeSelect(coordinator)]
+    if coordinator.energy.legionella.supported:
+        entities.append(ProxonLegionellaDay(coordinator))
     if read_day(coordinator.data or {}, 0) is not None:
         entities += [ProxonPhaseLevel(hass, coordinator, day, phase) for day in range(7) for phase in range(SCHEDULE_PHASES)]
     async_add_entities(entities)
@@ -74,3 +78,21 @@ class ProxonPhaseLevel(ProxonEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         await async_set_phase(self.hass, self.coordinator, self._day, self._phase, None, None, LEVEL_OPTIONS.index(option))
+
+
+class ProxonLegionellaDay(ProxonEnergyEntity, SelectEntity):
+    """Planned legionella protection: the weekday (a setting of the integration, nothing is written to the unit)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:calendar-week"
+    _attr_options = WEEKDAYS
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "LegionellenTag", "legionella_plan_day", coordinator.energy.legionella)
+
+    @property
+    def current_option(self) -> str:
+        return WEEKDAYS[self.manager.state.plan_day]
+
+    async def async_select_option(self, option: str) -> None:
+        await self.manager.async_set_plan(day=WEEKDAYS.index(option))
