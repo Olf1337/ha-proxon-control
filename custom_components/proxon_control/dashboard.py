@@ -242,6 +242,8 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         *tile("Intensivlueftung", HALF),
         *tile("Urlaubsmodus", HALF, icon_tap_action={"action": "toggle", "confirmation": {"text": t["holiday_confirm"]}}),
         *tile("ZeitprogrammAktiv", FULL),
+        # the holiday plan right below holiday mode's switch (warm-up time and clearing in the settings tab)
+        *tile("UrlaubAb", HALF), *tile("UrlaubBis", HALF),
     ]
     # the automatic functions with what they are doing ("On · Waiting"); their limits are in the optimisation tab
     functions = [c for key in ("SolarWarmwasser", "PreisWarmwasser", "WarmwasserBoost", "LegionellenSonne", "Nachtkuehlung", "SaisonAutomatik")
@@ -292,6 +294,11 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
             if cards:
                 title = t["floors"][floor] if several else t["rooms"]
                 out += [heading(title, "subtitle" if several else "title"), *cards]
+        # the heating elements of all rooms at once, right above the rooms (asks first: it changes every room)
+        all_elements = tile("WaermeelementeAlle", FULL, icon_tap_action={"action": "toggle", "confirmation": True})
+        if out and all_elements:
+            # with floors: above the first floor's heading; else right below the heading "Rooms"
+            out = [*all_elements, *out] if several else [out[0], *all_elements, *out[1:]]
         return out
 
     # ---- 1. home: key figures, operate the ventilation, the floor plan and every room, the unit and hot water ----

@@ -317,7 +317,9 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     solar_home = next(c for c in controls["cards"] if c.get("entity") == eid(hass, "switch", "SolarWarmwasser"))
     assert solar_home["state_content"] == ["state", "status"]
     # every room as a tile, two side by side: the temperature large, the target with -/+, the heating element
-    assert house["column_span"] == 2 and house["cards"][0]["type"] == "heading"
+    # above the rooms the switch for the heating elements of all rooms, then the first floor's heading
+    assert house["column_span"] == 2 and house["cards"][0]["entity"] == eid(hass, "switch", "WaermeelementeAlle")
+    assert house["cards"][1]["type"] == "heading"
     stacks = [c for c in house["cards"] if c["type"] == "vertical-stack"]
     assert [st["cards"][0]["entity"] for st in stacks] == [eid(hass, "sensor", f"NBE{n}Temperatur") for n in (0, 4, 1)]
     assert [st["cards"][0]["name"] for st in stacks] == ["Wohnzimmer", "Bad", "Schlafzimmer"]

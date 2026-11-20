@@ -103,3 +103,17 @@ async def test_dashboard_settings(hass: HomeAssistant, device) -> None:
     for key in ("UrlaubAb", "UrlaubBis", "UrlaubsplanLoeschen"):
         assert eid(hass, "datetime" if key.startswith("UrlaubA") or key == "UrlaubBis" else "button", key) in entities
     assert eid(hass, "number", "UrlaubVorlauf") in entities and eid(hass, "switch", "WaermeelementeAlle") in entities
+
+
+async def test_both_on_the_start_page(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    dashboard = await hass.services.async_call("proxon_control", "create_dashboard", {"paste_only": True}, blocking=True,
+                                               return_response=True)
+    home = dashboard["views"][0]
+    for section in home["sections"]:  # wide and narrow screens alike
+        entities = [c.get("entity") for c in section["cards"]]
+        if eid(hass, "switch", "Urlaubsmodus") in entities:  # departure and return right with holiday mode
+            assert eid(hass, "datetime", "UrlaubAb") in entities and eid(hass, "datetime", "UrlaubBis") in entities
+        if any(c["type"] == "vertical-stack" for c in section["cards"]):  # all heating elements right above the rooms
+            assert section["cards"][0]["entity"] == eid(hass, "switch", "WaermeelementeAlle")  # above "Ground floor"
+            assert section["cards"][1]["heading"] == "Ground floor"
