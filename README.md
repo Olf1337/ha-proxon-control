@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.21.0:** a holiday plan (departure and return: holiday mode switches itself on and off again a few hours
+before you are back); one switch for the heating elements of all rooms; both on the start page of the dashboard.
+
 **New in 0.20.1:** the button "set the unit's clock" is gone again: the unit refuses writing its clock over the network
 (`NP_E_NO_ACCESS`); please set it at the control panel or in the Proxon app.
 
@@ -117,11 +120,26 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Wochenprogramm | **Lüftungs-Zeitprogramm der Anlage**: je Wochentag ein Sensor („06:00–08:00 Stufe 2 · 17:00–22:00 Stufe 3“, die drei Phasen als Attribute), „Zeitprogramm aktiv“, Uhr der Anlage. Bearbeiten direkt in den Geräten „Proxon Zeitprogramm Montag“ … „Sonntag“ (je Phase Beginn, Ende, Lüftungsstufe), Knöpfe „Montag → Di–Fr / alle Tage“, oder über die Aktionen *Zeitprogramm-Phase setzen* und *Zeitprogramm-Tag kopieren* |
 | Auswahl | Betriebsart (ECO Komfort, Winter, Sommer, Ofenbetrieb, Aus; Urlaub wird angezeigt) |
 | Zahlen (Schieberegler) | Lüftungsstufe 1–4, Grenzwert CO₂ 400–1500 ppm (nur mit CO₂-Sensor), Grenzwert Feuchte 0–100 %, Warmwasser 20–55 °C, E-Heizstab 20–70 °C, Dauer der Intensivlüftung |
-| Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab, Legionellenschaltung |
+| Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab, Legionellenschaltung, Wärmeelemente aller Räume |
 | Sensoren | Raumtemperaturen, Innen (Mittel aller Räume), Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter (nach der an der Anlage eingestellten Standzeit), Betriebsstunden, 4-Wegeventil, Firmware, Warmwasser unten, Warmwasser-Ladezustand, Duschvorrat, Aktueller Betrieb, Wärmerückgewinnung, Stromkosten (mit Preis-Sensor) |
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
-| Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt |
+| Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.21.0: Urlaubsplan, Wärmeelemente aller Räume
+
+* **Urlaubsplan:** Am Gerät Proxon gibt es **„Urlaubsplan: Abreise“** und **„Urlaubsplan: Rückkehr“** (Datum und
+  Uhrzeit). Zur Abreise geht der Urlaubsmodus selbst an, vor der Rückkehr wieder aus – so viele Stunden vorher, wie unter
+  **„Urlaubsplan: vor der Rückkehr aufwärmen“** eingestellt (voreingestellt 6), damit Haus und Wasser warm sind. Danach ist
+  der Plan gelöscht. Wer früher zurückkommt und den Urlaubsmodus selbst ausschaltet, beendet den Plan damit ebenfalls.
+  Der Knopf **„Urlaubsplan löschen“** nimmt einen Plan zurück, bevor er beginnt. Am Schalter „Urlaubsmodus“ zeigen die
+  Attribute `plan_on_at` und `plan_off_at`, wann er schaltet. Geprüft wird einmal pro Minute.
+* **Wärmeelemente aller Räume:** ein Schalter, der die Wärmeelemente aller Räume auf einmal freigibt oder sperrt (z. B.
+  im Frühjahr). Er ist an, wenn alle freigegeben sind; die Attribute zeigen, welche Räume an und aus sind. Geschrieben
+  werden nur die Räume, die anders stehen – wie beim Umschalten im Thermostat des Raums. (Idee aus ha-lan-proxon 2.8.1.)
+* **Dashboard:** Auf „Zuhause“ stehen Abreise und Rückkehr direkt beim Urlaubsmodus und der Schalter für alle
+  Wärmeelemente über den Räumen; unter *Einstellungen* der ganze Urlaubsplan. Zum Übernehmen „Dashboard erstellen“
+  ausführen.
 
 ## Neu in Version 0.20.1
 
