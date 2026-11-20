@@ -137,7 +137,6 @@ const SETTINGS = [
   { id: "cooling", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
   { id: "season", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
   { id: "night", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
-  { id: "heating", rows: [["switch", "WaermeelementeAlle"]] },
 ];
 
 // ---------------- springs ----------------
