@@ -29,6 +29,11 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.22.0:** a page "Proxon" of its own in the sidebar, in the liquid-glass look: the unit as a section with the air
+flowing, the hot-water tank, every room (drag to set the target), cards for the functions that are running, and a tab with
+all settings; legionella protection can be planned on a weekday at a time; solar / cheap-power hot water and legionella
+protection with solar can only be switched on with their sensor; the ready-made dashboard is now called "Proxon Control".
+
 **New in 0.21.0:** a holiday plan (departure and return: holiday mode switches itself on and off again a few hours
 before you are back); one switch for the heating elements of all rooms; both on the start page of the dashboard.
 
@@ -120,11 +125,40 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Wochenprogramm | **Lüftungs-Zeitprogramm der Anlage**: je Wochentag ein Sensor („06:00–08:00 Stufe 2 · 17:00–22:00 Stufe 3“, die drei Phasen als Attribute), „Zeitprogramm aktiv“, Uhr der Anlage. Bearbeiten direkt in den Geräten „Proxon Zeitprogramm Montag“ … „Sonntag“ (je Phase Beginn, Ende, Lüftungsstufe), Knöpfe „Montag → Di–Fr / alle Tage“, oder über die Aktionen *Zeitprogramm-Phase setzen* und *Zeitprogramm-Tag kopieren* |
 | Auswahl | Betriebsart (ECO Komfort, Winter, Sommer, Ofenbetrieb, Aus; Urlaub wird angezeigt) |
 | Zahlen (Schieberegler) | Lüftungsstufe 1–4, Grenzwert CO₂ 400–1500 ppm (nur mit CO₂-Sensor), Grenzwert Feuchte 0–100 %, Warmwasser 20–55 °C, E-Heizstab 20–70 °C, Dauer der Intensivlüftung |
-| Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab, Legionellenschaltung, Wärmeelemente aller Räume |
+| Schalter | Intensivlüftung, Kühlung, Warmwasser-Wärmepumpe, E-Heizstab, Legionellenschaltung, Legionellenschutz mit Sonne / planen (mit Tag und Uhrzeit), Wärmeelemente aller Räume |
 | Sensoren | Raumtemperaturen, Innen (Mittel aller Räume), Frisch-/Zu-/Ab-/Fortluft, Warmwasser, Drehzahlen, CO₂, Feuchte, Lüftungsstufe (Ist), Restzeit Intensivlüftung, Restlaufzeit Filter (nach der an der Anlage eingestellten Standzeit), Betriebsstunden, 4-Wegeventil, Firmware, Warmwasser unten, Warmwasser-Ladezustand, Duschvorrat, Aktueller Betrieb, Wärmerückgewinnung, Stromkosten (mit Preis-Sensor) |
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.22.0: eigene Seite „Proxon“, Legionellenschutz planen
+
+* **Neue Seite „Proxon“ in der Seitenleiste** – eine eigene Oberfläche im „Liquid Glass“-Look (durchscheinende Flächen,
+  hell und dunkel wie Home Assistant), die nach dem Update ohne weiteres Zutun erscheint:
+  * **Zuhause:** oben Außentemperatur, Betrieb und „Alles in Ordnung“ (oder Störung / Filter); darunter eine Karte für
+    jede Funktion, die *gerade läuft* (Urlaubsmodus, PV-Überschuss, günstiger Strom, Warmwasser-Boost,
+    Legionellenschutz, Nachtkühlung) – ihr Schalter beendet sie, mit „Rückgängig“.
+  * **Lüftungsanlage im Schnitt:** vier Luftkanäle, eingefärbt nach ihren Temperaturen, die Luft strömt je nach Stufe,
+    die Lüfter drehen nach ihrer Drehzahl, die Wärmepumpe zeigt, ob sie heizt, kühlt oder aus ist; Kompressor,
+    Wärmerückgewinnung, CO₂ und Feuchte darunter. Direkter Schalter für die **Intensivlüftung** mit Restzeit. Antippen:
+    Stufe (rastet ein; im ECO-Komfortbetrieb ausgegraut, da regelt die Anlage selbst), Betriebsart, „Alle Werte“.
+  * **Warmwasser als großer Speicher:** 300 Liter mit Wasserstand und Schichten, die Fühler an ihrer Stelle, daneben
+    Liter warmes Wasser, Duschvorrat und Temperatur; das Soll lässt sich direkt auf der Karte ziehen.
+  * **Räume nach Geschossen:** Temperatur, Soll (zur Seite ziehen, rastet ein), Heizpanel; darüber der Schalter
+    „Wärmeelemente aller Räume“ (Rückgängig stellt jeden Raum wieder so ein, wie er war).
+  * **„Alle Werte“** bei Lüftung und Warmwasser: jede Entität dieses Teils, gruppiert und live, antippen zeigt den
+    Verlauf; dazu „Gerät in Home Assistant öffnen“.
+  * **Tab „Einstellungen“:** Lüftung (Grenzwerte mit Erklärung), Wochenprogramm (pro Tag drei Phasen, Montag kopieren),
+    Urlaub, Warmwasser, Warmwasser-Boost, PV-Überschuss und günstiger Strom, Legionellenschutz, Nachtkühlung,
+    Sommer/Winter automatisch, Nachtabsenkung – jeweils mit dem, was die Funktion gerade tut.
+  * Bewegung wie bei Apple: Federn, Ziehen mit Schwung, nichts davon mit „Bewegung reduzieren“.
+* **Das fertige Dashboard heißt jetzt „Proxon Control“** (ein bestehendes „Proxon“ wird beim Start umbenannt, ein selbst
+  gewählter Titel bleibt), damit „Proxon“ nicht zweimal in der Seitenleiste steht.
+* **Legionellenschutz planen:** neuer Schalter mit Wochentag und Uhrzeit – heizt jede Woche dann auf 60 °C, mit oder
+  ohne Sonne (ausgelassen, wenn das Wasser am Tag davor schon so heiß war). Nur eine der beiden Varianten ist an.
+* **Ohne Sensor kein stilles Nichtstun mehr:** „Warmwasser mit PV-Überschuss“ und „Legionellenschutz mit Sonne“ lassen
+  sich ohne Überschuss-Sensor nicht einschalten, „Warmwasser mit günstigem Strom“ nicht ohne Strompreis-Sensor oder mit
+  festem Preis – eine Meldung sagt, wo der Sensor gewählt wird.
 
 ## Neu in Version 0.21.0: Urlaubsplan, Wärmeelemente aller Räume
 
