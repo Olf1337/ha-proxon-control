@@ -523,6 +523,9 @@
       },
       "night_setback_temperature": {
         "name": "Nachttemperatur"
+      },
+      "holiday_lead": {
+        "name": "Urlaubsplan: vor der Rückkehr aufwärmen"
       }
     },
     "switch": {
@@ -638,6 +641,9 @@
       },
       "schedule": {
         "name": "Zeitprogramm Lüftung"
+      },
+      "all_heating_elements": {
+        "name": "Wärmeelemente aller Räume"
       }
     },
     "binary_sensor": {
@@ -752,6 +758,17 @@
       },
       "copy_monday_all": {
         "name": "Zeitprogramm: Montag → alle Tage"
+      },
+      "holiday_plan_clear": {
+        "name": "Urlaubsplan löschen"
+      }
+    },
+    "datetime": {
+      "holiday_start": {
+        "name": "Urlaubsplan: Abreise"
+      },
+      "holiday_end": {
+        "name": "Urlaubsplan: Rückkehr"
       }
     }
   },

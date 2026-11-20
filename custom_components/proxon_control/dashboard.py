@@ -12,7 +12,8 @@ the dashboard, without it the tabs keep the normal look), one for each thing to 
   setback) with its switch, what it is doing and its limits.
 * Power - consumption (and cost, with a price sensor) today / this week / month / year, split into compressor and
   ventilation, per day and month, power of the last day, runtimes and compressor starts per day.
-* Settings - ventilation limits, weekly schedule, heating elements, the unit's values, runtimes, diagnostics.
+* Settings - ventilation limits, weekly schedule, holiday plan, heating elements (all at once too), the unit's values,
+  runtimes, diagnostics.
 """
 from __future__ import annotations
 
@@ -79,13 +80,15 @@ TEXT: dict[str, dict[str, Any]] = {
             "WarmwasserIstTemperatur": "Warmwasser Mitte", "WarmwasserUntenTemperatur": "Warmwasser unten", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Wärmepumpe Warmwasser", "E-Heizstab": "Heizstab freigegeben",
             "WarmwasserDuschminuten": "Duschvorrat", "LegionellenSonne": "Legionellenschutz mit Sonne", "LegionellenStatus": "Status", "LegionellenZeit": "Ohne Sonne um",
+            "UrlaubAb": "Abreise", "UrlaubBis": "Rückkehr",
+            "UrlaubVorlauf": "Vor der Rückkehr aufwärmen", "UrlaubsplanLoeschen": "Plan löschen", "WaermeelementeAlle": "Alle Räume",
             "EnergieKompressor": "Kompressor", "EnergieLueftung": "Lüftung und Elektronik", "LeistungKompressor": "Kompressor", "LeistungLueftung": "Lüftung und Elektronik",
             "Stromkosten": "Kosten", "WarmwasserKompressorStartsHeute": "Warmwasser-Kompressor",
             "GrenzwertFeuchte": "Grenzwert Feuchte", "GrenzwertCO2": "Grenzwert CO₂", "ZeitprogrammAktiv": "Zeitprogramm",
             "EnergieGesamtMonatPrognose": "Verbrauch Monat", "StromkostenMonatPrognose": "Kosten Monat",
             "EnergieGesamtJahrPrognose": "Verbrauch Jahr", "StromkostenJahrPrognose": "Kosten Jahr",
         },
-        "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.",
+        "holiday_confirm": "Urlaubsmodus umschalten? Das ändert Lüftung, Raumtemperaturen und Warmwasser.", "holiday_plan": "Urlaubsplan",
         "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "schedule_on": "Programm aktiv",
         "diag": {"Antwortzeit": "Antwortzeit", "Antwortzeit_path": "Verbindungsweg", "Uhr": "Uhr der Anlage",
                  "FilterRestStunden": "Filter-Restlaufzeit", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Betriebsstunden",
@@ -130,13 +133,15 @@ TEXT: dict[str, dict[str, Any]] = {
             "WarmwasserIstTemperatur": "Hot water middle", "WarmwasserUntenTemperatur": "Hot water bottom", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Hot-water heat pump", "E-Heizstab": "Immersion heater released",
             "WarmwasserDuschminuten": "Shower supply", "LegionellenSonne": "Legionella protection with solar", "LegionellenStatus": "Status", "LegionellenZeit": "Without sun at",
+            "UrlaubAb": "Departure", "UrlaubBis": "Return",
+            "UrlaubVorlauf": "Warm up before the return", "UrlaubsplanLoeschen": "Clear plan", "WaermeelementeAlle": "All rooms",
             "EnergieKompressor": "Compressor", "EnergieLueftung": "Ventilation and electronics", "LeistungKompressor": "Compressor", "LeistungLueftung": "Ventilation and electronics",
             "Stromkosten": "Cost", "WarmwasserKompressorStartsHeute": "Hot-water compressor",
             "GrenzwertFeuchte": "Humidity limit", "GrenzwertCO2": "CO₂ limit", "ZeitprogrammAktiv": "Weekly schedule",
             "EnergieGesamtMonatPrognose": "Consumption month", "StromkostenMonatPrognose": "Cost month",
             "EnergieGesamtJahrPrognose": "Consumption year", "StromkostenJahrPrognose": "Cost year",
         },
-        "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.",
+        "holiday_confirm": "Switch holiday mode? This changes ventilation, room temperatures and hot water.", "holiday_plan": "Holiday plan",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "schedule_on": "Schedule active",
         "diag": {"Antwortzeit": "Response time", "Antwortzeit_path": "Connection path", "Uhr": "Unit clock",
                  "FilterRestStunden": "Filter time left", "FirmwareVersion": "Firmware", "Betriebsstundenzaehler": "Working hours",
@@ -427,7 +432,13 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     # ---- 5. settings: ventilation limits, weekly schedule, heating elements, the unit, runtimes, diagnostics ----
     limits = [heading(t["ventilation"]), *number("IntensivlueftungsDauer"), *number("GrenzwertCO2"), *number("GrenzwertFeuchte")]
     elements = [{"entity": ids[f"NBE{i}Waermeelement"], "name": room_name(i, data)} for i in rooms if f"NBE{i}Waermeelement" in ids]
-    heating = [heading(t["elements"]), {"type": "entities", "entities": elements, "grid_options": FULL}] if elements else []
+    heating = [heading(t["elements"]),
+               *tile("WaermeelementeAlle", FULL, icon_tap_action={"action": "toggle", "confirmation": True}),
+               *([{"type": "entities", "entities": elements, "grid_options": FULL}] if elements else [])]
+    press = {"action": "perform-action", "perform_action": "button.press", "target": {"entity_id": ids.get("UrlaubsplanLoeschen")},
+             "confirmation": True}
+    holiday_plan = [heading(t["holiday_plan"]), *tile("UrlaubAb", HALF), *tile("UrlaubBis", HALF), *number("UrlaubVorlauf"),
+                    *tile("UrlaubsplanLoeschen", FULL, tap_action=press, icon_tap_action=press)]
     unit = [heading(t["unit"]), *tile("AktuellerBetrieb", HALF), *tile("Waermerueckgewinnung", HALF),
             *tile("LeistungGesamt", HALF), *tile("FilterRestStunden", HALF),
             *tile("Stoerung", HALF), *tile("FilterRestStunden_warning", HALF)]
@@ -444,7 +455,8 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
                                          "target": {"entity_id": ids.get(key)}, "confirmation": True})
     diag_rows = [{"entity": ids[k], "name": name} for k, name in t["diag"].items() if k in ids]
     diagnostics = [heading(t["diagnostics"]), {"type": "entities", "entities": diag_rows, "grid_options": FULL}] if diag_rows else []
-    settings = [{"type": "grid", "cards": cards} for cards in (limits, schedule, heating, unit, runtime, diagnostics) if len(cards) > 1]
+    settings = [{"type": "grid", "cards": cards}
+                for cards in (limits, schedule, holiday_plan, heating, unit, runtime, diagnostics) if len(cards) > 1]
 
     # (the drawn house has its title in the picture)
     house_view = [{"type": "grid", "cards": [heading(t["plan"]), *plan_picture] if plan_picture else []},

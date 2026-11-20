@@ -523,6 +523,9 @@
       },
       "night_setback_temperature": {
         "name": "Night temperature"
+      },
+      "holiday_lead": {
+        "name": "Holiday plan: warm up before the return"
       }
     },
     "switch": {
@@ -638,6 +641,9 @@
       },
       "schedule": {
         "name": "Weekly ventilation schedule"
+      },
+      "all_heating_elements": {
+        "name": "Heating elements of all rooms"
       }
     },
     "binary_sensor": {
@@ -752,6 +758,17 @@
       },
       "copy_monday_all": {
         "name": "Schedule: Monday → all days"
+      },
+      "holiday_plan_clear": {
+        "name": "Clear holiday plan"
+      }
+    },
+    "datetime": {
+      "holiday_start": {
+        "name": "Holiday plan: departure"
+      },
+      "holiday_end": {
+        "name": "Holiday plan: return"
       }
     }
   },

@@ -1,4 +1,5 @@
-"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater, legionella function, weekly schedule. (Room heating elements are part of the room thermostats.)"""
+"""On/off settings: boost ventilation, cooling, hot-water heat pump, immersion heater, legionella function, weekly schedule,
+the heating elements of all rooms at once. (Each room's heating element is part of its thermostat.)"""
 from __future__ import annotations
 
 from typing import Any
@@ -6,10 +7,12 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
-from .entity import ProxonEnergyEntity, ProxonEntity
+from .entity import ProxonEnergyEntity, ProxonEntity, house_rooms, room_name
 
 SWITCHES: list[tuple[str, str, str, int | None]] = [
     ("Intensivlueftung", "boost", "mdi:fan-plus", None),
@@ -32,6 +35,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         if key in data and not (key == "GlobalKuehlungFreigabe" and data.get("GeraeteTyp") == 0)
     ]
     entities.append(ProxonHolidaySwitch(coordinator))
+    if any(f"NBE{i}PTC" in data for i in house_rooms(data)):
+        entities.append(ProxonAllElementsSwitch(coordinator))
     comfort = coordinator.comfort
     if comfort.cooling.supported:
         entities.append(ProxonEnergySwitch(coordinator, "on", "Nachtkuehlung", "night_cooling", "mdi:weather-night", comfort.cooling))
@@ -80,9 +85,18 @@ class ProxonHolidaySwitch(ProxonEntity, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.holiday.active
 
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.coordinator.holiday.add_listener(self.async_write_ha_state))
+
     @property
     def extra_state_attributes(self) -> dict:
-        return {"saved_values": self.coordinator.holiday.saved}
+        holiday = self.coordinator.holiday
+        start, back = holiday.plan_start, holiday.back_on_at
+
+        def iso(v):
+            return dt_util.as_local(v).isoformat() if v else None
+        return {"saved_values": holiday.saved, "plan_on_at": iso(start), "plan_off_at": iso(back)}
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         try:
@@ -121,3 +135,52 @@ class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.manager.async_set(**{self._setting: False})
+
+
+class ProxonAllElementsSwitch(ProxonEntity, SwitchEntity):
+    """The heating elements of all rooms at once: on when every room's element is released; switching writes each room
+    whose element differs (one write per room, like in the room's thermostat)."""
+
+    _attr_icon = "mdi:radiator"
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "WaermeelementeAlle", "all_heating_elements")
+
+    def _rooms(self) -> list[int]:
+        data = self.coordinator.data or {}
+        return [i for i in house_rooms(data) if f"NBE{i}PTC" in data]
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and bool(self._rooms())
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data or {}
+        rooms = self._rooms()
+        return all(data.get(f"NBE{i}PTC") for i in rooms) if rooms else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self.coordinator.data or {}
+        rooms = self._rooms()
+        return {"rooms_on": [room_name(i, data) for i in rooms if data.get(f"NBE{i}PTC")],
+                "rooms_off": [room_name(i, data) for i in rooms if not data.get(f"NBE{i}PTC")]}
+
+    async def _set(self, on: bool) -> None:
+        # every room is tried; the first failure is reported afterwards (the others are written anyway)
+        failed: HomeAssistantError | None = None
+        for i in self._rooms():
+            if bool((self.coordinator.data or {}).get(f"NBE{i}PTC")) != on:
+                try:
+                    await self.coordinator.async_write(f"NBE{i}PTC", 1 if on else 0)
+                except HomeAssistantError as err:
+                    failed = failed or err
+        if failed:
+            raise failed
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._set(False)

@@ -68,6 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonEnergyNumber(coordinator, d, comfort.boost) for d in BOOST_NUMBERS]
     if comfort.season.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.season) for d in SEASON_NUMBERS]
+    entities.append(ProxonHolidayLeadNumber(coordinator))
     async_add_entities(entities)
 
 
@@ -169,3 +170,33 @@ class ProxonEnergyNumber(ProxonEnergyEntity, NumberEntity):
         if setting == "summer_above" and value <= getattr(s, "winter_below", value - 1):
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="season_limits")
         await self.manager.async_set(**{setting: int(value) if setting == "level" else float(value)})
+
+
+class ProxonHolidayLeadNumber(ProxonEntity, NumberEntity):
+    """Holiday plan: how many hours before the return holiday mode goes off (house and water warm up again)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:home-clock-outline"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 48
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = UnitOfTime.HOURS
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "UrlaubVorlauf", "holiday_lead")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self.coordinator.holiday.add_listener(self.async_write_ha_state))
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.holiday.lead_h
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.holiday.async_set_plan(lead_h=value)

@@ -50,6 +50,7 @@ PLATFORMS = [
     Platform.WATER_HEATER,
     Platform.IMAGE,
     Platform.TIME,
+    Platform.DATETIME,
     Platform.BUTTON,
 ]
 
@@ -136,6 +137,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     # hot water as a store for solar surplus / cheap electricity
     coordinator.energy.async_start()
     entry.async_on_unload(coordinator.energy.async_stop)
+    # holiday plan: departure and return
+    entry.async_on_unload(coordinator.holiday.async_start())
     # summer night cooling and hot-water boost
     coordinator.comfort.async_start()
     entry.async_on_unload(coordinator.comfort.async_stop)
