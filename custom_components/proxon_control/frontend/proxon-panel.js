@@ -23,7 +23,7 @@ const TEXT = {
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
     close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
-    end: "{f} beenden", unavailable: "nicht erreichbar", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
+    end: "{f} beenden", unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
     holidayNeedsPlan: "Bitte zuerst Abreise und Rückkehr eintragen, dann lässt sich der Urlaubsmodus einschalten.",
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", settings: "Einstellungen", status: "Status",
@@ -80,7 +80,7 @@ const TEXT = {
     releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
     close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
-    end: "End {f}", unavailable: "unavailable", switchingOn: "switching on …", switchingOff: "switching off …",
+    end: "End {f}", unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
     holidayNeedsPlan: "Please enter departure and return first, then holiday mode can be switched on.",
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", settings: "Settings", status: "Status",
@@ -137,6 +137,9 @@ const FUNCS = [
   { k: "cooling", sw: "Nachtkuehlung", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
 ];
+
+// limits shown with the value measured now (CO2 only with a CO2 sensor that delivers values)
+const NOW_OF = { GrenzwertFeuchte: "LuftfeuchteRel", GrenzwertCO2: "CurrentCO2" };
 
 // the settings tab: sections of rows (shown when their entities exist); a status sensor says what the function is doing
 const SETTINGS = [
@@ -403,6 +406,8 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .s-rail, .s-fill { position: absolute; left: 0; top: 19px; height: 6px; border-radius: 6px; }
 .s-rail { right: 0; background: var(--line); }
 .s-fill { background: var(--accent); width: 0; }
+.s-now { position: absolute; top: 13px; width: 3px; height: 18px; margin-left: -1.5px; border-radius: 2px; background: var(--fg); opacity: .55; }
+.row-label small.now-val { color: var(--fg); font-weight: 600; }
 .s-knob { position: absolute; top: 8px; left: 0; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface-solid);
   box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); transition: scale 120ms ease-out; }
 .slider.dragging .s-knob { scale: 1.12; }
@@ -976,9 +981,11 @@ class ProxonPanel extends HTMLElement {
     });
     return ctl;
   }
-  _sliderRow(id, label, sub) {
-    return `<div class="srow" id="${id}"><div class="srow-head"><span class="row-label">${label}${sub ? `<small>${sub}</small>` : ""}</span><b class="num sval"></b></div>
-      <div class="slider" tabindex="0" role="slider" aria-label="${label}"><div class="s-rail"></div><div class="s-fill"></div><div class="s-knob"></div></div>
+  _sliderRow(id, label, sub, nowKey) {
+    const now = nowKey ? `<small class="now-val num" id="nowv-${id}" hidden></small>` : "";
+    const tick = nowKey ? `<div class="s-now" id="nowt-${id}" hidden></div>` : "";
+    return `<div class="srow" id="${id}"><div class="srow-head"><span class="row-label">${label}${now}${sub ? `<small>${sub}</small>` : ""}</span><b class="num sval"></b></div>
+      <div class="slider" tabindex="0" role="slider" aria-label="${label}"><div class="s-rail"></div><div class="s-fill"></div>${tick}<div class="s-knob"></div></div>
       <div class="s-ends num"><span class="s-min"></span><span class="s-max"></span></div></div>`;
   }
   _sliderShow(row, format) {  // how a slider row shows a value
@@ -1019,7 +1026,7 @@ class ProxonPanel extends HTMLElement {
         }
         if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
           <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
-        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint);
+        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint, NOW_OF[key]);
         if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
@@ -1094,6 +1101,19 @@ class ProxonPanel extends HTMLElement {
       }
       const foot = v.querySelector(`#foot-${sec.id}`), st = sec.status && this.st(sec.status);
       if (foot && st) foot.textContent = `${this.t.status}: ${this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state}`;
+    }
+    // the value measured now, at the limits it is compared with
+    for (const [limit, sensor] of Object.entries(NOW_OF)) {
+      const id = `num-${limit}`, val = v.querySelector(`#nowv-${id}`), tick = v.querySelector(`#nowt-${id}`);
+      if (!val || !tick) continue;
+      const cur = this.num(sensor), st = this.st(limit), a = st ? st.attributes : {};
+      const has = cur !== null && !(sensor === "CurrentCO2" && cur <= 0);  // a CO2 reading of 0: no sensor delivering values
+      val.hidden = tick.hidden = !has;
+      if (!has) continue;
+      const unit = sensor === "CurrentCO2" ? " ppm" : " %";
+      val.textContent = `${this.t.nowLabel} ${this.fmt(cur, 0)}${unit}`;
+      tick.style.left = `${(clamp((cur - a.min) / (a.max - a.min), 0, 1) * 100).toFixed(1)}%`;
+      tick.title = val.textContent;
     }
     for (let d = 0; d < 7; d++) {
       const el = v.querySelector(`#day-sum-${d}`);
