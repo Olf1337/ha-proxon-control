@@ -23,7 +23,10 @@ const TEXT = {
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
     close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
-    end: "{f} beenden", unavailable: "nicht erreichbar", home: "Zuhause", settings: "Einstellungen", status: "Status",
+    end: "{f} beenden", unavailable: "nicht erreichbar", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
+    holidayNeedsPlan: "Bitte zuerst Abreise und Rückkehr eintragen, dann lässt sich der Urlaubsmodus einschalten.",
+    holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
+    holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", settings: "Einstellungen", status: "Status",
     days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis", lvl: "Stufe",
     daysShort: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
     hint: {
@@ -77,7 +80,10 @@ const TEXT = {
     releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
     close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
-    end: "End {f}", unavailable: "unavailable", home: "Home", settings: "Settings", status: "Status",
+    end: "End {f}", unavailable: "unavailable", switchingOn: "switching on …", switchingOff: "switching off …",
+    holidayNeedsPlan: "Please enter departure and return first, then holiday mode can be switched on.",
+    holidayReturnPast: "The return is in the past. Please enter a new return.",
+    holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", settings: "Settings", status: "Status",
     days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to", lvl: "level",
     daysShort: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     hint: {
@@ -343,6 +349,8 @@ button.card:active, .card.pressed { transform: scale(.985); }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform 320ms cubic-bezier(.3,1.4,.5,1); }
 .switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-busy="true"] { opacity: .55; cursor: progress; }
+.row-label small.pend { color: var(--accent); font-weight: 600; }
 .switch[aria-checked="true"]::after { transform: translateX(20px); }
 .pill-switch .switch { width: 44px; height: 26px; pointer-events: none; }
 .pill-switch .switch::after { width: 20px; height: 20px; }
@@ -696,7 +704,8 @@ class ProxonPanel extends HTMLElement {
     this.$("hum-wrap").hidden = hum === null; this.$("hum").textContent = `${this.fmt(hum, 0)} %`;
     const boost = (this.st("Intensivlueftung") || {}).state === "on";
     this.$("boost").hidden = !this.st("Intensivlueftung");
-    this.$("boost").setAttribute("aria-pressed", boost); this.$("boost-sw").setAttribute("aria-checked", boost);
+    this.$("boost").setAttribute("aria-pressed", this.swOn("Intensivlueftung")); this.$("boost-sw").setAttribute("aria-checked", this.swOn("Intensivlueftung"));
+    this.$("boost-sw").setAttribute("aria-busy", this.swBusy("Intensivlueftung"));
     const left = this.num("IntensivlueftungsRestDauer");
     // the time left, small below the name, while boost ventilation runs
     this.$("boost-left").hidden = !boost || left === null;
@@ -1069,7 +1078,7 @@ class ProxonPanel extends HTMLElement {
     for (const sec of SETTINGS) {
       for (const [kind, key] of sec.rows) {
         const st = this.st(key);
-        if (kind === "switch") { const b = v.querySelector(`#set-${CSS.escape(key)}`); if (b && st) b.setAttribute("aria-checked", st.state === "on"); }
+        if (kind === "switch" && st) this._swDraw(`set-${key}`, key);
         if (kind === "select") v.querySelectorAll(`#sel-${CSS.escape(key)} button`).forEach(b => b.setAttribute("aria-pressed", !!st && b.dataset.o === st.state));
         if (kind === "time") {
           const i = v.querySelector(`#time-${CSS.escape(key)}`);
@@ -1171,9 +1180,43 @@ class ProxonPanel extends HTMLElement {
     if (this._opener) this._opener.focus();
   }
   _sw(id, label, sub) {
-    return `<div class="row"><span class="row-label">${label}${sub ? `<small>${sub}</small>` : ""}</span><button class="switch" role="switch" id="${id}" aria-label="${label}" aria-checked="false"></button></div>`;
+    return `<div class="row"><span class="row-label">${label}${sub ? `<small>${sub}</small>` : ""}<small class="pend" id="pend-${id}" hidden></small></span><button class="switch" role="switch" id="${id}" aria-label="${label}" aria-checked="false"></button></div>`;
   }
-  _toggle(key) { const e = this.id(key); if (e) this.call("switch", "toggle", { entity_id: e }).catch(() => {}); }
+  _swDraw(id, key) {  // a switch row: its state, and "switching on …" while that is on its way
+    const b = this.$(id), pend = this.$(`pend-${id}`); if (!b) return;
+    const busy = this.swBusy(key), on = this.swOn(key);
+    b.setAttribute("aria-checked", on); b.setAttribute("aria-busy", busy);
+    if (pend) { pend.hidden = !busy; pend.textContent = on ? this.t.switchingOn : this.t.switchingOff; }
+  }
+  // a switch flips at once and shows "switching on …" until the unit reports it (holiday mode writes many values and takes
+  // a while); a tap meanwhile is ignored, and the action sent is the state shown (never "toggle")
+  swOn(key) {
+    const st = this.st(key), on = !!st && st.state === "on", p = (this._swPending || new Map()).get(key);
+    if (p && (on === p.want || Date.now() - p.at > 90000)) { this._swPending.delete(key); return on; }
+    return p ? p.want : on;
+  }
+  swBusy(key) { this.swOn(key); return !!this._swPending && this._swPending.has(key); }
+  _toggle(key) {
+    const e = this.id(key); if (!e || this.swBusy(key)) return;
+    const want = !this.swOn(key);
+    if (want && key === "Urlaubsmodus" && !this._holidayPlanned()) return;
+    (this._swPending || (this._swPending = new Map())).set(key, { want, at: Date.now() });
+    this._update();
+    this.call("switch", want ? "turn_on" : "turn_off", { entity_id: e }).catch(() => { this._swPending.delete(key); this._update(); });
+  }
+  // holiday mode only with departure and return (in the future): otherwise a hint, and the first missing date is offered
+  _holidayPlanned() {
+    const t = this.t, at = k => { const st = this.st(k); const d = st ? new Date(st.state) : null; return d && !isNaN(d) ? d : null; };
+    const start = at("UrlaubAb"), end = at("UrlaubBis");
+    const problem = !start || !end ? t.holidayNeedsPlan : end <= new Date() ? t.holidayReturnPast : end <= start ? t.holidayOrder : null;
+    if (!problem) return true;
+    this._toast(problem, null);
+    if (this._current === "settings") {
+      const i = this.$(`dt-${!start ? "UrlaubAb" : "UrlaubBis"}`);
+      if (i) { i.scrollIntoView({ block: "center", behavior: reduceMotion.matches ? "auto" : "smooth" }); i.focus(); }
+    } else this._tab("settings");
+    return false;
+  }
 
   _sheetVentilation(from) {
     const t = this.t, sel = this.st("Betriebsart"), opts = sel ? sel.attributes.options || [] : [];
@@ -1195,7 +1238,7 @@ class ProxonPanel extends HTMLElement {
     }, () => {
       this.$("v-sub").textContent = `${t.supply} ${this.$("v-supply").textContent} · ${t.extract} ${this.$("v-extract").textContent} · ${this.$("rpm-s-t").textContent}`;
       const m = this.st("Betriebsart"); this.shadowRoot.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", !!m && b.dataset.o === m.state));
-      const sb = this.$("s-boost"); if (sb) sb.setAttribute("aria-checked", (this.st("Intensivlueftung") || {}).state === "on");
+      this._swDraw("s-boost", "Intensivlueftung");
       const auto = (m && m.state === "eco_comfort") || (this.st("Intensivlueftung") || {}).state === "on";
       const lv = this.$("level"); if (lv) { lv.classList.toggle("auto", auto); lv.setAttribute("aria-disabled", auto); this.$("level-note").hidden = !auto; }
       if (this._levelSync) this._levelSync();
@@ -1258,7 +1301,7 @@ class ProxonPanel extends HTMLElement {
     }, () => {
       this.$("w-sub").textContent = `${this.$("w-temp").textContent} · ${t.bottom} ${this.$("w-bottom").textContent}`;
       (this._sheetCtl || []).forEach(c => c.sync());
-      [["s-pump", "T300Betriebsart"], ["s-heater", "E-Heizstab"]].forEach(([id, k]) => { const b = this.$(id); if (b) b.setAttribute("aria-checked", (this.st(k) || {}).state === "on"); });
+      [["s-pump", "T300Betriebsart"], ["s-heater", "E-Heizstab"]].forEach(([id, k]) => this._swDraw(id, k));
     });
   }
   _sheetRoom(n, from) {
