@@ -13,7 +13,7 @@ import voluptuous as vol
 from .const import CONF_PICTURE_THEME, DOMAIN
 from .coordinator import ProxonCoordinator
 from .dashboard import build
-from .dashboard_store import DashboardStoreError, async_store_dashboard
+from .dashboard_store import OLD_TITLE, TITLE, DashboardStoreError, async_retitle, async_store_dashboard
 from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
 from .theme import GLASS_THEME_NAME, THEME_FILE, THEME_NAME, async_install_theme
@@ -142,7 +142,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         await async_copy_day(hass, coordinator, DAYS.index(call.data["source_day"]), [DAYS.index(d) for d in call.data["target_days"]])
 
     async def create_dashboard(call: ServiceCall) -> ServiceResponse:
-        """The ready-made dashboard, with this unit's real entity IDs: put into Home Assistant as the dashboard "Proxon"
+        """The ready-made dashboard, with this unit's real entity IDs: put into Home Assistant as the dashboard "Proxon Control"
         (created on the first run, written anew on every further one). With "paste only" it is just returned (starting
         with `views:`), to paste into the raw configuration editor of a dashboard of one's own."""
         entry = _entry(hass, call.data.get(ATTR_CONFIG_ENTRY))
@@ -160,7 +160,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         except OSError:
             pass
         try:
-            created = await async_store_dashboard(hass, url, "Proxon" if first else f"Proxon {entry.title}", config)
+            title, old = (TITLE, OLD_TITLE) if first else (f"{TITLE} {entry.title}", f"{OLD_TITLE} {entry.title}")
+            created = await async_store_dashboard(hass, url, title, config)
+            await async_retitle(hass, url, title, only_from=old)  # its title until 0.21
         except DashboardStoreError as err:
             if str(err) == "yaml":
                 reason = (f"Unter /{url} gibt es schon ein Dashboard aus der YAML-Konfiguration; das wird nicht überschrieben."

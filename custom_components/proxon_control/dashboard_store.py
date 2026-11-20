@@ -32,6 +32,23 @@ def _dashboards_collection(hass: HomeAssistant) -> Any:
     return getattr(getattr(handler, "__self__", None), "storage_collection", None)
 
 
+OLD_TITLE = "Proxon"  # until 0.21: since then the page "Proxon" is our own interface, the dashboard is "Proxon Control"
+TITLE = "Proxon Control"
+
+
+async def async_retitle(hass: HomeAssistant, url_path: str, title: str, only_from: str | None = None) -> bool:
+    """Give the dashboard at url_path a new title in the sidebar (only when it still has `only_from`, if given: a title chosen
+    by hand stays). Returns whether it was changed."""
+    collection = _dashboards_collection(hass)
+    if collection is None:
+        return False
+    for item_id, item in dict(getattr(collection, "data", {})).items():
+        if item.get("url_path") == url_path and item.get("title") != title and (only_from is None or item.get("title") == only_from):
+            await collection.async_update_item(item_id, {"title": title})
+            return True
+    return False
+
+
 async def async_store_dashboard(hass: HomeAssistant, url_path: str, title: str, config: dict[str, Any]) -> bool:
     """Write the dashboard at url_path (created first if it isn't there). Returns whether it was created."""
     try:

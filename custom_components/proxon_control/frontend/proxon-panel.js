@@ -18,7 +18,25 @@ const TEXT = {
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
     more: "Alle Werte", close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
-    end: "{f} beenden", unavailable: "nicht erreichbar", levelAuto: "Im ECO-Komfortbetrieb und während der Intensivlüftung wählt die Anlage die Stufe selbst.",
+    end: "{f} beenden", unavailable: "nicht erreichbar", home: "Zuhause", settings: "Einstellungen", status: "Status",
+    days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis",
+    copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
+    s: {
+      vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
+      store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz mit Sonne", cooling: "Sommer-Nachtkühlung",
+      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen",
+      IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
+      ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
+      UrlaubVorlauf: "Vor der Rückkehr aufwärmen", UrlaubsplanLoeschen: "Urlaubsplan löschen", SollWassertemperatur: "Solltemperatur",
+      T300Betriebsart: "Wärmepumpe", "E-Heizstab": "Heizstab freigegeben", "Soll-E-Heizstab-Temperatur": "Heizstab bis",
+      Legionellenfunktion: "Legionellenschaltung der Anlage", WarmwasserBoost: "Boost an", BoostGrenze: "Boost unter",
+      SolarWarmwasser: "Mit PV-Überschuss heizen", SolarSchwelle: "Überschuss ab", PreisWarmwasser: "Mit günstigem Strom heizen",
+      PreisSchwelle: "Strompreis unter", SpeicherTemperatur: "Speichern bis", LegionellenSonne: "Legionellenschutz mit Sonne",
+      LegionellenZeit: "Ohne Sonne um", Nachtkuehlung: "Nachtkühlung an", KuehlWunsch: "Wunschtemperatur innen", KuehlStufe: "Kühlstufe",
+      SaisonAutomatik: "Automatisch umschalten", SaisonWinterUnter: "Winter unter", SaisonSommerUeber: "Sommer über",
+      NachtabsenkungAktiv: "Nachtabsenkung an", NachtabsenkungTemperatur: "Nachttemperatur", NachtabsenkungStart: "Beginn",
+      NachtabsenkungEnde: "Ende", WaermeelementeAlle: "Wärmeelemente aller Räume",
+    }, levelAuto: "Im ECO-Komfortbetrieb und während der Intensivlüftung wählt die Anlage die Stufe selbst.",
     fn: {
       holiday: ["Urlaubsmodus", "Lüftung Stufe 1, Räume kühler", "bis {d}"],
       solar: ["PV-Überschuss", "heizt das Warmwasser auf {t} °C"],
@@ -41,7 +59,25 @@ const TEXT = {
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
     releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
     more: "All values", close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
-    end: "End {f}", unavailable: "unavailable", levelAuto: "In ECO comfort mode and during boost ventilation the unit chooses the level itself.",
+    end: "End {f}", unavailable: "unavailable", home: "Home", settings: "Settings", status: "Status",
+    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to",
+    copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
+    s: {
+      vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
+      store: "Solar surplus and cheap power", legionella: "Legionella protection with solar", cooling: "Summer night cooling",
+      season: "Summer/winter automatic", night: "Night setback", heating: "Heating",
+      IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
+      ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
+      UrlaubVorlauf: "Warm up before the return", UrlaubsplanLoeschen: "Clear holiday plan", SollWassertemperatur: "Target temperature",
+      T300Betriebsart: "Heat pump", "E-Heizstab": "Immersion heater enabled", "Soll-E-Heizstab-Temperatur": "Heater up to",
+      Legionellenfunktion: "Unit's legionella function", WarmwasserBoost: "Boost on", BoostGrenze: "Boost below",
+      SolarWarmwasser: "Heat with solar surplus", SolarSchwelle: "Surplus from", PreisWarmwasser: "Heat with cheap power",
+      PreisSchwelle: "Price below", SpeicherTemperatur: "Store up to", LegionellenSonne: "Legionella protection with solar",
+      LegionellenZeit: "Without sun at", Nachtkuehlung: "Night cooling on", KuehlWunsch: "Wanted indoor temperature", KuehlStufe: "Cooling level",
+      SaisonAutomatik: "Switch automatically", SaisonWinterUnter: "Winter below", SaisonSommerUeber: "Summer above",
+      NachtabsenkungAktiv: "Night setback on", NachtabsenkungTemperatur: "Night temperature", NachtabsenkungStart: "Start",
+      NachtabsenkungEnde: "End", WaermeelementeAlle: "Heating elements of all rooms",
+    }, levelAuto: "In ECO comfort mode and during boost ventilation the unit chooses the level itself.",
     fn: {
       holiday: ["Holiday mode", "ventilation level 1, rooms cooler", "until {d}"],
       solar: ["Solar surplus", "heating the hot water to {t} °C"],
@@ -68,6 +104,21 @@ const FUNCS = [
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
   { k: "cooling", sw: "Nachtkuehlung", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
+];
+
+// the settings tab: sections of rows (shown when their entities exist); a status sensor says what the function is doing
+const SETTINGS = [
+  { id: "vent", rows: [["num", "IntensivlueftungsDauer"], ["num", "GrenzwertCO2"], ["num", "GrenzwertFeuchte"]] },
+  { id: "schedule", rows: [["switch", "ZeitprogrammAktiv"], ["days"]] },
+  { id: "holiday", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
+  { id: "water", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
+  { id: "boost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
+  { id: "store", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
+  { id: "legionella", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"]] },
+  { id: "cooling", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
+  { id: "season", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
+  { id: "night", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
+  { id: "heating", rows: [["switch", "WaermeelementeAlle"]] },
 ];
 
 // ---------------- springs ----------------
@@ -104,6 +155,70 @@ const SETTING = 0.99;  // deceleration for targets and levels: a flick moves a s
 const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
+// A value set by dragging sideways (room and hot-water tiles, the sliders in sheets and settings): 1:1 with the finger,
+// a rubber band past the ends, a short momentum, a spring into the nearest step, sent when it rests. On a tile the whole
+// tile is the handle and a move that starts vertical stays a scroll; on a slider the knob jumps to the finger.
+// o: range() -> {min, max, step} or null, value() -> the value to show at rest, show(v, snapped, range) on every frame,
+// commit(v), tile (bool).
+function dragValue(handle, track, o) {
+  let start = null, dragging = false, hist = [], dragged = false, held = false;
+  const snap = (v, r) => clamp(Math.round(v / r.step) * r.step, r.min, r.max);
+  const pos = new Spring(0, v => { const r = o.range(); if (r) o.show(v, snap(v, r), r); });
+  const per = r => track.clientWidth / Math.max(1e-9, r.max - r.min);
+  const at = (x, r) => r.min + (x - track.getBoundingClientRect().left) / per(r);
+  const settle = (target, velocity) => pos.to(target, { damping: velocity ? 0.8 : 1, response: 0.35, velocity,
+    onRest: () => { held = false; o.commit(target); } });
+  const band = (v, r) => (v > r.max ? r.max + rubber(v - r.max, (r.max - r.min) * 0.15) : v < r.min ? r.min - rubber(r.min - v, (r.max - r.min) * 0.15) : v);
+  handle.addEventListener("pointerdown", e => {
+    const r = o.range(); if (!r || (e.button !== undefined && e.button > 0)) return;
+    start = { x: e.clientX, y: e.clientY, v: pos.x, id: e.pointerId, moved: false }; hist = [{ x: e.clientX, t: e.timeStamp }];
+    if (o.tile) { dragging = false; handle.classList.add("pressed"); return; }
+    dragging = true; held = true; try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
+    pos.set(band(at(e.clientX, r), r));
+  });
+  handle.addEventListener("pointermove", e => {
+    if (!start || e.pointerId !== start.id) return;
+    const r = o.range(); if (!r) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (!dragging) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { start = null; handle.classList.remove("pressed"); return; }  // a scroll
+      if (Math.abs(dx) < 10) return;
+      dragging = true; held = true; handle.classList.remove("pressed"); handle.classList.add("dragging");
+      try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
+    }
+    start.moved = true;
+    hist.push({ x: e.clientX, t: e.timeStamp }); if (hist.length > 6) hist.shift();
+    pos.set(band(o.tile ? start.v + dx / per(r) : at(e.clientX, r), r));
+  });
+  const end = () => {
+    handle.classList.remove("pressed");
+    if (!start) return;
+    const r = o.range();
+    if (dragging && r) {
+      const a = hist[0], b = hist[hist.length - 1], vel = start.moved ? (b.x - a.x) / Math.max(1, b.t - a.t) * 1000 / per(r) : 0;
+      // momentum carries at most two steps past where the finger let go: a flick nudges a setting, it never throws it
+      const carry = clamp(project(vel * per(r), SETTING) / per(r), -2 * r.step, 2 * r.step);
+      settle(snap(pos.x + carry, r), vel ? clamp(vel, -8 * r.step / 0.35, 8 * r.step / 0.35) : undefined);
+      handle.classList.remove("dragging");
+      if (o.tile) { dragged = true; setTimeout(() => { dragged = false; }, 0); }  // the click that ends a drag opens nothing
+    }
+    start = null; dragging = false;
+  };
+  handle.addEventListener("pointerup", end); handle.addEventListener("pointercancel", end);
+  // drawn again when the track gets its width (first layout, rotation, a sheet opening)
+  if (window.ResizeObserver) new ResizeObserver(() => { if (o.range() && !activeSprings.has(pos)) pos.set(pos.x); }).observe(track);
+  handle.addEventListener("keydown", e => {
+    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key], r = o.range();
+    if (!d || !r) return; e.preventDefault(); held = true;
+    settle(snap((activeSprings.has(pos) ? pos.target : o.value()) + d * r.step, r));
+  });
+  return {
+    pos, dragged: () => dragged,
+    sync() { if (!held && !activeSprings.has(pos) && o.range()) pos.set(o.value()); },  // follow the entity while untouched
+    back(v) { held = false; pos.to(v, { damping: 1, response: 0.35 }); },  // a write that failed: back to what the unit has
+  };
+}
+
 const STYLE = `
 :host {
   --bg: #eef1f4; --surface: rgba(255,255,255,.78); --surface-solid: #fff; --line: rgba(20,32,45,.08); --fg: #14202d; --fg-2: #586675;
@@ -126,8 +241,28 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
 .num { font-variant-numeric: tabular-nums; }
 .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
-.status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.status h1 { font: 700 1.6rem/1.1 var(--font-display); letter-spacing: -.02em; margin: 0 auto 0 0; display: flex; align-items: center; gap: 6px; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.head h1 { font: 700 1.6rem/1.1 var(--font-display); letter-spacing: -.02em; margin: 0 auto 0 0; display: flex; align-items: center; gap: 6px; }
+.tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--line); }
+.tabs button { border: 0; background: transparent; padding: 7px 14px; border-radius: 9px; font-size: .9375rem; font-weight: 600; color: var(--fg-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface-solid); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.view { display: grid; gap: 20px; }
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.group { display: grid; gap: 6px; }
+.group h2 { font: 600 .8125rem/1.2 var(--font); letter-spacing: .02em; text-transform: uppercase; color: var(--fg-2); margin: 0 4px; }
+.group .card { padding: 0 16px; }
+.group .card > :first-child { border-top: 0; }
+.group .foot { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
+.tin { font: 600 1rem var(--font); color: var(--fg); background: var(--line); border: 0; border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.day { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line);
+  background: none; padding: 13px 0; text-align: left; cursor: pointer; }
+.day span:last-child { color: var(--fg-2); font-size: .875rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.day::after { content: "›"; color: var(--fg-3); font-size: 1.2rem; margin-left: 4px; }
+.textbtn { width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); background: none; padding: 14px 0; color: var(--accent); font-weight: 600; cursor: pointer; }
+.textbtn.warn { color: var(--danger); }
+.phase { padding: 12px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.phase-times { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--fg-2); }
 .menu { width: 40px; height: 40px; border: 0; border-radius: 12px; background: none; cursor: pointer; display: grid; place-items: center; margin-left: -8px; }
 .menu svg { width: 24px; height: 24px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line);
@@ -177,6 +312,20 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .water-lines b { color: var(--fg); font-weight: 600; }
 .working { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
   background: color-mix(in srgb, var(--water-hot) 14%, transparent); font-size: .8125rem; font-weight: 600; }
+.water-set { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; font-size: .875rem; color: var(--fg-2); position: relative; }
+.water-set b { color: var(--fg); font-weight: 600; }
+#water { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.srow { padding: 14px 0 6px; border-top: 1px solid var(--line); }
+.srow-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.sval { font: 700 1.25rem var(--font-display); letter-spacing: -.02em; white-space: nowrap; }
+.slider { position: relative; height: 44px; margin: 2px 14px 0; touch-action: none; cursor: pointer; }
+.s-rail, .s-fill { position: absolute; left: 0; top: 19px; height: 6px; border-radius: 6px; }
+.s-rail { right: 0; background: var(--line); }
+.s-fill { background: var(--accent); width: 0; }
+.s-knob { position: absolute; top: 8px; left: 0; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface-solid);
+  box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); transition: scale 120ms ease-out; }
+.slider.dragging .s-knob { scale: 1.12; }
+.s-ends { display: flex; justify-content: space-between; font-size: .75rem; color: var(--fg-3); margin: -4px 0 4px; }
 .active-wrap { overflow: hidden; margin: -6px; padding: 6px; }
 .active { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
 .fn { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
@@ -288,12 +437,16 @@ class ProxonPanel extends HTMLElement {
     const t = this.t;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style>
       <div class="page">
-        <header class="status">
-          <h1><button class="menu" id="menu" aria-label="Menu" ${this._narrow ? "" : "hidden"}><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>${t.title}</h1>
+        <header class="head">
+          <h1><button class="menu" id="menu" aria-label="Menu" ${this._narrow ? "" : "hidden"}><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><span id="h-title">${t.home}</span></h1>
+          <div class="tabs" role="tablist"><button role="tab" id="tab-home" aria-selected="true">${t.home}</button><button role="tab" id="tab-settings" aria-selected="false">${t.settings}</button></div>
+        </header>
+        <div class="view" id="v-home">
+        <div class="status">
           <span class="chip">${t.outside} <b class="num" id="c-out">–</b></span>
           <span class="chip" id="c-op-wrap">${t.op} <b id="c-op">–</b></span>
           <span class="chip"><span class="dot" id="c-dot"></span><b id="c-ok">${t.ok}</b></span>
-        </header>
+        </div>
         <div class="active-wrap" id="active-wrap"><div class="active" id="active" aria-live="polite"></div></div>
         <section class="top">
           <section class="card" aria-label="${t.unit}">
@@ -332,13 +485,17 @@ class ProxonPanel extends HTMLElement {
                 <g clip-path="url(#tank-clip)"><rect id="w-fill" x="0" y="170" width="74" height="170" fill="url(#wg)"/></g>
               </svg>
               <div><div class="water-big num" id="w-temp">–</div>
-                <div class="water-lines"><span id="w-shower"></span><span>${t.bottom} <b class="num" id="w-bottom">–</b> · ${t.target} <b class="num" id="w-target">–</b></span>
+                <div class="water-lines"><span id="w-shower"></span><span>${t.bottom} <b class="num" id="w-bottom">–</b></span>
                   <span id="w-charge-wrap">${t.charge} <b class="num" id="w-charge">–</b></span></div>
                 <span class="working" id="w-working" hidden><svg width="14" height="14" viewBox="0 0 28 37" aria-hidden="true">${FLAME}</svg><span id="w-who"></span></span></div>
             </div>
+            <div id="w-set-wrap"><div class="water-set"><span>${t.target} <b class="num" id="w-target">–</b></span><span class="saved" id="w-saved">${t.sent}</span></div>
+              <div class="track" id="w-track" aria-hidden="true"><span class="now-mark" id="w-now"></span><span class="mark" id="w-mark"></span></div></div>
           </button>
         </section>
         <div id="floors"></div>
+        </div>
+        <div class="view" id="v-settings" hidden></div>
       </div>
       <div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button id="toast-undo">${t.undo}</button></div>
       <div class="scrim" id="scrim"></div>
@@ -346,14 +503,42 @@ class ProxonPanel extends HTMLElement {
         <button class="close" id="sheet-close" aria-label="${t.close}">✕</button><div id="sheet-body"></div></div>`;
     this.$("menu").addEventListener("click", () => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })));
     this.$("boost").addEventListener("click", () => this._toggle("Intensivlueftung"));
+    this._viewIn = new Spring(1, v => { const el = this._shownView; if (el) { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.translate = `${((1 - v) * this._viewDir * 24).toFixed(1)}px 0`; } });
+    this.$("tab-home").addEventListener("click", () => this._tab("home"));
+    this.$("tab-settings").addEventListener("click", () => this._tab("settings"));
     this.$("unit").addEventListener("click", e => this._sheetVentilation(e.currentTarget));
-    this.$("water").addEventListener("click", e => this._sheetWater(e.currentTarget));
+    this.$("water").addEventListener("click", e => { if (!this._wCtl.dragged()) this._sheetWater(e.currentTarget); });
+    this._wCtl = this._numberDrag(this.$("water"), this.$("w-track"), "SollWassertemperatur", {
+      tile: true,
+      show: (v, snapped, r) => {
+        this.$("w-mark").style.transform = `translateX(${((v - r.min) / (r.max - r.min) * this.$("w-track").clientWidth).toFixed(1)}px)`;
+        this.$("w-target").textContent = `${this.fmt(snapped, 0)}°`;
+      },
+      done: () => { const s = this.$("w-saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400); },
+    });
     this._fill = new Spring(0, v => this.$("w-fill").setAttribute("y", (170 * (1 - v)).toFixed(1)));
     this._wrapH = new Spring(0, v => { this.$("active-wrap").style.height = `${v.toFixed(1)}px`; });
     this._buildSheet();
     this._buildToast();
     this._buildAir();
     this._startAir();
+    let tab = "home"; try { tab = sessionStorage.getItem("proxon-tab") || "home"; } catch (_) { /* no storage */ }
+    if (tab === "settings") this._tab("settings", true);
+  }
+
+  // ---------- tabs: home and settings; the new one slides in from its side ----------
+  _tab(name, instant) {
+    const home = name === "home";
+    if (this._current === name) return;
+    this._current = name;
+    try { sessionStorage.setItem("proxon-tab", name); } catch (_) { /* no storage */ }
+    this.$("tab-home").setAttribute("aria-selected", home); this.$("tab-settings").setAttribute("aria-selected", !home);
+    this.$("h-title").textContent = home ? this.t.home : this.t.settings;
+    if (!home && !this._settingsBuilt) this._buildSettings();
+    this.$("v-home").hidden = !home; this.$("v-settings").hidden = home;
+    this._shownView = this.$(home ? "v-home" : "v-settings"); this._viewDir = home ? -1 : 1;
+    if (instant) this._viewIn.set(1); else { this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 }); }
+    if (!home) this._updateSettings();
   }
 
   // ---------- live values ----------
@@ -394,7 +579,10 @@ class ProxonPanel extends HTMLElement {
       const sh = this.num("WarmwasserDuschminuten");
       this.$("w-shower").hidden = sh === null; this.$("w-shower").innerHTML = fill(t.shower, { m: `<b class="num">${this.fmt(sh, 0)}</b>` });
       this.$("w-bottom").textContent = deg("WarmwasserUntenTemperatur");
-      const wt = this.num("SollWassertemperatur"); this.$("w-target").textContent = wt === null ? "–" : `${this.fmt(wt, 0)}°`;
+      const wt = this.num("SollWassertemperatur"), wn = this.st("SollWassertemperatur");
+      this.$("w-set-wrap").hidden = !wn;
+      if (wn && w !== null) this.$("w-now").style.left = `${(clamp((w - wn.attributes.min) / (wn.attributes.max - wn.attributes.min), 0, 1) * 100).toFixed(1)}%`;
+      this._wCtl.sync();
       const ch = this.num("WarmwasserLadezustand");
       this.$("w-charge-wrap").hidden = ch === null; this.$("w-charge").textContent = `${this.fmt(ch, 0)} %`;
       const level = ch !== null ? ch / 100 : w !== null && wt ? clamp((w - 20) / Math.max(1, wt - 20), 0, 1) : 0;
@@ -403,6 +591,7 @@ class ProxonPanel extends HTMLElement {
     this._updateFunctions();
     this._updateRooms();
     if (this._sheetRefresh) this._sheetRefresh();
+    if (this._settingsBuilt && this._current === "settings") this._updateSettings();
   }
 
   // ---------- the air: particles along the ducts at the speed of the fans ----------
@@ -550,14 +739,16 @@ class ProxonPanel extends HTMLElement {
       <div class="room-temp num"></div><div class="room-target"><span>${t.target} <b class="num tv"></b></span><span class="saved">${t.sent}</span></div>
       <div class="track" aria-hidden="true"><span class="now-mark"></span><span class="mark"></span></div>`;
     const $ = s => el.querySelector(s), track = $(".track"), mark = $(".mark");
-    let r = null, shown = null, dragging = false, start = null, hist = [], dragged = false;
+    let r = null, shown = null;
     const frac = v => r ? (v - r.min) / (r.max - r.min) : 0;
     const digits = () => (r && r.step < 1 ? 1 : 0);
-    const pos = new Spring(0, v => {
-      mark.style.transform = `translateX(${(frac(v) * track.clientWidth).toFixed(1)}px)`;
-      if (!r) return;
-      const snapped = clamp(Math.round(v / r.step) * r.step, r.min, r.max);
-      if (snapped !== shown) { shown = snapped; $(".tv").textContent = `${this.fmt(snapped, digits())}°`; }
+    const ctl = dragValue(el, track, {
+      tile: true, range: () => r && { min: r.min, max: r.max, step: r.step }, value: () => r.target,
+      show: (v, snapped) => {
+        mark.style.transform = `translateX(${(frac(v) * track.clientWidth).toFixed(1)}px)`;
+        if (snapped !== shown) { shown = snapped; $(".tv").textContent = `${this.fmt(snapped, digits())}°`; }
+      },
+      commit: v => commit(v),
     });
     const ring = x => { const d = x.temp - x.target; return d < -1 ? "var(--cold)" : d > 1 ? "var(--warm)" : "var(--fine)"; };
     const render = () => {
@@ -570,56 +761,193 @@ class ProxonPanel extends HTMLElement {
       $(".state").style.setProperty("--ring", r.available && r.temp != null ? ring(r) : "transparent");
       $(".now-mark").style.left = `${(clamp(frac(r.temp), 0, 1) * 100).toFixed(1)}%`;
       el.setAttribute("aria-label", `${r.name}: ${this.fmt(r.temp)} °C, ${t.target} ${this.fmt(r.target, digits())} °C, ${t.element[r.element] || ""}`);
-      if (!dragging && !activeSprings.has(pos)) { shown = null; pos.set(r.target); }
+      ctl.sync();
     };
     const commit = v => {
       if (!r || v === r.target) return;
       this._pending.set(n, { v, at: Date.now() });
       this.call("climate", "set_temperature", { entity_id: r.entity, temperature: v }).then(() => {
         const s = $(".saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400);
-      }, () => { this._pending.delete(n); render(); pos.to(this._room(n).target, { damping: 1, response: 0.35 }); });
+      }, () => { this._pending.delete(n); render(); ctl.back(this._room(n).target); });
     };
-    el.addEventListener("pointerdown", e => {
-      if (!r) return;
-      start = { x: e.clientX, y: e.clientY, v: pos.x, id: e.pointerId }; dragging = false; hist = [{ x: e.clientX, t: e.timeStamp }];
-      el.classList.add("pressed");
-    });
-    el.addEventListener("pointermove", e => {
-      if (!start || e.pointerId !== start.id) return;
-      const dx = e.clientX - start.x, dy = e.clientY - start.y;
-      if (!dragging) {
-        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { start = null; el.classList.remove("pressed"); return; }
-        if (Math.abs(dx) < 10) return;
-        dragging = true; el.setPointerCapture(e.pointerId); el.classList.add("dragging"); el.classList.remove("pressed");
-      }
-      hist.push({ x: e.clientX, t: e.timeStamp }); if (hist.length > 6) hist.shift();
-      const per = track.clientWidth / (r.max - r.min);
-      let v = start.v + dx / per;
-      if (v > r.max) v = r.max + rubber(v - r.max, 1.2); if (v < r.min) v = r.min - rubber(r.min - v, 1.2);
-      pos.set(v);
-    });
-    const end = () => {
-      el.classList.remove("pressed");
-      if (!start) return;
-      if (dragging) {
-        const a = hist[0], b = hist[hist.length - 1], per = track.clientWidth / (r.max - r.min);
-        const vel = (b.x - a.x) / Math.max(1, b.t - a.t) * 1000 / per;
-        const target = clamp(Math.round((pos.x + project(vel * per, SETTING) / per) / r.step) * r.step, r.min, r.max);
-        pos.to(target, { damping: 0.8, response: 0.35, velocity: vel, onRest: () => commit(target) });
-        el.classList.remove("dragging");
-        dragged = true; setTimeout(() => { dragged = false; }, 0);
-      }
-      start = null; dragging = false;
-    };
-    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
-    el.addEventListener("click", () => { if (!dragged && r) this._sheetRoom(n, el); });
-    el.addEventListener("keydown", e => {
-      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
-      if (!d || !r) return; e.preventDefault();
-      const v = clamp(r.target + d * r.step, r.min, r.max);
-      pos.to(v, { damping: 1, response: 0.3, onRest: () => commit(v) });
-    });
+    el.addEventListener("click", () => { if (!ctl.dragged() && r) this._sheetRoom(n, el); });
     return { el, render };
+  }
+
+  // ---------- a number entity set by dragging (tile or slider); what was sent shows until the unit reports it ----------
+  _numberDrag(handle, track, key, { tile = false, show, done } = {}) {
+    const pend = this._pendingNum || (this._pendingNum = new Map());
+    const range = () => {
+      const st = this.st(key); if (!st || st.state === "unavailable") return null;
+      const a = st.attributes, min = Number(a.min), max = Number(a.max), step = Number(a.step) || 1;
+      let eff = step;  // a slider with more than ~120 positions gets coarser steps (e.g. a duration in minutes)
+      for (const f of [1, 2, 5, 10, 15, 30, 60]) { eff = step * f; if ((max - min) / eff <= 120) break; }
+      return { min, max, step: eff };
+    };
+    const value = () => {
+      const p = pend.get(key), cur = this.num(key);
+      if (p && (cur === p.v || Date.now() - p.at > 8000)) pend.delete(key);
+      return pend.has(key) ? pend.get(key).v : cur ?? range().min;
+    };
+    const ctl = dragValue(handle, track, {
+      tile, range, value, show,
+      commit: v => {
+        if (v === this.num(key)) return;
+        pend.set(key, { v, at: Date.now() });
+        this.call("number", "set_value", { entity_id: this.id(key), value: v }).then(() => done && done(),
+          () => { pend.delete(key); ctl.back(this.num(key) ?? v); });
+      },
+    });
+    return ctl;
+  }
+  _sliderRow(id, label, sub) {
+    return `<div class="srow" id="${id}"><div class="srow-head"><span class="row-label">${label}${sub ? `<small>${sub}</small>` : ""}</span><b class="num sval"></b></div>
+      <div class="slider" tabindex="0" role="slider" aria-label="${label}"><div class="s-rail"></div><div class="s-fill"></div><div class="s-knob"></div></div>
+      <div class="s-ends num"><span class="s-min"></span><span class="s-max"></span></div></div>`;
+  }
+  _sliderShow(row, format) {  // how a slider row shows a value
+    const sl = row.querySelector(".slider"), knob = row.querySelector(".s-knob"), fillEl = row.querySelector(".s-fill");
+    return (v, snapped, r) => {
+      const x = clamp((v - r.min) / (r.max - r.min), -0.04, 1.04) * sl.clientWidth;
+      knob.style.transform = `translateX(${x.toFixed(1)}px)`; fillEl.style.width = `${clamp(x, 0, sl.clientWidth).toFixed(1)}px`;
+      row.querySelector(".sval").textContent = format(snapped);
+      row.querySelector(".s-min").textContent = format(r.min); row.querySelector(".s-max").textContent = format(r.max);
+      sl.setAttribute("aria-valuenow", snapped); sl.setAttribute("aria-valuetext", format(snapped));
+    };
+  }
+  _numberSlider(row, key, format) {  // a slider row for a number entity
+    const ctl = this._numberDrag(row.querySelector(".slider"), row.querySelector(".slider"), key, { show: this._sliderShow(row, format) });
+    requestAnimationFrame(() => ctl.sync());
+    return ctl;
+  }
+  _unit(key, d = 0) {  // "46 °C", "1.500 W", "30 min": the number entity's own unit
+    const u = ((this.st(key) || {}).attributes || {}).unit_of_measurement || "";
+    return v => `${this.fmt(v, d)}${u ? (u === "°C" || u === "%" ? (u === "%" ? " %" : "°") : ` ${u}`) : ""}`;
+  }
+
+  // ---------- settings: grouped like iOS settings, every row an entity of this unit ----------
+  _label(key) { const s = this.st(key); return this.t.s[key] || (s ? (s.attributes.friendly_name || key).replace(/^Proxon\s+/, "") : key); }
+  _buildSettings() {
+    this._settingsBuilt = true; this._settingCtl = [];
+    const t = this.t, has = k => !!this.id(k);
+    const html = SETTINGS.map(sec => {
+      const rows = sec.rows.filter(r => r[0] === "days" ? has("Zeitprogramm0") : has(r[1]));
+      if (!rows.length) return "";
+      const body = rows.map(([kind, key]) => {
+        if (kind === "switch") return this._sw(`set-${key}`, this._label(key));
+        if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
+          <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
+        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key));
+        if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
+        if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
+        if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
+        return t.days.map((name, d) => `<button class="day" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
+      }).join("");
+      const status = sec.status && has(sec.status) ? `<p class="foot" id="foot-${sec.id}"></p>` : "";
+      return `<section class="group"><h2>${t.s[sec.id]}</h2><div class="card">${body}</div>${status}</section>`;
+    }).join("");
+    this.$("v-settings").innerHTML = `<div class="sgrid">${html}</div>`;
+    const v = this.$("v-settings");
+    for (const sec of SETTINGS) for (const [kind, key] of sec.rows) {
+      if (kind === "switch" && v.querySelector(`#set-${CSS.escape(key)}`)) v.querySelector(`#set-${CSS.escape(key)}`).addEventListener("click", () => this._toggle(key));
+      if (kind === "num" && v.querySelector(`#out-${CSS.escape(key)}`)) this._wireStepper(key);
+      if (kind === "num" && v.querySelector(`#num-${CSS.escape(key)}`)) {
+        const st = this.st(key), d = st && Number(st.attributes.step) < 1 ? 1 : 0;
+        this._settingCtl.push(this._numberSlider(v.querySelector(`#num-${CSS.escape(key)}`), key, this._unit(key, d)));
+      }
+      const time = v.querySelector(`#time-${CSS.escape(key)}`);
+      if (kind === "time" && time) time.addEventListener("change", () => { if (time.value) this.call("time", "set_value", { entity_id: this.id(key), time: `${time.value}:00` }).catch(() => this._updateSettings()); });
+      const dt = v.querySelector(`#dt-${CSS.escape(key)}`);
+      if (kind === "datetime" && dt) dt.addEventListener("change", () => { if (dt.value) this.call("datetime", "set_value", { entity_id: this.id(key), datetime: new Date(dt.value).toISOString() }).catch(() => this._updateSettings()); });
+      const btn = v.querySelector(`#btn-${CSS.escape(key)}`);
+      if (kind === "button" && btn) this._confirmButton(btn, () => this.call("button", "press", { entity_id: this.id(key) }).catch(() => {}));
+    }
+    for (let d = 0; d < 7; d++) { const b = v.querySelector(`#day-${d}`); if (b) b.addEventListener("click", () => this._sheetDay(d, b)); }
+  }
+  _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }
+  _wireStepper(key) {  // taps in a row are sent once, 0.6 s after the last
+    const v = this.$("v-settings"), out = v.querySelector(`#out-${CSS.escape(key)}`), fmt = this._unit(key, 0);
+    const a = this.st(key).attributes, step = (Number(a.step) || 1) * 5;
+    let want = null, timer = 0;
+    const show = () => { out.textContent = fmt(want ?? this.num(key)); };
+    const go = d => {
+      want = clamp(Math.round(((want ?? this.num(key)) + d * step) / step) * step || Number(a.min), Number(a.min), Number(a.max)); show();
+      clearTimeout(timer);
+      timer = setTimeout(() => { const x = want; this.call("number", "set_value", { entity_id: this.id(key), value: x }).then(() => { want = null; show(); }, () => { want = null; show(); }); }, 600);
+    };
+    v.querySelector(`#dn-${CSS.escape(key)}`).addEventListener("click", () => go(-1));
+    v.querySelector(`#up-${CSS.escape(key)}`).addEventListener("click", () => go(1));
+    this._settingCtl.push({ sync: () => { if (want === null) show(); } });
+  }
+  _confirmButton(btn, act) {  // asks once, inline: a second tap within 4 s does it
+    const label = btn.textContent; let armed = 0;
+    btn.addEventListener("click", () => {
+      if (Date.now() - armed < 4000) { armed = 0; btn.textContent = label; act(); return; }
+      armed = Date.now(); btn.textContent = this.t.sure;
+      setTimeout(() => { if (armed && Date.now() - armed >= 4000) { armed = 0; btn.textContent = label; } }, 4100);
+    });
+  }
+  _updateSettings() {
+    const v = this.$("v-settings"); if (!v) return;
+    const focused = this.shadowRoot.activeElement;
+    for (const sec of SETTINGS) {
+      for (const [kind, key] of sec.rows) {
+        const st = this.st(key);
+        if (kind === "switch") { const b = v.querySelector(`#set-${CSS.escape(key)}`); if (b && st) b.setAttribute("aria-checked", st.state === "on"); }
+        if (kind === "time") {
+          const i = v.querySelector(`#time-${CSS.escape(key)}`);
+          if (i && st && i !== focused) i.value = /^\d\d:\d\d/.test(st.state) ? st.state.slice(0, 5) : "";
+        }
+        if (kind === "datetime") {
+          const i = v.querySelector(`#dt-${CSS.escape(key)}`);
+          if (i && st && i !== focused) {
+            const d = new Date(st.state);
+            i.value = isNaN(d) ? "" : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          }
+        }
+      }
+      const foot = v.querySelector(`#foot-${sec.id}`), st = sec.status && this.st(sec.status);
+      if (foot && st) foot.textContent = `${this.t.status}: ${this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state}`;
+    }
+    for (let d = 0; d < 7; d++) {
+      const el = v.querySelector(`#day-sum-${d}`), st = this.st(`Zeitprogramm${d}`);
+      if (el && st) el.textContent = st.state && st.state !== "unknown" ? st.state : this.t.empty;
+    }
+    (this._settingCtl || []).forEach(c => c.sync());
+  }
+  _sheetDay(d, from) {
+    const t = this.t;
+    const phase = p => {
+      const sel = this.st(`ZP${d}_${p}_stufe`), opts = sel ? sel.attributes.options || [] : [];
+      return `<div class="phase"><span class="row-label">${fill(t.phase, { n: p + 1 })}</span>
+        <div class="phase-times"><input class="tin num" type="time" step="60" id="ph-${p}-start" aria-label="${fill(t.phase, { n: p + 1 })} ${t.from}">
+          <span>–</span><input class="tin num" type="time" step="60" id="ph-${p}-end" aria-label="${fill(t.phase, { n: p + 1 })} ${t.to}"></div>
+        ${sel ? `<div class="seg" id="ph-${p}-lvl">${opts.map(o => `<button data-o="${o}">${this._hass.formatEntityState ? this._hass.formatEntityState(sel, o) : o}</button>`).join("")}</div>` : ""}</div>`;
+    };
+    const copy = d === 0 ? ["ZeitprogrammMoDiFr", "ZeitprogrammMoAlle"].filter(k => this.id(k)) : [];
+    this._openSheet(`<h3>${t.days[d]}</h3><p class="sub" id="day-sub"></p>${[0, 1, 2].map(phase).join("")}
+      ${copy.map(k => `<button class="textbtn" id="cp-${k}">${k.endsWith("MoDiFr") ? t.copyWeekdays : t.copyAll}</button>`).join("")}`, from, () => {
+      for (let p = 0; p < 3; p++) {
+        for (const w of ["start", "end"]) {
+          const i = this.$(`ph-${p}-${w}`);
+          i.addEventListener("change", () => { if (i.value) this.call("time", "set_value", { entity_id: this.id(`ZP${d}_${p}_${w}`), time: `${i.value}:00` }).catch(() => this._sheetRefresh && this._sheetRefresh()); });
+        }
+        this.shadowRoot.querySelectorAll(`#ph-${p}-lvl button`).forEach(b => b.addEventListener("click", () =>
+          this.call("select", "select_option", { entity_id: this.id(`ZP${d}_${p}_stufe`), option: b.dataset.o }).catch(() => {})));
+      }
+      copy.forEach(k => this._confirmButton(this.$(`cp-${k}`), () => this.call("button", "press", { entity_id: this.id(k) }).catch(() => {})));
+    }, () => {
+      const sum = this.st(`Zeitprogramm${d}`); this.$("day-sub").textContent = sum && sum.state !== "unknown" ? sum.state : t.empty;
+      const focused = this.shadowRoot.activeElement;
+      for (let p = 0; p < 3; p++) {
+        for (const w of ["start", "end"]) {
+          const i = this.$(`ph-${p}-${w}`), st = this.st(`ZP${d}_${p}_${w}`);
+          if (i && i !== focused) i.value = st && /^\d\d:\d\d/.test(st.state) ? st.state.slice(0, 5) : "";
+        }
+        const sel = this.st(`ZP${d}_${p}_stufe`);
+        this.shadowRoot.querySelectorAll(`#ph-${p}-lvl button`).forEach(b => b.setAttribute("aria-pressed", !!sel && b.dataset.o === sel.state));
+      }
+    });
   }
 
   // ---------- sheet ----------
@@ -631,7 +959,7 @@ class ProxonPanel extends HTMLElement {
     this.shadowRoot.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) this._closeSheet(); });
     let sd = null;
     sheet.addEventListener("pointerdown", e => {
-      if (e.target.closest("button, .level") || sheet.scrollTop > 0) return;
+      if (e.target.closest("button, input, .level, .slider") || sheet.scrollTop > 0) return;
       sd = { y: e.clientY, v: this._sheetY.x, h: sheet.offsetHeight, hist: [{ y: e.clientY, t: e.timeStamp }] }; sheet.setPointerCapture(e.pointerId);
     });
     sheet.addEventListener("pointermove", e => {
@@ -649,7 +977,7 @@ class ProxonPanel extends HTMLElement {
     sheet.addEventListener("pointerup", up); sheet.addEventListener("pointercancel", up);
   }
   _openSheet(html, from, wire, refresh) {
-    this._opener = from; this.$("sheet-body").innerHTML = html; this.$("sheet").hidden = false; this.$("scrim").style.pointerEvents = "auto";
+    this._opener = from; this._sheetCtl = []; this.$("sheet-body").innerHTML = html; this.$("sheet").hidden = false; this.$("scrim").style.pointerEvents = "auto";
     wire(); this._sheetRefresh = refresh || null; if (refresh) refresh();
     this._sheetY.to(0, { damping: 0.8, response: 0.3 });
     requestAnimationFrame(() => this.$("sheet-close").focus());
@@ -730,47 +1058,42 @@ class ProxonPanel extends HTMLElement {
       const dd = d; d = null;
       if (!dd.moved) { choose(Math.round(1 + (e.clientX - lv.getBoundingClientRect().left) / lv.clientWidth * 3)); return; }
       const a = dd.hist[0], b = dd.hist[dd.hist.length - 1], vel = (b.x - a.x) / Math.max(1, b.t - a.t) * 1000 / lv.clientWidth * 3;
-      choose(Math.round(k.x + project(vel * 100, SETTING) / 100), vel);
+      choose(Math.round(k.x + clamp(project(vel * 100, SETTING) / 100, -1, 1)), clamp(vel, -12, 12));
     };
     lv.addEventListener("pointerup", up); lv.addEventListener("pointercancel", up);
     lv.addEventListener("keydown", e => { const s = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key]; if (s) { e.preventDefault(); choose((chosen || this.num("Luefterstufe") || 1) + s); } });
   }
   _sheetWater(from) {
     const t = this.t, n = this.st("SollWassertemperatur");
-    const lo = n ? n.attributes.min : 20, hi = n ? n.attributes.max : 55;
     this._openSheet(`<h3>${t.water}</h3><p class="sub" id="w-sub"></p>
-      ${n ? `<div class="row"><span class="row-label">${t.waterTarget}<small>${lo} – ${hi} °C</small></span>
-        <div class="stepper"><button id="wt-minus" aria-label="${t.colder}">−</button><output class="num" id="wt"></output><button id="wt-plus" aria-label="${t.warmer}">+</button></div></div>` : ""}
+      ${n ? this._sliderRow("wt-row", t.waterTarget) : ""}
       ${this.id("T300Betriebsart") ? this._sw("s-pump", t.pump, t.pumpSub) : ""}${this.id("E-Heizstab") ? this._sw("s-heater", t.heater, t.heaterSub) : ""}
       <button class="link" id="w-more">${t.more}</button>`, from, () => {
-      let want = null;
-      const set = d => {
-        want = clamp((want ?? this.num("SollWassertemperatur")) + d, lo, hi); this.$("wt").textContent = `${want}°`;
-        clearTimeout(this._wtTimer);  // several taps in a row are sent once
-        this._wtTimer = setTimeout(() => { const v = want; want = null; this.call("number", "set_value", { entity_id: this.id("SollWassertemperatur"), value: v }).catch(() => {}); }, 600);
-      };
-      if (n) { this.$("wt-minus").addEventListener("click", () => set(-1)); this.$("wt-plus").addEventListener("click", () => set(1)); this._wtWant = () => want; }
+      this._sheetCtl = n ? [this._numberSlider(this.$("wt-row"), "SollWassertemperatur", v => `${this.fmt(v, 0)} °C`)] : [];
       ["s-pump", "s-heater"].forEach((id, i) => { const b = this.$(id); if (b) b.addEventListener("click", () => this._toggle(i ? "E-Heizstab" : "T300Betriebsart")); });
       this.$("w-more").addEventListener("click", () => { this._closeSheet(); this.moreInfo(this.id("Warmwasser") || this.id("WarmwasserIstTemperatur")); });
     }, () => {
       this.$("w-sub").textContent = `${this.$("w-temp").textContent} · ${t.bottom} ${this.$("w-bottom").textContent}`;
-      if (n && this._wtWant() === null) this.$("wt").textContent = `${this.fmt(this.num("SollWassertemperatur"), 0)}°`;
+      (this._sheetCtl || []).forEach(c => c.sync());
       [["s-pump", "T300Betriebsart"], ["s-heater", "E-Heizstab"]].forEach(([id, k]) => { const b = this.$(id); if (b) b.setAttribute("aria-checked", (this.st(k) || {}).state === "on"); });
     });
   }
   _sheetRoom(n, from) {
     const t = this.t, r = this._room(n), d = r.step < 1 ? 1 : 0;
     this._openSheet(`<h3>${r.name}</h3><p class="sub" id="r-sub"></p>
-      <div class="row"><span class="row-label">${t.target}<small>${fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) })}</small></span>
-        <div class="stepper"><button id="rt-minus" aria-label="${t.colder}">−</button><output class="num" id="rt"></output><button id="rt-plus" aria-label="${t.warmer}">+</button></div></div>
+      ${this._sliderRow("rt-row", t.target, fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) }))}
       ${this._sw("s-elem", t.released, t.releasedSub)}<p class="hint">${t.dragHint}</p><button class="link" id="r-more">${t.more}</button>`, from, () => {
-      const step = s => {
-        const cur = this._room(n), v = clamp(cur.target + s * cur.step, cur.min, cur.max);
-        this._pending.set(n, { v, at: Date.now() }); this._updateRooms(); this._sheetRefresh();
-        clearTimeout(this._rtTimer);
-        this._rtTimer = setTimeout(() => this.call("climate", "set_temperature", { entity_id: cur.entity, temperature: v }).catch(() => { this._pending.delete(n); this._update(); }), 600);
-      };
-      this.$("rt-minus").addEventListener("click", () => step(-1)); this.$("rt-plus").addEventListener("click", () => step(1));
+      const row = this.$("rt-row"), sl = row.querySelector(".slider");
+      const ctl = dragValue(sl, sl, {
+        range: () => { const c = this._room(n); return c && { min: c.min, max: c.max, step: c.step }; },
+        value: () => this._room(n).target, show: this._sliderShow(row, v => `${this.fmt(v, d)} °C`),
+        commit: v => {
+          const cur = this._room(n); if (v === cur.target) return;
+          this._pending.set(n, { v, at: Date.now() }); this._updateRooms();
+          this.call("climate", "set_temperature", { entity_id: cur.entity, temperature: v }).catch(() => { this._pending.delete(n); this._update(); ctl.back(this._room(n).target); });
+        },
+      });
+      this._sheetCtl = [ctl]; requestAnimationFrame(() => ctl.sync());
       this.$("s-elem").addEventListener("click", () => {
         const cur = this._room(n);
         this.call("climate", "set_hvac_mode", { entity_id: cur.entity, hvac_mode: cur.mode === "heat" ? "auto" : "heat" }).catch(() => {});
@@ -779,7 +1102,7 @@ class ProxonPanel extends HTMLElement {
     }, () => {
       const cur = this._room(n); if (!cur) return;
       this.$("r-sub").textContent = `${t.now} ${this.fmt(cur.temp)}° · ${t.element[cur.element] || ""}`;
-      this.$("rt").textContent = `${this.fmt(cur.target, d)}°`;
+      (this._sheetCtl || []).forEach(c => c.sync());
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
     });
   }

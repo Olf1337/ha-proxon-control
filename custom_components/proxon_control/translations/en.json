@@ -924,7 +924,7 @@
     },
     "create_dashboard": {
       "name": "Create dashboard",
-      "description": "Creates the ready-made dashboard \"Proxon\" in the sidebar (written anew the next time; changes made in it by hand are replaced): home, hot water, optimisation, power, settings, with this unit's real entity IDs.",
+      "description": "Creates the ready-made dashboard \"Proxon Control\" in the sidebar (written anew the next time; changes made in it by hand are replaced): home, hot water, optimisation, power, settings, with this unit's real entity IDs.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",

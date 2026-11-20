@@ -62,6 +62,11 @@ async def async_register(hass: HomeAssistant, entry: ConfigEntry) -> None:
         config=panel_config(hass, entry), require_admin=False, handle_safe_area=True,
     )
     hass.data[_OWNER] = entry.entry_id
+    # the ready-made dashboard was called "Proxon" too: renamed, so the sidebar doesn't show the name twice
+    from .dashboard_store import OLD_TITLE, TITLE, async_retitle
+    from .services import DASHBOARD_URL
+
+    await async_retitle(hass, DASHBOARD_URL, TITLE, only_from=OLD_TITLE)
 
 
 async def _async_serve_files(hass: HomeAssistant) -> None:

@@ -488,7 +488,7 @@ async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> Non
 
 
 async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant, device, hass_ws_client) -> None:
-    """Without "paste only" the action creates the dashboard "Proxon" (sidebar) and writes it anew on the next run."""
+    """Without "paste only" the action creates the dashboard "Proxon Control" (sidebar) and writes it anew on the next run."""
     from homeassistant.setup import async_setup_component
 
     assert await async_setup_component(hass, "lovelace", {})
@@ -499,7 +499,7 @@ async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant,
     await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
     boards = (await client.receive_json())["result"]
     proxon = next(b for b in boards if b["url_path"] == "proxon-dashboard")
-    assert proxon["title"] == "Proxon" and proxon["show_in_sidebar"] is True and proxon["mode"] == "storage"
+    assert proxon["title"] == "Proxon Control" and proxon["show_in_sidebar"] is True and proxon["mode"] == "storage"
     await client.send_json_auto_id({"type": "lovelace/config", "url_path": "proxon-dashboard"})
     views = (await client.receive_json())["result"]["views"]
     assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-optimize", "proxon-energy",
@@ -509,6 +509,30 @@ async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant,
     assert answer["created"] is False and "replaced" in answer["message"]
     await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
     assert [b["url_path"] for b in (await client.receive_json())["result"]].count("proxon-dashboard") == 1
+
+
+async def test_old_dashboard_title_is_renamed(hass: HomeAssistant, device, hass_ws_client) -> None:
+    """Until 0.21 the dashboard was called "Proxon"; since the page "Proxon" is our own interface it is "Proxon Control" (a
+    title chosen by hand stays)."""
+    from homeassistant.setup import async_setup_component
+
+    from custom_components.proxon_control.dashboard_store import async_retitle
+
+    assert await async_setup_component(hass, "lovelace", {})
+    await setup(hass)
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "lovelace/dashboards/create", "url_path": "proxon-dashboard", "title": "Proxon",
+                                    "icon": "mdi:home", "show_in_sidebar": True, "require_admin": False, "mode": "storage"})
+    assert (await client.receive_json())["success"]
+
+    async def title() -> str:
+        await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
+        return next(b for b in (await client.receive_json())["result"] if b["url_path"] == "proxon-dashboard")["title"]
+
+    assert await async_retitle(hass, "proxon-dashboard", "Proxon Control", only_from="Unser Haus") is False  # chosen by hand: kept
+    assert await title() == "Proxon"
+    await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    assert await title() == "Proxon Control"
 
 
 async def test_create_dashboard_without_dashboards(hass: HomeAssistant, device) -> None:
