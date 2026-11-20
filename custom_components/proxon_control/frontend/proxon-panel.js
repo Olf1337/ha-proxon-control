@@ -10,6 +10,8 @@ const TEXT = {
     unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", leftSoon: "endet gleich", level: "Stufe", levelBoost: "4 (Intensiv)",
     tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
+    hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
+    compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
     litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei 40 °C", bottom: "Unten", target: "Soll", charge: "Ladezustand",
     floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
@@ -62,6 +64,8 @@ const TEXT = {
     unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", leftSoon: "ending now", level: "Level", levelBoost: "4 (boost)",
     tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
+    hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
+    compressor: "Compressor", compOff: "off", humidity: "Humidity",
     water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
     litersSub: "of warm water in the tank", showerSub: "of showering at 40 °C", bottom: "Bottom", target: "Target", charge: "Charge",
     floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
@@ -335,16 +339,18 @@ button.card:active, .card.pressed { transform: scale(.985); }
 .pill-switch .switch { width: 44px; height: 26px; pointer-events: none; }
 .pill-switch .switch::after { width: 20px; height: 20px; }
 .pill-switch .switch[aria-checked="true"]::after { transform: translateX(18px); }
-svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0; height: auto; overflow: visible; }
-.duct { fill: none; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; opacity: .18; }
-.t-name { font: 600 10.5px var(--font); letter-spacing: .04em; text-transform: uppercase; fill: var(--fg-2); }
-.t-val { font: 700 22px var(--font-display); letter-spacing: -.02em; fill: var(--fg); }
-.t-small { font: 500 10.5px var(--font); fill: var(--fg-3); }
+svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0; height: auto; overflow: visible; --glowc: var(--water-hot); }
+.tube { fill: none; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; opacity: .62; }
+.flow { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 2 14; opacity: .85; }
+.unit-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip.soft { font-weight: 500; color: var(--fg-2); background: var(--glass-strong) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.chip.soft b { color: var(--fg); font-weight: 600; }
+.t-name { font: 600 12px var(--font); letter-spacing: .05em; text-transform: uppercase; fill: var(--fg-2); }
+.t-val { font: 700 30px var(--font-display); letter-spacing: -.03em; fill: var(--fg); }
+.t-small { font: 500 12px var(--font); fill: var(--fg-3); }
 .box { fill: var(--surface-solid); stroke: var(--line); stroke-width: 1.5; }
 .hx { fill: none; stroke: var(--fg-3); stroke-width: 1.2; opacity: .55; }
-.zone { font: 600 10px var(--font); letter-spacing: .08em; text-transform: uppercase; fill: var(--fg-3); }
-.unit-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: .875rem; color: var(--fg-2); }
-.unit-meta b { color: var(--fg); font-weight: 600; }
+.zone { font: 600 11px var(--font); letter-spacing: .08em; text-transform: uppercase; fill: var(--fg-3); }
 #water { container-type: inline-size; }
 .a-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin-top: 12px; }
 .tankA { position: relative; width: 132px; height: 290px; }
@@ -462,6 +468,7 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 @media (prefers-reduced-motion: reduce) { button.card, .switch::after, .stepper button, .unit-tap, .pill-switch { transition: none; } }
 `;
 
+const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
 const FAN = '<circle r="12" fill="var(--surface-solid)" stroke="var(--line)"/><path d="M0-8C3-8 4-3 0 0 -4-3-3-8 0-8ZM8 0C8 3 3 4 0 0 3-4 8-3 8 0ZM0 8C-3 8-4 3 0 0 4 3 3 8 0 8ZM-8 0C-8-3-3-4 0 0-3 4-8 3-8 0Z" fill="var(--fg-2)"/>';
 const FLAME = '<path d="M14 0C20 12 28 16 26 28 24 37 4 37 2 28 0 19 8 14 14 0Z" fill="var(--flame)"/><path d="M14 13C16 19 21 22 19 28 18 32 10 32 9 28 8 23 13 20 14 13Z" fill="#ffd166"/>';
 const RADIATOR = '<path d="M5 6v12M9.5 6v12M14 6v12M18.5 6v12M3 8h18M3 16h18" stroke="var(--fg-2)" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
@@ -521,25 +528,47 @@ class ProxonPanel extends HTMLElement {
               <button class="pill-switch" id="boost"><span class="pill-text">${t.boost}<small id="boost-left" hidden></small></span><span class="switch" id="boost-sw" aria-hidden="true" aria-checked="false"></span></button></div>
             <button class="unit-tap" id="unit">
               <div class="hint" style="margin-top:4px">${t.level} <b class="num" id="u-level">–</b> · ${t.tapUnit}</div>
-              <svg class="diagram" viewBox="0 0 400 236" aria-hidden="true">
-                <text class="zone" x="0" y="118">${t.out}</text><text class="zone" x="400" y="118" text-anchor="end">${t.house}</text>
-                <path id="p-fresh" class="duct" stroke="var(--fresh)" d="M 44 70 L 150 70 L 200 118"/>
-                <path id="p-supply" class="duct" stroke="var(--supply)" d="M 200 118 L 250 70 L 356 70"/>
-                <path id="p-extract" class="duct" stroke="var(--extract)" d="M 356 166 L 250 166 L 200 118"/>
-                <path id="p-exhaust" class="duct" stroke="var(--exhaust)" d="M 200 118 L 150 166 L 44 166"/>
-                <rect class="box" x="134" y="52" width="132" height="132" rx="20"/>
-                <path class="hx" d="M 200 92 L 226 118 L 200 144 L 174 118 Z M 187 105 L 213 131 M 213 105 L 187 131"/>
-                <g id="particles"></g>
-                <g transform="translate(306 70)"><g id="fan-s">${FAN}</g></g><g transform="translate(94 166)"><g id="fan-e">${FAN}</g></g>
-                <text class="t-name" x="44" y="30">${t.fresh}</text><text class="t-val num" id="v-fresh" x="44" y="54">–</text>
-                <text class="t-name" x="356" y="30" text-anchor="end">${t.supply}</text><text class="t-val num" id="v-supply" x="356" y="54" text-anchor="end">–</text>
-                <text class="t-name" x="356" y="200" text-anchor="end">${t.extract}</text><text class="t-val num" id="v-extract" x="356" y="224" text-anchor="end">–</text>
-                <text class="t-name" x="44" y="200">${t.exhaust}</text><text class="t-val num" id="v-exhaust" x="44" y="224">–</text>
-                <text class="t-small num" id="rpm-s-t" x="306" y="98" text-anchor="middle"></text>
-                <text class="t-small num" id="rpm-e-t" x="94" y="146" text-anchor="middle"></text>
+              <svg class="diagram" viewBox="0 0 720 360" aria-hidden="true">
+                <defs>
+                  <linearGradient id="g-fresh" x1="0" x2="1"><stop id="gf0" offset="0"/><stop id="gf1" offset="1"/></linearGradient>
+                  <linearGradient id="g-supply" x1="0" x2="1"><stop id="gs0" offset="0"/><stop id="gs1" offset="1"/></linearGradient>
+                  <linearGradient id="g-extract" x1="1" x2="0"><stop id="ge0" offset="0"/><stop id="ge1" offset="1"/></linearGradient>
+                  <linearGradient id="g-exhaust" x1="1" x2="0"><stop id="gx0" offset="0"/><stop id="gx1" offset="1"/></linearGradient>
+                  <radialGradient id="g-glow"><stop offset="0" stop-color="var(--glowc)" stop-opacity=".55"/><stop offset="1" stop-color="var(--glowc)" stop-opacity="0"/></radialGradient>
+                  <linearGradient id="g-box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset="1" stop-color="#fff" stop-opacity=".06"/></linearGradient>
+                </defs>
+                <text class="zone" x="8" y="186">${t.out}</text><text class="zone" x="712" y="186" text-anchor="end">${t.house}</text>
+                <rect x="190" y="36" width="340" height="288" rx="34" fill="url(#g-box)" stroke="var(--edge)" stroke-width="1.2"/>
+                <path class="tube" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176" stroke="url(#g-fresh)"/>
+                <path class="tube" d="M 380 176 L 440 116 Q 460 96 490 96 L 660 96" stroke="url(#g-supply)"/>
+                <path class="tube" d="M 660 264 L 490 264 Q 460 264 440 244 L 380 184" stroke="url(#g-extract)"/>
+                <path class="tube" d="M 340 184 L 280 244 Q 260 264 230 264 L 60 264" stroke="url(#g-exhaust)"/>
+                <path class="flow" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176"/>
+                <path class="flow" d="M 380 176 L 440 116 Q 460 96 490 96 L 660 96"/>
+                <path class="flow" d="M 660 264 L 490 264 Q 460 264 440 244 L 380 184"/>
+                <path class="flow" d="M 340 184 L 280 244 Q 260 264 230 264 L 60 264"/>
+                <rect x="326" y="146" width="68" height="68" rx="10" transform="rotate(45 360 180)" fill="var(--glass-strong)" stroke="var(--edge)"/>
+                <path d="M 345 165 L 375 195 M 375 165 L 345 195 M 360 155 L 360 205 M 335 180 L 385 180" stroke="var(--fg-3)" stroke-width="1" opacity=".6"/>
+                <text class="t-small" x="360" y="236" text-anchor="middle">${t.hx}</text>
+                <circle cx="470" cy="96" r="44" fill="url(#g-glow)" id="hp-glow"/>
+                <rect x="458" y="72" width="24" height="48" rx="6" id="hp-supply"/>
+                <rect x="238" y="240" width="24" height="48" rx="6" id="hp-exhaust"/>
+                <text class="t-small" x="470" y="140" text-anchor="middle" id="hp-label">${t.heatPump}</text>
+                <g transform="translate(580 96)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-s">${FAN_BLADES}</g></g>
+                <g transform="translate(140 264)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-e">${FAN_BLADES}</g></g>
+                <text class="t-small num" id="rpm-s-t" x="580" y="132" text-anchor="middle"></text>
+                <text class="t-small num" id="rpm-e-t" x="140" y="300" text-anchor="middle"></text>
+                <text class="t-name" x="60" y="44">${t.fresh}</text><text class="t-val num" id="v-fresh" x="60" y="76">–</text>
+                <text class="t-name" x="660" y="44" text-anchor="end">${t.supply}</text><text class="t-val num" id="v-supply" x="660" y="76" text-anchor="end">–</text>
+                <text class="t-name" x="660" y="312" text-anchor="end">${t.extract}</text><text class="t-val num" id="v-extract" x="660" y="344" text-anchor="end">–</text>
+                <text class="t-name" x="60" y="312">${t.exhaust}</text><text class="t-val num" id="v-exhaust" x="60" y="344">–</text>
               </svg>
-              <div class="unit-meta"><span>${t.fanSupply} <b class="num" id="rpm-s">–</b> U/min</span><span>${t.fanExhaust} <b class="num" id="rpm-e">–</b> U/min</span>
-                <span id="rec-wrap">${t.recovery} <b class="num" id="rec">–</b></span></div>
+              <div class="unit-chips">
+                <span class="chip soft" id="ch-comp">${t.compressor} <b class="num" id="comp">–</b></span>
+                <span class="chip soft" id="rec-wrap">${t.recovery} <b class="num" id="rec">–</b></span>
+                <span class="chip soft" id="co2-wrap">CO₂ <b class="num" id="co2">–</b></span>
+                <span class="chip soft" id="hum-wrap">${t.humidity} <b class="num" id="hum">–</b></span>
+              </div>
             </button>
           </section>
           <button class="card" id="water" aria-label="${t.water}">
@@ -637,9 +666,26 @@ class ProxonPanel extends HTMLElement {
     [["v-fresh", "T3Frischluft"], ["v-supply", "T1Zuluft"], ["v-extract", "T7Abluft"], ["v-exhaust", "T4Fortluft"]].forEach(([el, k]) => { this.$(el).textContent = deg(k); });
     const rs = this.num("DrehzahlZuluft"), re = this.num("DrehzahlAbluft");
     const rpm = v => v === null ? "–" : Math.round(v).toLocaleString(this._hass.language || undefined);
-    this.$("rpm-s").textContent = rpm(rs); this.$("rpm-e").textContent = rpm(re);
     this.$("rpm-s-t").textContent = rs === null ? "" : `${rpm(rs)} U/min`; this.$("rpm-e-t").textContent = re === null ? "" : `${rpm(re)} U/min`;
-    this._rpm = rs || 0;
+    this._rpm = rs || 0; this._rpmS = rs || 0; this._rpmE = re || 0;
+    // the tubes coloured by temperature: inlet and outlet of each air path (the exchanger in the middle)
+    const tc = this._tempColor.bind(this), tF = this.num("T3Frischluft"), tZ = this.num("T1Zuluft"), tA = this.num("T7Abluft"), tO = this.num("T4Fortluft");
+    const mid = (a, b) => (a !== null && b !== null ? (a + b) / 2 : a ?? b);
+    [["gf0", tF], ["gf1", mid(tF, tZ)], ["gs0", mid(tF, tZ)], ["gs1", tZ], ["ge0", tA], ["ge1", mid(tA, tO)], ["gx0", mid(tA, tO)], ["gx1", tO]]
+      .forEach(([id, v]) => this.$(id).setAttribute("stop-color", tc(v)));
+    // the heat pump: heating (warm on the supply side), cooling (cold on the supply side) or off
+    const comp = this.num("DrehzahlKompressor"), opSt = this.st("AktuellerBetrieb"), mode = opSt ? opSt.state : null;
+    const runs = (comp || 0) > 0, cooling = mode === "cooling";
+    this.$("hp-supply").setAttribute("fill", runs ? (cooling ? "var(--cold)" : "var(--water-hot)") : "var(--fg-3)");
+    this.$("hp-exhaust").setAttribute("fill", runs ? (cooling ? "var(--water-hot)" : "var(--cold)") : "var(--fg-3)");
+    this.$("hp-glow").style.display = runs ? "" : "none";
+    this.shadowRoot.querySelector("svg.diagram").style.setProperty("--glowc", cooling ? "var(--cold)" : "var(--water-hot)");
+    this.$("hp-label").textContent = runs ? (cooling ? t.hpCools : t.hpHeats) : t.hpIdle;
+    this.$("ch-comp").hidden = comp === null;
+    this.$("comp").textContent = runs ? `${rpm(comp)} U/min` : t.compOff;
+    const co2 = this.num("CurrentCO2"), hum = this.num("LuftfeuchteRel");
+    this.$("co2-wrap").hidden = !co2; this.$("co2").textContent = `${this.fmt(co2, 0)} ppm`;
+    this.$("hum-wrap").hidden = hum === null; this.$("hum").textContent = `${this.fmt(hum, 0)} %`;
     const boost = (this.st("Intensivlueftung") || {}).state === "on";
     this.$("boost").hidden = !this.st("Intensivlueftung");
     this.$("boost").setAttribute("aria-pressed", boost); this.$("boost-sw").setAttribute("aria-checked", boost);
@@ -651,6 +697,7 @@ class ProxonPanel extends HTMLElement {
     this.$("u-level").textContent = boost ? t.levelBoost : lvl === null ? "–" : Math.round(lvl);
     const rec = this.num("Waermerueckgewinnung");
     this.$("rec-wrap").hidden = rec === null; this.$("rec").textContent = `${this.fmt(rec, 0)} %`;
+    this._level = boost ? 4.5 : (lvl || 0);
     // hot water
     const hasWater = !!this.st("WarmwasserIstTemperatur");
     this.$("water").hidden = !hasWater;
@@ -677,35 +724,32 @@ class ProxonPanel extends HTMLElement {
     if (this._settingsBuilt && this._current === "settings") this._updateSettings();
   }
 
-  // ---------- the air: particles along the ducts at the speed of the fans ----------
+  // ---------- the air: flowing along the tubes with the level, the fans turning by their speed ----------
   _buildAir() {
-    const g = this.$("particles");
-    this._ducts = [["p-fresh", "--fresh"], ["p-supply", "--supply"], ["p-extract", "--extract"], ["p-exhaust", "--exhaust"]].map(([id, color]) => {
-      const path = this.$(id), len = path.getTotalLength(), n = Math.round(len / 18);
-      const dots = Array.from({ length: n }, (_, i) => {
-        const c = document.createElementNS(svgNS, "circle"); c.setAttribute("r", "2.6"); c.setAttribute("fill", `var(${color})`); g.appendChild(c);
-        return { el: c, s: i / n * len };
-      });
-      return { path, len, dots };
-    });
-    this._speed = new Spring(0, () => {}); this._angle = 0;
+    this._flows = [...this.shadowRoot.querySelectorAll(".flow")];
+    this._speed = new Spring(0, () => {}); this._angleS = 0; this._angleE = 0; this._flowOff = 0;
+  }
+  _tempColor(v) {  // cold blue below 5 °C, a neutral grey around 20 °C, warm orange from 35 °C
+    if (v === null || v === undefined) return "#9aa6b2";
+    const mix = (a, b, f) => `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * f)).join(",")})`;
+    const cold = [90, 160, 230], mid = [176, 184, 192], warm = [242, 112, 44];
+    return v <= 20 ? mix(cold, mid, clamp((v - 5) / 15, 0, 1)) : mix(mid, warm, clamp((v - 20) / 15, 0, 1));
   }
   _startAir() {
-    if (this._air || !this._ducts) return;
+    if (this._air || !this._flows) return;
     let last = performance.now();
     const step = t => {
       const dt = Math.min(0.05, (t - last) / 1000); last = t;
-      if (Math.abs(this._speed.target - (this._rpm || 0)) > 1) this._speed.to(this._rpm || 0, { damping: 1, response: 0.9 });
-      const moving = !reduceMotion.matches, v = moving ? this._speed.x / 1580 * 34 : 0;
-      for (const d of this._ducts) for (const p of d.dots) {
-        p.s = (p.s + v * dt) % d.len;
-        const pt = d.path.getPointAtLength(p.s);
-        p.el.setAttribute("cx", pt.x.toFixed(1)); p.el.setAttribute("cy", pt.y.toFixed(1));
-        p.el.setAttribute("opacity", Math.min(1, Math.min(p.s, d.len - p.s) / 14).toFixed(2));
-      }
-      if (moving) this._angle = (this._angle + this._speed.x / 60 * 360 * dt * 0.08) % 360;
-      this.$("fan-s").setAttribute("transform", `rotate(${this._angle.toFixed(1)})`);
-      this.$("fan-e").setAttribute("transform", `rotate(${this._angle.toFixed(1)})`);
+      // the air flows faster with a higher level (it stops with the fans); the fans turn by their own speed
+      const want = (this._rpmS || this._rpmE) ? (this._level || 1) : 0;
+      if (Math.abs(this._speed.target - want) > 0.01) this._speed.to(want, { damping: 1, response: 0.9 });
+      const moving = !reduceMotion.matches;
+      if (moving) this._flowOff -= dt * 12 * this._speed.x;
+      this._flows.forEach(f => f.setAttribute("stroke-dashoffset", this._flowOff.toFixed(1)));
+      const fanStep = rpm => (moving ? clamp(rpm, 0, 3000) / 60 * 360 * dt * 0.12 : 0);
+      this._angleS = (this._angleS + fanStep(this._rpmS || 0)) % 360; this._angleE = (this._angleE + fanStep(this._rpmE || 0)) % 360;
+      this.$("fan-s").setAttribute("transform", `rotate(${this._angleS.toFixed(1)})`);
+      this.$("fan-e").setAttribute("transform", `rotate(${this._angleE.toFixed(1)})`);
       const lvl = clamp(this._fill.x, 0, 1), top = 324 - 318 * lvl, amp = moving && lvl > 0.02 ? 2 : 0, ts = t / 1000;
       let d = `M0 ${top.toFixed(1)}`;
       for (let x = 0; x <= 150; x += 6) d += ` L${x} ${(top + Math.sin(x / 22 + ts * 1.4) * amp + Math.sin(x / 9 - ts) * amp * 0.4).toFixed(1)}`;
@@ -1140,7 +1184,7 @@ class ProxonPanel extends HTMLElement {
       }));
       if (hasLevel) this._wireLevel();
     }, () => {
-      this.$("v-sub").textContent = `${t.supply} ${this.$("v-supply").textContent} · ${t.extract} ${this.$("v-extract").textContent} · ${this.$("rpm-s").textContent} U/min`;
+      this.$("v-sub").textContent = `${t.supply} ${this.$("v-supply").textContent} · ${t.extract} ${this.$("v-extract").textContent} · ${this.$("rpm-s-t").textContent}`;
       const m = this.st("Betriebsart"); this.shadowRoot.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", !!m && b.dataset.o === m.state));
       const sb = this.$("s-boost"); if (sb) sb.setAttribute("aria-checked", (this.st("Intensivlueftung") || {}).state === "on");
       const auto = (m && m.state === "eco_comfort") || (this.st("Intensivlueftung") || {}).state === "on";
