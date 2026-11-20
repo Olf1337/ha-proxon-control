@@ -298,7 +298,8 @@ button { font: inherit; color: inherit; }
 .group .card > :first-child { border-top: 0; }
 .group .foot { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
 .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
-.sgrid > *, .group .card { min-width: 0; }  /* a section never grows wider than its column (long texts wrap inside it) */
+.sgrid > *, .group .card { min-width: 0; }
+.version { margin: 28px 0 0; text-align: center; font-size: .75rem; color: var(--fg-3); }  /* a section never grows wider than its column (long texts wrap inside it) */
 /* a weekday: its name, the phases below it (wrapping), the chevron on the right */
 .day.sched { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; }
 .day.sched > span:first-child { grid-column: 1; grid-row: 1; }
@@ -1018,7 +1019,8 @@ class ProxonPanel extends HTMLElement {
       const status = sec.status && has(sec.status) ? `<p class="foot" id="foot-${sec.id}"></p>` : "";
       return `<section class="group"><h2>${t.s[sec.id]}</h2><div class="card">${body}</div>${status}</section>`;
     }).join("");
-    this.$("v-settings").innerHTML = `<div class="sgrid">${html}</div>`;
+    const ver = (this._config || {}).version;
+    this.$("v-settings").innerHTML = `<div class="sgrid">${html}</div>${ver ? `<p class="version num">Proxon Control ${ver}</p>` : ""}`;
     const v = this.$("v-settings");
     for (const sec of SETTINGS) for (const [kind, key] of sec.rows) {
       if (kind === "switch" && v.querySelector(`#set-${CSS.escape(key)}`)) v.querySelector(`#set-${CSS.escape(key)}`).addEventListener("click", () => this._toggle(key));

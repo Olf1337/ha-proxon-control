@@ -34,6 +34,8 @@ async def test_panel_registered_and_removed(hass: HomeAssistant, device) -> None
         assert kwargs["frontend_url_path"] == "proxon" and kwargs["webcomponent_name"] == "proxon-panel"
         assert kwargs["sidebar_title"] == "Proxon" and kwargs["require_admin"] is False
         assert kwargs["module_url"].startswith("/proxon_control_static/proxon-panel.js?v=")
+        assert kwargs["module_url"].endswith(P._fingerprint()) and len(P._fingerprint()) == 10  # changes with the script
+        assert kwargs["config"]["version"]
         assert kwargs["config"]["entities"]["T3Frischluft"] == eid(hass, "sensor", "T3Frischluft")
         serve.assert_awaited_once()
         # the page is refreshed on a reload (entity IDs may change), the files are served once

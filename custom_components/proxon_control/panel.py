@@ -9,6 +9,7 @@ normal actions of these entities.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
 from typing import Any
@@ -56,11 +57,14 @@ async def async_register(hass: HomeAssistant, entry: ConfigEntry) -> None:
         await _async_serve_files(hass)
         hass.data[_STATIC] = True
     version = (await async_get_integration(hass, DOMAIN)).version
+    # the script's address carries a fingerprint of its content: after an update the browser loads the new script instead
+    # of one it kept (the version alone isn't enough when files change without a new version, or a cache holds on)
+    fingerprint = await hass.async_add_executor_job(_fingerprint)
     frontend.async_remove_panel(hass, PANEL_PATH, warn_if_unknown=False)
     await panel_custom.async_register_panel(
         hass, frontend_url_path=PANEL_PATH, webcomponent_name=COMPONENT, sidebar_title="Proxon",
-        sidebar_icon="mdi:home-thermometer-outline", module_url=f"{STATIC_URL}/{COMPONENT}.js?v={version}",
-        config=panel_config(hass, entry), require_admin=False, handle_safe_area=True,
+        sidebar_icon="mdi:home-thermometer-outline", module_url=f"{STATIC_URL}/{COMPONENT}.js?v={version}-{fingerprint}",
+        config={**panel_config(hass, entry), "version": version}, require_admin=False, handle_safe_area=True,
     )
     hass.data[_OWNER] = entry.entry_id
     # the ready-made dashboard was called "Proxon" too: renamed, so the sidebar doesn't show the name twice
@@ -68,6 +72,10 @@ async def async_register(hass: HomeAssistant, entry: ConfigEntry) -> None:
     from .services import DASHBOARD_URL
 
     await async_retitle(hass, DASHBOARD_URL, TITLE, only_from=OLD_TITLE)
+
+
+def _fingerprint() -> str:
+    return hashlib.sha256((FRONTEND_DIR / f"{COMPONENT}.js").read_bytes()).hexdigest()[:10]
 
 
 async def _async_serve_files(hass: HomeAssistant) -> None:
