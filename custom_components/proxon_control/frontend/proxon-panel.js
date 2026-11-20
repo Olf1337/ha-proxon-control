@@ -11,7 +11,8 @@ const TEXT = {
     tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", bottom: "Unten", target: "Soll", charge: "Ladezustand",
-    floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet",
+    floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
+    allOff: "Wärmeelemente aller Räume aus", allOnDone: "Wärmeelemente aller Räume an",
     element: { off: "Heizpanel aus", ready: "Heizpanel bereit", heating: "Heizpanel heizt" },
     ventilation: "Lüftung", mode: "Betriebsart", boostSub: "läuft {m} Minuten, dann zurück", waterTarget: "Solltemperatur",
     pump: "Wärmepumpe", pumpSub: "heizt das Wasser sparsam", heater: "Heizstab", heaterSub: "schneller, braucht mehr Strom",
@@ -19,7 +20,7 @@ const TEXT = {
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
     more: "Alle Werte", close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
     end: "{f} beenden", unavailable: "nicht erreichbar", home: "Zuhause", settings: "Einstellungen", status: "Status",
-    days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis",
+    days: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], phase: "Phase {n}", from: "von", to: "bis", lvl: "Stufe",
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     s: {
       vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
@@ -52,7 +53,8 @@ const TEXT = {
     tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
     water: "Hot water", shower: "Enough for about {m} min of showering", bottom: "Bottom", target: "Target", charge: "Charge",
-    floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent",
+    floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
+    allOff: "Heating elements of all rooms off", allOnDone: "Heating elements of all rooms on",
     element: { off: "Heating panel off", ready: "Heating panel ready", heating: "Heating panel heating" },
     ventilation: "Ventilation", mode: "Operating mode", boostSub: "runs {m} minutes, then back", waterTarget: "Target temperature",
     pump: "Heat pump", pumpSub: "heats the water efficiently", heater: "Immersion heater", heaterSub: "faster, uses more power",
@@ -60,7 +62,7 @@ const TEXT = {
     releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
     more: "All values", close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
     end: "End {f}", unavailable: "unavailable", home: "Home", settings: "Settings", status: "Status",
-    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to",
+    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], phase: "Phase {n}", from: "from", to: "to", lvl: "level",
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
     s: {
       vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
@@ -257,7 +259,7 @@ button { font: inherit; color: inherit; }
 .tin { font: 600 1rem var(--font); color: var(--fg); background: var(--line); border: 0; border-radius: 10px; padding: 8px 10px; min-width: 0; }
 .day { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line);
   background: none; padding: 13px 0; text-align: left; cursor: pointer; }
-.day span:last-child { color: var(--fg-2); font-size: .875rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.day span:last-child { margin-left: auto; color: var(--fg-2); font-size: .875rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .day::after { content: "›"; color: var(--fg-3); font-size: 1.2rem; margin-left: 4px; }
 .textbtn { width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); background: none; padding: 14px 0; color: var(--accent); font-weight: 600; cursor: pointer; }
 .textbtn.warn { color: var(--danger); }
@@ -336,6 +338,8 @@ svg.diagram { display: block; width: 100%; max-width: 640px; margin: 6px auto 0;
 .fn-title { font-weight: 600; font-size: .9375rem; }
 .fn-detail { font-size: .8125rem; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #floors { display: grid; gap: 20px; }
+.allel { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; }
+.allel .fn-text { flex: 1; min-width: 0; }
 .floor { display: grid; gap: 10px; }
 .floor h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: -.01em; margin: 6px 2px 0; }
 .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); gap: 12px; }
@@ -709,6 +713,14 @@ class ProxonPanel extends HTMLElement {
       this._roomKey = key; this._rooms.clear();
       const box = this.$("floors"); box.innerHTML = "";
       const floors = [0, 1, -1].filter(f => rooms.some(r => r.floor === f)), several = floors.length > 1;
+      if (this.id("WaermeelementeAlle")) {  // the heating panels of all rooms at once, right above the rooms
+        const row = document.createElement("div"); row.className = "card allel";
+        row.innerHTML = `<span class="fn-icon" style="background: color-mix(in srgb, var(--flame) 14%, transparent)"><svg class="elem" viewBox="0 0 24 24" aria-hidden="true">${RADIATOR}</svg></span>
+          <span class="fn-text"><div class="fn-title">${this.t.allEl}</div><div class="fn-detail" id="allel-sum"></div></span>
+          <button class="switch" role="switch" id="allel-sw" aria-label="${this.t.allEl}" aria-checked="false"></button>`;
+        box.appendChild(row);
+        row.querySelector("#allel-sw").addEventListener("click", () => this._allElements());
+      }
       for (const f of floors) {
         const sec = document.createElement("section"); sec.className = "floor";
         sec.innerHTML = `<h2>${several ? this.t.floors[String(f)] : this.t.rooms}</h2><div class="rooms"></div>`;
@@ -720,6 +732,26 @@ class ProxonPanel extends HTMLElement {
       }
     }
     for (const tile of this._rooms.values()) tile.render();
+    const sw = this.shadowRoot.getElementById("allel-sw");
+    if (sw) {
+      const all = this.st("WaermeelementeAlle"), list = [...this._rooms.keys()].map(n => this._room(n)).filter(Boolean);
+      const on = list.filter(r => r.mode === "heat").length;
+      if (!this._allBusy) sw.setAttribute("aria-checked", (all && all.state === "on") || false);
+      this.shadowRoot.getElementById("allel-sum").textContent = fill(this.t.allOn, { a: on, b: list.length });
+    }
+  }
+  // switches every room's heating panel at once; undo puts each room back as it was (also when only some were on)
+  _allElements() {
+    const t = this.t, sw = this.shadowRoot.getElementById("allel-sw"), all = this.st("WaermeelementeAlle");
+    const turnOn = !(all && all.state === "on");
+    const before = [...this._rooms.keys()].map(n => this._room(n)).filter(Boolean).map(r => ({ entity: r.entity, mode: r.mode }));
+    this._allBusy = true; sw.setAttribute("aria-checked", turnOn);
+    this.call("switch", turnOn ? "turn_on" : "turn_off", { entity_id: this.id("WaermeelementeAlle") }).then(() => {
+      this._allBusy = false;
+      this._toast(turnOn ? t.allOnDone : t.allOff, () => Promise.all(before
+        .filter(b => (b.mode === "heat" || b.mode === "auto") && b.mode !== (turnOn ? "heat" : "auto"))  // only rooms that changed
+        .map(b => this.call("climate", "set_hvac_mode", { entity_id: b.entity, hvac_mode: b.mode }))));
+    }, () => { this._allBusy = false; this._update(); });
   }
   _room(n) {
     const c = this.st(`NBE${n}Thermostat`); if (!c) return null;
@@ -910,10 +942,16 @@ class ProxonPanel extends HTMLElement {
       if (foot && st) foot.textContent = `${this.t.status}: ${this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state}`;
     }
     for (let d = 0; d < 7; d++) {
-      const el = v.querySelector(`#day-sum-${d}`), st = this.st(`Zeitprogramm${d}`);
-      if (el && st) el.textContent = st.state && st.state !== "unknown" ? st.state : this.t.empty;
+      const el = v.querySelector(`#day-sum-${d}`);
+      if (el) el.textContent = this._daySummary(d);
     }
     (this._settingCtl || []).forEach(c => c.sync());
+  }
+  _daySummary(d) {
+    const st = this.st(`Zeitprogramm${d}`); if (!st) return this.t.empty;
+    const a = st.attributes || {}, parts = [1, 2, 3].map(i => a[`phase_${i}`]).filter(p => p && p.active && p.level > 0)
+      .map(p => `${p.start}–${p.end} ${this.t.lvl} ${p.level}`);
+    return parts.length ? parts.join(" · ") : this.t.empty;
   }
   _sheetDay(d, from) {
     const t = this.t;
@@ -937,7 +975,7 @@ class ProxonPanel extends HTMLElement {
       }
       copy.forEach(k => this._confirmButton(this.$(`cp-${k}`), () => this.call("button", "press", { entity_id: this.id(k) }).catch(() => {})));
     }, () => {
-      const sum = this.st(`Zeitprogramm${d}`); this.$("day-sub").textContent = sum && sum.state !== "unknown" ? sum.state : t.empty;
+      this.$("day-sub").textContent = this._daySummary(d);
       const focused = this.shadowRoot.activeElement;
       for (let p = 0; p < 3; p++) {
         for (const w of ["start", "end"]) {
