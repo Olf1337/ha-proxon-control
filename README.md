@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.22.1:** on the page "Proxon", the settings sections no longer overlap on wide screens (the weekly schedule
+pushed into the column next to it); a day's phases now show below its name.
+
 **New in 0.22.0:** a page "Proxon" of its own in the sidebar, in the liquid-glass look: the unit as a section with the air
 flowing, the hot-water tank, every room (drag to set the target), cards for the functions that are running, and a tab with
 all settings; legionella protection can be planned on a weekday at a time; solar / cheap-power hot water and legionella
@@ -130,6 +133,12 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.22.1
+
+* **Seite „Proxon“, Tab „Einstellungen“:** Auf breiten Bildschirmen überlappten sich die Abschnitte – lange
+  Tageszusammenfassungen im Wochenprogramm schoben die Karte unter die Spalte daneben („Urlaub“). Jetzt bleibt jeder
+  Abschnitt in seiner Spalte, und die Phasen eines Tages stehen vollständig unter dem Wochentag.
 
 ## Neu in Version 0.22.0: eigene Seite „Proxon“, Legionellenschutz planen
 

@@ -298,9 +298,16 @@ button { font: inherit; color: inherit; }
 .group .card > :first-child { border-top: 0; }
 .group .foot { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
 .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
+.sgrid > *, .group .card { min-width: 0; }  /* a section never grows wider than its column (long texts wrap inside it) */
+/* a weekday: its name, the phases below it (wrapping), the chevron on the right */
+.day.sched { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; }
+.day.sched > span:first-child { grid-column: 1; grid-row: 1; }
+.day.sched > span:last-child { grid-column: 1; grid-row: 2; margin: 0; text-align: left; white-space: normal; overflow: visible; font-size: .8125rem; color: var(--fg-2); }
+.day.sched::after { grid-column: 2; grid-row: 1 / span 2; }
 .tin { font: 600 1rem var(--font); color: var(--fg); background: var(--line); border: 0; border-radius: 10px; padding: 8px 10px; min-width: 0; }
 .day { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line);
   background: none; padding: 13px 0; text-align: left; cursor: pointer; }
+.day > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day span:last-child { margin-left: auto; color: var(--fg-2); font-size: .875rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .day::after { content: "›"; color: var(--fg-3); font-size: 1.2rem; margin-left: 4px; }
 .textbtn { width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); background: none; padding: 14px 0; color: var(--accent); font-weight: 600; cursor: pointer; }
@@ -1006,7 +1013,7 @@ class ProxonPanel extends HTMLElement {
         if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
         if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
-        return t.days.map((name, d) => `<button class="day" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
+        return t.days.map((name, d) => `<button class="day sched" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
       }).join("");
       const status = sec.status && has(sec.status) ? `<p class="foot" id="foot-${sec.id}"></p>` : "";
       return `<section class="group"><h2>${t.s[sec.id]}</h2><div class="card">${body}</div>${status}</section>`;
