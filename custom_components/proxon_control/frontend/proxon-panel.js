@@ -406,7 +406,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .s-rail, .s-fill { position: absolute; left: 0; top: 19px; height: 6px; border-radius: 6px; }
 .s-rail { right: 0; background: var(--line); }
 .s-fill { background: var(--accent); width: 0; }
-.s-now { position: absolute; top: 13px; width: 3px; height: 18px; margin-left: -1.5px; border-radius: 2px; background: var(--fg); opacity: .55; }
+.s-now { position: absolute; top: 2px; width: 3px; height: 40px; margin-left: -1.5px; border-radius: 2px; background: var(--fg); opacity: .5; }
 .row-label small.now-val { color: var(--fg); font-weight: 600; }
 .s-knob { position: absolute; top: 8px; left: 0; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface-solid);
   box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); transition: scale 120ms ease-out; }
