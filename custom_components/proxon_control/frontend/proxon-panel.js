@@ -36,7 +36,7 @@ const TEXT = {
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
-    yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
+    failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
@@ -94,7 +94,7 @@ const TEXT = {
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
-    yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
+    failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
@@ -585,8 +585,24 @@ class ProxonPanel extends HTMLElement {
   st(key) { const e = this.id(key); return e ? this._hass.states[e] : undefined; }
   num(key) { const s = this.st(key); const v = s ? parseFloat(s.state) : NaN; return Number.isFinite(v) ? v : null; }
   fmt(v, d = 1) { return v === null || v === undefined ? "–" : Number(v).toLocaleString(this._hass.language || undefined, { minimumFractionDigits: d, maximumFractionDigits: d }); }
-  call(domain, service, data) {  // a failure is shown by Home Assistant itself; the caller only puts its view back
-    return this._hass.callService(domain, service, data);
+  // an action of an entity; a failure (e.g. "solar surplus needs a sensor") is shown in the page's own toast, like its
+  // other hints, instead of Home Assistant's; the caller only puts its view back
+  call(domain, service, data) {
+    return this._hass.callService(domain, service, data, undefined, false).catch(async err => {
+      this._toast(await this._errorText(err, domain, service), null);
+      throw err;
+    });
+  }
+  async _errorText(err, domain, service) {
+    const e = err || {};
+    if (e.translation_domain && e.translation_key && this._hass.loadBackendTranslation) {
+      try {
+        const text = (await this._hass.loadBackendTranslation("exceptions", e.translation_domain))(
+          `component.${e.translation_domain}.exceptions.${e.translation_key}.message`, e.translation_placeholders);
+        if (text) return text;
+      } catch (_) { /* fall back to the message the server sent */ }
+    }
+    return e.message || fill(this.t.failed, { a: `${domain}.${service}` });
   }
   moreInfo(entityId) { this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true })); }
 
@@ -1559,7 +1575,7 @@ class ProxonPanel extends HTMLElement {
   _toast(text, undo) {
     this.$("toast-text").textContent = text; this._undo = undo; this.$("toast-undo").hidden = !undo; this.$("toast").hidden = false;
     this._toastY.to(0, { damping: 0.85, response: 0.35 });
-    clearTimeout(this._toastTimer); this._toastTimer = setTimeout(() => this._hideToast(), 5000);
+    clearTimeout(this._toastTimer); this._toastTimer = setTimeout(() => this._hideToast(), clamp(text.length * 60, 5000, 12000));  // long hints stay longer
   }
   _hideToast() { this._undo = null; this._toastY.to(1.6, { damping: 1, response: 0.3, onRest: () => { this.$("toast").hidden = true; } }); }
 }
