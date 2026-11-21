@@ -16,12 +16,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity, room_device
-from .registers import MODE_OFF, ROOM_COUNT, room_base, room_connected, room_demand, room_heating, room_target, room_write
+from .registers import MODE_OFF, ROOM_COUNT, room_connected, room_demand, room_heating, room_target, room_write
 
-# ranges of the original app: living room 10-30 °C; other rooms 14-26 °C and at most 3 °C around the room's own base value
+# ranges of the original app (checked on a real unit): living room 10-30 °C; the other rooms 14-24 °C, whatever their own base
+# value (their target is stored as a whole-degree offset to it; every write is read back, so an offset the unit refuses shows)
 LIVING_ROOM_RANGE = (10.0, 30.0)
-OTHER_ROOM_RANGE = (14.0, 26.0)
-ROOM_OFFSET_LIMIT = 3.0
+OTHER_ROOM_RANGE = (14.0, 24.0)
 
 
 # one change at a time per platform: the unit allows only a few sessions, and every write is read back
@@ -79,17 +79,11 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
 
     @property
     def min_temp(self) -> float:
-        if self._room == 0:
-            return LIVING_ROOM_RANGE[0]
-        base = room_base(self._data, self._room)
-        return OTHER_ROOM_RANGE[0] if base is None else max(OTHER_ROOM_RANGE[0], base - ROOM_OFFSET_LIMIT)
+        return LIVING_ROOM_RANGE[0] if self._room == 0 else OTHER_ROOM_RANGE[0]
 
     @property
     def max_temp(self) -> float:
-        if self._room == 0:
-            return LIVING_ROOM_RANGE[1]
-        base = room_base(self._data, self._room)
-        return OTHER_ROOM_RANGE[1] if base is None else min(OTHER_ROOM_RANGE[1], base + ROOM_OFFSET_LIMIT)
+        return LIVING_ROOM_RANGE[1] if self._room == 0 else OTHER_ROOM_RANGE[1]
 
     @property
     def hvac_mode(self) -> HVACMode:

@@ -218,7 +218,7 @@ async def test_rooms_are_thermostats(hass: HomeAssistant, device) -> None:
     assert bedroom.state == "heat"  # heating element released
     assert bedroom.attributes["temperature"] == 22.0  # own base value 20 + offset 2
     assert bedroom.attributes["target_temp_step"] == 1.0
-    assert (bedroom.attributes["min_temp"], bedroom.attributes["max_temp"]) == (17.0, 23.0)  # own base value +-3
+    assert (bedroom.attributes["min_temp"], bedroom.attributes["max_temp"]) == (14.0, 24.0)  # like the app
     bath = hass.states.get(eid(hass, "climate", "NBE4Thermostat"))
     assert bath.state == "heat"
     assert bath.attributes["temperature"] == 19.0
@@ -231,11 +231,13 @@ async def test_thermostat_follows_the_rooms_own_base_value(hass: HomeAssistant, 
     bedroom = eid(hass, "climate", "NBE1Thermostat")
     state = hass.states.get(bedroom)
     assert state.attributes["temperature"] == 20.0  # 18 + offset 2
-    assert (state.attributes["min_temp"], state.attributes["max_temp"]) == (15.0, 21.0)
+    assert (state.attributes["min_temp"], state.attributes["max_temp"]) == (14.0, 24.0)  # like the app, whatever the base
     await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=19)
     assert device.writes[-1] == {"obj": 0, "address": 436, "value": 1}  # offset 1 relative to its own 18
-    with pytest.raises(ServiceValidationError):  # outside the +-3 around the room's own value
-        await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=22)
+    await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=24)
+    assert device.writes[-1] == {"obj": 0, "address": 436, "value": 6}  # more than 3 above its own 18: as in the app
+    with pytest.raises(ServiceValidationError):  # outside the app's 14-24 °C
+        await call(hass, "climate", "set_temperature", entity_id=bedroom, temperature=25)
 
 
 async def test_living_room_thermostat_in_half_degrees(hass: HomeAssistant, device) -> None:

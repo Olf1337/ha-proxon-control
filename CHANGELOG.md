@@ -125,6 +125,9 @@ nobody home).
 * **Neuer Tab „Energie“ auf der Seite „Proxon“:** Säulendiagramm des Verbrauchs, gestapelt aus Kompressor, Lüftung und
   Warmwasser, je Tag (Woche, Monat) oder je Monat (Jahr), mit Kosten und Hochrechnung; „‹ ›“ blättert zu früheren Zeiträumen
   (aus der Statistik von Home Assistant); ein Tipp auf eine Säule zeigt ihre Werte. Dazu Leistung jetzt und Laufzeiten von heute. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Raumtemperaturen wie in der Proxon-App:** Die Nebenräume lassen sich auf 14–24 °C stellen (das Wohnzimmer wie bisher
+  10–30 °C). Bisher erlaubte die Integration nur ±3 °C um den Grundwert des Raums, bei einem Grundwert von 21 °C also
+  18–24 °C – nach unten enger als die App.
 * **Warmwasser-Speicher in Wasserfarbe:** Das Wasser im Speicher auf „Zuhause“ ist blau (unten tiefer, oben heller) statt
   orange, in beiden Designs, hell und dunkel; die Temperaturen stehen wie bisher als Zahlen daneben.
 * **Zweites Design „Soft“ für die Seite „Proxon“:** unter *Konfigurieren* wählbar neben Liquid Glass – erhabene Karten
