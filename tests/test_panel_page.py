@@ -52,6 +52,11 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert [c[:2] for c in step["calls"]] == [["number", "set_value"]], f"{width}: two taps are sent once: {step['calls']}"
         assert float(step["calls"][0][2]["value"]) == float(step["before"].rstrip("°")) + 2
         assert r["toast"] == [False, "Sensor fehlt"], f"{width}: a refused action shows the page's hint"
+        lv = r["level"]
+        assert lv["buttons"] == 4, f"{width}: the fan level has four buttons"
+        assert r["level_eco"], f"{width}: in ECO comfort mode the unit chooses the level (buttons disabled)"
+        assert not lv["auto"], f"{width}: in another mode the level can be chosen"
+        assert [c[:2] + [c[2]["value"]] for c in lv["calls"]] == [["number", "set_value", lv["chosen"]]], f"{width}: {lv}"
         assert any(c.startswith("Legionellenschutz") for c in r["chips"]), f"{width}: no chip for a switched-on function"
         assert r["chip_opens"] == ["settings", "auto"]
         assert {"vent", "water", "auto"} <= set(r["sections"])

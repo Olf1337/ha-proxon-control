@@ -95,6 +95,26 @@ def check(page, data: dict) -> dict:
         page.wait_for_timeout(400)
         r["toast"] = js(f"() => [{root}.getElementById('toast').hidden, {root}.getElementById('toast-text').textContent]")
 
+    # the fan level: four buttons, a tap sends that level (disabled while the unit chooses it itself)
+    js(f"() => {{ window.calls = []; window.panel._sheetVentilation({root}.getElementById('unit')); }}")
+    page.wait_for_timeout(500)
+    r["level_eco"] = js(f"() => [...{root}.querySelectorAll('#level button')].every(b => b.disabled)")
+    # another mode than ECO comfort: the level is chosen by hand
+    mode = data["config"]["entities"].get("Betriebsart")
+    js("""(e) => { const h = window.hassFake, st = h.states[e]; const other = (st.attributes.options || []).find(o => o !== 'eco_comfort' && o !== st.state);
+                   h.states = { ...h.states, [e]: { ...st, state: other } }; window.panel.hass = { ...h }; }""", mode)
+    page.wait_for_timeout(300)
+    r["level"] = js(f"""() => {{
+      const b = [...{root}.querySelectorAll('#level button')];
+      const free = b.find(x => !x.disabled && x.getAttribute('aria-pressed') !== 'true');
+      if (free) free.click();
+      return {{ buttons: b.length, auto: b.every(x => x.disabled), chosen: free ? +free.dataset.n : null }};
+    }}""")
+    page.wait_for_timeout(300)
+    r["level"]["calls"] = js("() => window.calls")
+    js("() => window.panel._closeSheet()")
+    page.wait_for_timeout(400)
+
     # a switched-on function: a chip in the status row that opens its settings
     leg = data["config"]["entities"].get("LegionellenGeplant")
     if leg:

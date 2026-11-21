@@ -214,7 +214,6 @@ class Spring {
   }
 }
 const project = (v, d = 0.998) => (v / 1000) * d / (1 - d);  // Apple's momentum projection
-const SETTING = 0.99;  // deceleration for targets and levels: a flick moves a step or two, not to the end
 const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -480,16 +479,10 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: var(--line); }
 .seg button { border: 0; background: transparent; padding: 7px 11px; border-radius: 9px; font-size: .875rem; cursor: pointer; color: var(--fg-2); }
 .seg button[aria-pressed="true"] { background: var(--surface-solid); color: var(--fg); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.level { position: relative; height: 56px; margin: 6px 4px 4px; touch-action: none; cursor: grab; }
-.level.auto { opacity: .45; pointer-events: none; }
+.level-seg { display: grid; grid-template-columns: repeat(4, 1fr); margin: 6px 0 10px; }
+.level-seg button { padding: 10px 0; font-size: 1.0625rem; font-weight: 600; }
+.level-seg button:disabled { opacity: .45; cursor: default; }
 .level-note { font-size: .8125rem; color: var(--fg-3); margin: 0 0 6px; }
-.rail, .rail-fill { position: absolute; left: 0; top: 26px; height: 4px; border-radius: 4px; }
-.rail { right: 0; background: var(--line); }
-.rail-fill { background: var(--accent); }
-.tick { position: absolute; top: 40px; transform: translateX(-50%); font-size: .8125rem; color: var(--fg-3); font-weight: 600; }
-.tick.on { color: var(--fg); }
-.knob { position: absolute; top: 14px; left: 0; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface-solid);
-  box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); }
 .link { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 14px 0 0; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: flex; align-items: center; gap: 14px;
   padding: 10px 10px 10px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sheet-shadow);
@@ -1282,7 +1275,7 @@ class ProxonPanel extends HTMLElement {
     this.shadowRoot.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) this._closeSheet(); });
     let sd = null;
     sheet.addEventListener("pointerdown", e => {
-      if (e.target.closest("button, input, .level") || sheet.scrollTop > 0) return;
+      if (e.target.closest("button, input") || sheet.scrollTop > 0) return;
       sd = { y: e.clientY, v: this._sheetY.x, h: sheet.offsetHeight, hist: [{ y: e.clientY, t: e.timeStamp }] }; sheet.setPointerCapture(e.pointerId);
     });
     sheet.addEventListener("pointermove", e => {
@@ -1354,8 +1347,8 @@ class ProxonPanel extends HTMLElement {
     const label = o => (this._hass.formatEntityState ? this._hass.formatEntityState(sel, o) : o);
     const hasLevel = !!this.id("Luefterstufe");
     this._openSheet(`<h3>${t.ventilation}</h3><p class="sub" id="v-sub"></p>
-      ${hasLevel ? `<div class="row-label">${t.level}</div><div class="level" id="level" role="slider" tabindex="0" aria-label="${t.level}" aria-valuemin="1" aria-valuemax="4">
-        <div class="rail"></div><div class="rail-fill"></div>${[1, 2, 3, 4].map(n => `<span class="tick" data-n="${n}">${n}</span>`).join("")}<div class="knob"></div></div>
+      ${hasLevel ? `<div class="row-label">${t.level}</div><div class="seg level-seg num" id="level" role="group" aria-label="${t.level}">
+        ${[1, 2, 3, 4].map(n => `<button data-n="${n}" aria-label="${t.level} ${n}">${n}</button>`).join("")}</div>
         <p class="level-note" id="level-note" hidden>${t.levelAuto}</p>` : ""}
       ${sel ? `<div class="row"><span class="row-label">${t.mode}</span><div class="seg" id="mode">${opts.map(o => `<button data-o="${o}">${label(o)}</button>`).join("")}</div></div>` : ""}
       ${this.id("Intensivlueftung") ? this._sw("s-boost", t.boost, this.num("IntensivlueftungsDauer") ? fill(t.boostSub, { m: this.fmt(this.num("IntensivlueftungsDauer"), 0) }) : "") : ""}
@@ -1371,54 +1364,27 @@ class ProxonPanel extends HTMLElement {
       const m = this.st("Betriebsart"); this.shadowRoot.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", !!m && b.dataset.o === m.state));
       this._swDraw("s-boost", "Intensivlueftung");
       const auto = (m && m.state === "eco_comfort") || (this.st("Intensivlueftung") || {}).state === "on";
-      const lv = this.$("level"); if (lv) { lv.classList.toggle("auto", auto); lv.setAttribute("aria-disabled", auto); this.$("level-note").hidden = !auto; }
+      const lv = this.$("level"); if (lv) { lv.querySelectorAll("button").forEach(b => { b.disabled = auto; }); this.$("level-note").hidden = !auto; }
       if (this._levelSync) this._levelSync();
     });
   }
-  _wireLevel() {
-    const lv = this.$("level"), knob = lv.querySelector(".knob"), fillEl = lv.querySelector(".rail-fill");
-    const xOf = n => (n - 1) / 3 * lv.clientWidth;
+  _wireLevel() {  // four buttons, one per level: a tap chooses it (nothing to drag by accident)
+    const lv = this.$("level"), buttons = [...lv.querySelectorAll("button")];
     const shownLevel = () => this.num("IstLuefterstufe") ?? this.num("Luefterstufe");
-    const k = new Spring(shownLevel() || 1, v => {
-      const x = clamp(xOf(v), -12, lv.clientWidth + 12);
-      knob.style.transform = `translateX(${x.toFixed(1)}px)`; fillEl.style.width = `${clamp(x, 0, lv.clientWidth).toFixed(1)}px`;
-    });
-    let chosen = null, d = null;
-    requestAnimationFrame(() => { lv.querySelectorAll(".tick").forEach(t => { t.style.left = `${xOf(+t.dataset.n)}px`; }); k.set(k.x); });
-    const mark = n => { lv.setAttribute("aria-valuenow", n); lv.querySelectorAll(".tick").forEach(t => t.classList.toggle("on", +t.dataset.n === n)); };
-    const choose = (n, velocity) => {
-      n = clamp(n, 1, 4); chosen = n; mark(n);
-      k.to(n, { damping: velocity ? 0.8 : 1, response: 0.3, velocity });
+    let chosen = null;
+    const mark = n => buttons.forEach(b => b.setAttribute("aria-pressed", +b.dataset.n === n));
+    buttons.forEach(b => b.addEventListener("click", () => {
+      const n = +b.dataset.n; chosen = n; mark(n);
       if (n !== this.num("Luefterstufe")) this.call("number", "set_value", { entity_id: this.id("Luefterstufe"), value: n }).catch(() => {
-        chosen = null; const cur = this.num("Luefterstufe") || 1; mark(cur); k.to(cur, { damping: 1, response: 0.35 });  // back to what the unit has
+        chosen = null; mark(shownLevel());  // back to what the unit has
       });
-    };
+    }));
     this._levelSync = () => {  // follows the unit, except while a choice is on its way
-      const cur = shownLevel(); if (cur === null || d) return;
+      const cur = shownLevel(); if (cur === null) return;
       if (chosen !== null && cur !== chosen) return;
-      chosen = null; mark(cur); if (!activeSprings.has(k)) k.set(cur);
+      chosen = null; mark(cur);
     };
-    lv.addEventListener("pointerdown", e => {
-      lv.setPointerCapture(e.pointerId);
-      d = { grab: e.clientX - lv.getBoundingClientRect().left - xOf(k.x), hist: [{ x: e.clientX, t: e.timeStamp }], moved: false, x0: e.clientX };
-    });
-    lv.addEventListener("pointermove", e => {
-      if (!d) return;
-      if (Math.abs(e.clientX - d.x0) > 4) d.moved = true;
-      d.hist.push({ x: e.clientX, t: e.timeStamp }); if (d.hist.length > 6) d.hist.shift();
-      let v = 1 + (e.clientX - lv.getBoundingClientRect().left - d.grab) / lv.clientWidth * 3;
-      if (v > 4) v = 4 + rubber(v - 4, 1); if (v < 1) v = 1 - rubber(1 - v, 1);
-      k.set(v);
-    });
-    const up = e => {
-      if (!d) return;
-      const dd = d; d = null;
-      if (!dd.moved) { choose(Math.round(1 + (e.clientX - lv.getBoundingClientRect().left) / lv.clientWidth * 3)); return; }
-      const a = dd.hist[0], b = dd.hist[dd.hist.length - 1], vel = (b.x - a.x) / Math.max(1, b.t - a.t) * 1000 / lv.clientWidth * 3;
-      choose(Math.round(k.x + clamp(project(vel * 100, SETTING) / 100, -1, 1)), clamp(vel, -12, 12));
-    };
-    lv.addEventListener("pointerup", up); lv.addEventListener("pointercancel", up);
-    lv.addEventListener("keydown", e => { const s = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key]; if (s) { e.preventDefault(); choose((chosen || this.num("Luefterstufe") || 1) + s); } });
+    this._levelSync();
   }
   _sheetWater(from) {
     const t = this.t, n = this.st("SollWassertemperatur");
