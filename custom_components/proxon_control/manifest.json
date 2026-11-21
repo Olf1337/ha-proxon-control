@@ -16,5 +16,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Olf1337/ha-proxon-control/issues",
   "requirements": [],
+  "single_config_entry": true,
   "version": "0.24.0"
 }

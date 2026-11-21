@@ -41,3 +41,15 @@ async def test_settings_from_a_newer_version_are_not_loaded(hass: HomeAssistant,
     assert not await hass.config_entries.async_setup(e.entry_id)
     assert e.state is ConfigEntryState.MIGRATION_ERROR
     assert e.version == ENTRY_VERSION + 1 and dict(e.data) == DATA  # left as they were
+
+
+async def test_only_one_unit(hass: HomeAssistant, device) -> None:
+    """One unit per Home Assistant for now (the heating is too central to share one page between several): adding a second
+    one is refused right away."""
+    from homeassistant import config_entries
+    from homeassistant.data_entry_flow import FlowResultType
+
+    e = entry(ENTRY_VERSION, ENTRY_MINOR_VERSION)
+    e.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    assert result["type"] is FlowResultType.ABORT and result["reason"] == "single_instance_allowed"

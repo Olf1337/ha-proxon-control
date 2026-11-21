@@ -63,7 +63,7 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 
 ## Die Seite „Proxon“
 
-In der Seitenleiste erscheint die Seite **„Proxon“** (für die erste eingerichtete Anlage), im Liquid-Glass-Look und für Handy, Tablet und Computer:
+In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look und für Handy, Tablet und Computer:
 
 * **Zuhause:** die Anlage im Schnitt (Frisch-, Zu-, Ab- und Fortluft mit Temperaturen, Lüfter mit Drehzahl, Wärmepumpe), der Warmwasserspeicher
   (warmes Wasser in Litern, Duschminuten, Temperaturen) und jeder Raum als Kachel. Eingeschaltete Funktionen (Urlaub, Legionellenschutz,
@@ -80,7 +80,8 @@ weiter, danach entfällt es. Solange es existiert, steht ein Hinweis unter *Eins
 * Die **Uhr der Anlage** lässt sich nicht stellen – die Anlage lehnt das Schreiben übers Netz ab (in der Proxon-App geht es).
 * Der Ausweichweg über den **Proxon-Server** braucht Nabtos Bibliothek, die es nur für Linux auf Intel/AMD und Mac mit Apple-Chip gibt
   (Raspberry Pi: nur Heimnetz).
-* Die Seite „Proxon“ zeigt die **erste** eingerichtete Anlage; weitere Anlagen nutzen das fertige Dashboard.
+* **Eine Anlage pro Home Assistant.** Eine zweite lässt sich nicht hinzufügen; mehrere Anlagen kommen frühestens in einem
+  späteren Release.
 * Grenzwert CO₂ wirkt nur mit CO₂-Fühler; Grenzwert CO₂ und Feuchte steuern die Lüftung nur im ECO-Komfortbetrieb.
 
 ## Hinweise zu den Werten
