@@ -7,7 +7,8 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 **Not yet released:** no sliders in the settings of the page "Proxon" any more (every number with − and +, hold to
 repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); one unit per Home
-Assistant (a second one can't be added for now); entities tidied (clearer names, four unchecked sensors removed, the pictures off for
+Assistant (a second one can't be added for now); a new tab "Energy" on the page (today, now, running times, week/month/year
+with forecast, earlier years from the statistics); hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
 new installs); saved settings
 get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
 
@@ -120,6 +121,12 @@ nobody home).
 * **Qualitätsstufen Bronze und Silber erfüllt:** Selbsteinschätzung in `docs/quality-scale.md`; Testabdeckung 96 % (die Tests
   auf GitHub schlagen unter 95 % fehl), neue Tests für den Weg über den Proxon-Server und die Verbindungsfehler; Änderungen
   gehen je Plattform einzeln an die Anlage (`PARALLEL_UPDATES`).
+* **Neuer Tab „Energie“ auf der Seite „Proxon“:** Verbrauch von heute als Ring (Kompressor, Lüftung, Warmwasser) mit
+  Kosten und gestern, Leistung jetzt, Laufzeiten von heute, dazu Woche, Monat und Jahr mit Hochrechnung; frühere Jahre aus
+  der Statistik von Home Assistant über „‹ Jahr ›“. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Warmwasser-Verbrauch geschätzt:** Die Anlage misst das Warmwasser-Modul nicht. Neue Sensoren schätzen Leistung und
+  Energie von Warmwasser-Wärmepumpe und Heizstab aus ihrer Laufzeit und der Leistung laut Datenblatt T300 (430 W, 1500 W;
+  unter *Konfigurieren* änderbar, z. B. 4500 oder 9000 W für BOOST). Für das Energie-Dashboard geeignet, mit „geschätzt“ im Namen.
 * **Entitäten aufgeräumt vor 1.0:**
   * Neue Anzeigenamen (bestehende Entitäts-IDs bleiben): „Kompressor-Auslastung“ (statt „Kompressor-Leistung“ in %),
     „Legionellenschutz Status“, „Heizstab freigegeben“ und „Heizstab bis“ (statt „E-Heizstab / Boost“), „Kühlung

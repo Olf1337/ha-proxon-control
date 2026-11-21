@@ -28,7 +28,10 @@ BOOT = """([config, states, narrow]) => {
       if (why) throw why;
     },
     formatEntityState: (st, s) => s ?? st.state,
+    config: { currency: "EUR" },
+    callWS: async msg => { window.ws.push(msg); return window.wsAnswer ? window.wsAnswer(msg) : {}; },
   };
+  window.ws = [];
   window.hassFake = hass;
   const el = document.createElement("proxon-panel");
   el.narrow = narrow; el.panel = { config }; el.hass = hass;
@@ -124,6 +127,25 @@ def check(page, data: dict) -> dict:
         js(f"() => {root}.querySelector('#status .fchip').click()")
         page.wait_for_timeout(600)
         r["chip_opens"] = js("() => [window.panel._current, window.panel._section]")
+
+    # energy: today, the periods; an earlier year from Home Assistant's statistics (empty without rows, summed with rows)
+    js(f"() => {root}.getElementById('tab-energy').click()")
+    page.wait_for_timeout(500)
+    r["energy"] = js(f"""() => ({{
+      shown: !{root}.getElementById('v-energy').hidden, today: {root}.getElementById('e-today').textContent,
+      tiles: [...{root}.querySelectorAll('.e-tile')].length, parts: window.panel._eParts().map(p => p.k),
+      overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }})""")
+    js(f"() => {root}.getElementById('e-prev').click()")
+    page.wait_for_timeout(300)
+    r["energy_empty_year"] = js(f"() => [{root}.getElementById('e-yr').textContent, {root}.getElementById('ep-empty').hidden, {root}.getElementById('e-prev').disabled]")
+    js("""() => {
+      window.wsAnswer = msg => Object.fromEntries(msg.statistic_ids.map(id => [id, [{ change: 100 }, { change: 20.5 }]]));
+      window.panel._eStats = {}; window.panel._updateEnergy();
+    }""")
+    page.wait_for_timeout(300)
+    r["energy_year"] = js(f"() => [{root}.getElementById('ep-total').textContent, {root}.getElementById('ep-key').textContent]")
+    js(f"() => {{ window.wsAnswer = null; {root}.getElementById('e-next').click(); }}")
+    page.wait_for_timeout(300)
 
     # settings: every section; the list stays in its column, nothing runs out sideways
     js(f"() => {root}.getElementById('tab-settings').click()")

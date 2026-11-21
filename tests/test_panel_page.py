@@ -7,6 +7,7 @@ in its own process (tests/panel_page.py).
 """
 from __future__ import annotations
 
+from datetime import datetime
 import json
 from pathlib import Path
 import shutil
@@ -60,6 +61,14 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert any(c.startswith("Legionellenschutz") for c in r["chips"]), f"{width}: no chip for a switched-on function"
         assert r["chip_opens"] == ["settings", "auto"]
         assert {"vent", "water", "auto"} <= set(r["sections"])
+        en = r["energy"]
+        assert en["shown"] and en["tiles"] == 3 and en["today"].endswith("kWh"), f"{width}: energy tab {en}"
+        assert en["parts"] == ["comp", "vent", "water"] and en["overflow"] <= 0, f"{width}: energy tab {en}"
+        year, empty, no_further = r["energy_empty_year"]
+        assert int(year) == datetime.now().year - 1 and not empty and no_further, f"{width}: a year without statistics"
+        total, key = r["energy_year"]
+        # each counter rose 120.5 kWh in the year: compressor, ventilation, hot water (heat pump + heater) = 4 x 120.5
+        assert total.startswith("482") and "Warmwasser (geschätzt) 241 kWh" in key, f"{width}: a year from the statistics: {r['energy_year']}"
         for sec, s in r["settings"].items():
             assert s["shown"] and s["rows"], f"{width}/{sec}: the section is empty"
             assert s["overflow"] <= 0 and s["rows_out"] == 0, f"{width}/{sec}: runs out sideways: {s}"
