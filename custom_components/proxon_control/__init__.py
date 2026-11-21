@@ -1,6 +1,7 @@
 """Proxon Control: the ventilation / heat unit as a Home Assistant integration."""
 from __future__ import annotations
 
+import logging
 import re
 
 from homeassistant.config_entries import ConfigEntry
@@ -27,6 +28,8 @@ from .const import (
     DEFAULT_MODE,
     DEFAULT_PORT,
     DOMAIN,
+    ENTRY_MINOR_VERSION,
+    ENTRY_VERSION,
     MANUFACTURER,
     MODEL,
 )
@@ -40,6 +43,8 @@ from .panel import async_unregister as async_unregister_panel
 from .registers import ROOM_COUNT
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     Platform.SENSOR,
@@ -146,6 +151,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     entry.async_on_unload(coordinator.comfort.async_stop)
     # the "Proxon" page in the sidebar (our own interface)
     await async_register_panel(hass, entry)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Bring settings saved by an older version up to date. Settings saved by a newer version (after going back to an older
+    release) are left alone and the entry is not loaded, so nothing is overwritten that this version doesn't understand."""
+    if entry.version > ENTRY_VERSION:
+        _LOGGER.error("Proxon Control: these settings were saved by a newer version (%s.%s); please update the integration again",
+                      entry.version, entry.minor_version)
+        return False
+    # version 1 is the current layout: nothing to change yet. A future version 2 converts here, e.g.
+    # hass.config_entries.async_update_entry(entry, data=..., version=2, minor_version=1)
+    if (entry.version, entry.minor_version) != (ENTRY_VERSION, ENTRY_MINOR_VERSION):
+        hass.config_entries.async_update_entry(entry, version=ENTRY_VERSION, minor_version=ENTRY_MINOR_VERSION)
     return True
 
 

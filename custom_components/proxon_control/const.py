@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 DOMAIN = "proxon_control"
+# the layout of the saved settings (config entry): a new major version needs a migration in async_migrate_entry, a new
+# minor version only adds things older code can ignore
+ENTRY_VERSION = 1
+ENTRY_MINOR_VERSION = 1
 
 # parts per million: UnitOfRatio from Home Assistant 2026.10 on, the old constant (deprecated, removed in 2027.8) before
 PPM: str

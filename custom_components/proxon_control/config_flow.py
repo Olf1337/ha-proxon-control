@@ -49,6 +49,8 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    ENTRY_MINOR_VERSION,
+    ENTRY_VERSION,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     MODES,
@@ -171,7 +173,8 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
 
 
 class ProxonConfigFlow(ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    VERSION = ENTRY_VERSION
+    MINOR_VERSION = ENTRY_MINOR_VERSION
 
     @staticmethod
     @callback
