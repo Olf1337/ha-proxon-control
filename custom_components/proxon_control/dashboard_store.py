@@ -36,6 +36,12 @@ OLD_TITLE = "Proxon"  # until 0.21: since then the page "Proxon" is our own inte
 TITLE = "Proxon Control"
 
 
+def stored_url_paths(hass: HomeAssistant) -> list[str]:
+    """The addresses of the dashboards made in the user interface (empty when they can't be read)."""
+    collection = _dashboards_collection(hass)
+    return [str(item.get("url_path")) for item in dict(getattr(collection, "data", {}) or {}).values()] if collection else []
+
+
 async def async_retitle(hass: HomeAssistant, url_path: str, title: str, only_from: str | None = None) -> bool:
     """Give the dashboard at url_path a new title in the sidebar (only when it still has `only_from`, if given: a title chosen
     by hand stays). Returns whether it was changed."""

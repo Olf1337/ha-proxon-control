@@ -72,7 +72,8 @@ In der Seitenleiste erscheint die Seite **„Proxon“** (für die erste eingeri
   gewählte Bereich; auf dem Handy erst die Liste, dann der Bereich.
 * **Sollwerte nur mit − und +** (gedrückt halten wiederholt): Wischen beim Scrollen verstellt nichts.
 
-Ein fertiges Dashboard „Proxon Control“ lässt sich zusätzlich anlegen (Aktion *Dashboard erstellen*).
+Das frühere fertige Dashboard „Proxon Control“ (Aktion *Dashboard erstellen*) ist **abgekündigt**: Es funktioniert bis Version 2.0
+weiter, danach entfällt es. Solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*.
 
 ## Bekannte Grenzen
 

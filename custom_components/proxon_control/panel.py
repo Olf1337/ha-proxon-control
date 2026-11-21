@@ -72,6 +72,27 @@ async def async_register(hass: HomeAssistant, entry: ConfigEntry) -> None:
     from .services import DASHBOARD_URL
 
     await async_retitle(hass, DASHBOARD_URL, TITLE, only_from=OLD_TITLE)
+    async_dashboard_notice(hass)
+
+
+DEPRECATED_ISSUE = "dashboard_deprecated"
+
+
+def async_dashboard_notice(hass: HomeAssistant) -> None:
+    """The ready-made dashboard is deprecated (the page "Proxon" replaces it; it goes in 2.0): a notice under Repairs while
+    one exists, gone when it was deleted."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from .dashboard_store import stored_url_paths
+    from .services import DASHBOARD_URL
+
+    urls = [u for u in stored_url_paths(hass) if u == DASHBOARD_URL or u.startswith(f"{DASHBOARD_URL}-")]
+    if urls:
+        ir.async_create_issue(hass, DOMAIN, DEPRECATED_ISSUE, is_fixable=False, is_persistent=False, severity=ir.IssueSeverity.WARNING,
+                              translation_key=DEPRECATED_ISSUE, translation_placeholders={"url": f"/{urls[0]}"},
+                              learn_more_url="https://github.com/Olf1337/ha-proxon-control#die-seite-proxon")
+    else:
+        ir.async_delete_issue(hass, DOMAIN, DEPRECATED_ISSUE)
 
 
 def _fingerprint() -> str:

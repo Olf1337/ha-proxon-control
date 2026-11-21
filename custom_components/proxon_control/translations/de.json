@@ -955,8 +955,8 @@
       }
     },
     "create_dashboard": {
-      "name": "Dashboard erstellen",
-      "description": "Legt das fertige Dashboard „Proxon Control“ in der Seitenleiste an (beim nächsten Mal wird es neu geschrieben; Änderungen von Hand darin werden ersetzt): Zuhause, Warmwasser, Optimierung, Strom, Einstellungen, mit den tatsächlichen Entitäts-IDs dieser Anlage.",
+      "name": "Dashboard erstellen (abgekündigt)",
+      "description": "Abgekündigt: Die Seite „Proxon“ in der Seitenleiste ersetzt dieses Dashboard, die Aktion entfällt in Version 2.0. Legt das fertige Dashboard „Proxon Control“ in der Seitenleiste an (beim nächsten Mal wird es neu geschrieben; Änderungen von Hand darin werden ersetzt): Zuhause, Warmwasser, Optimierung, Strom, Einstellungen, mit den tatsächlichen Entitäts-IDs dieser Anlage.",
       "fields": {
         "config_entry_id": {
           "name": "Anlage",
@@ -1026,6 +1026,10 @@
     "legionella_risk": {
       "title": "Proxon: Warmwasser seit {days} Tagen nicht auf {temperature} °C",
       "description": "Das Warmwasser war seit {days} Tagen nicht mindestens {temperature} °C heiß, und kein Legionellenschutz ist eingeschaltet. Empfohlen ist, das Wasser regelmäßig (etwa einmal pro Woche) auf {temperature} °C aufzuheizen – besonders mit einer Zirkulationspumpe, weil lauwarmes Wasser in der Zirkulationsleitung Legionellen begünstigt. Schalte dazu „Legionellenschutz mit Sonne“ oder die Legionellenschaltung der Anlage ein. Der Hinweis verschwindet von selbst, sobald eine der beiden eingeschaltet ist oder das Wasser heiß genug war."
+    },
+    "dashboard_deprecated": {
+      "title": "Proxon: Das fertige Dashboard ist abgekündigt",
+      "description": "Das Dashboard unter {url} ist abgekündigt: Die Seite „Proxon“ in der Seitenleiste zeigt Anlage, Warmwasser und alle Räume und hat alle Einstellungen. Das Dashboard funktioniert bis Version 2.0 weiter, danach legt die Integration es nicht mehr an und aktualisiert es nicht mehr. Lösche es unter Einstellungen → Dashboards, wenn du es nicht mehr brauchst; der Hinweis verschwindet dann beim nächsten Start von Home Assistant."
     }
   }
 }

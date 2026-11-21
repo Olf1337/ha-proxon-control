@@ -955,8 +955,8 @@
       }
     },
     "create_dashboard": {
-      "name": "Create dashboard",
-      "description": "Creates the ready-made dashboard \"Proxon Control\" in the sidebar (written anew the next time; changes made in it by hand are replaced): home, hot water, optimisation, power, settings, with this unit's real entity IDs.",
+      "name": "Create dashboard (deprecated)",
+      "description": "Deprecated: the page \"Proxon\" in the sidebar replaces this dashboard, and the action goes in version 2.0. Creates the ready-made dashboard \"Proxon Control\" in the sidebar (written anew the next time; changes made in it by hand are replaced): home, hot water, optimisation, power, settings, with this unit's real entity IDs.",
       "fields": {
         "config_entry_id": {
           "name": "Unit",
@@ -1026,6 +1026,10 @@
     "legionella_risk": {
       "title": "Proxon: hot water not at {temperature} °C for {days} days",
       "description": "The hot water hasn't reached {temperature} °C for {days} days, and no legionella protection is on. Heating the water to {temperature} °C regularly (about once a week) is recommended - all the more with a circulation pump, as lukewarm water in the circulation pipe favours legionella. Switch on \"Legionella protection with solar\" or the unit's own legionella function. The notice goes away by itself as soon as one of them is on or the water was hot enough."
+    },
+    "dashboard_deprecated": {
+      "title": "Proxon: the ready-made dashboard is deprecated",
+      "description": "The dashboard at {url} is deprecated: the page \"Proxon\" in the sidebar shows the unit, the hot water and every room and has all settings. The dashboard keeps working until version 2.0, then the integration no longer creates or updates it. Delete it under Settings → Dashboards when you no longer need it; this notice goes away at the next start of Home Assistant."
     }
   }
 }

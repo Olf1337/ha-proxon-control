@@ -624,3 +624,29 @@ async def test_all_rooms_upstairs_get_one_heading(hass: HomeAssistant, device) -
     rooms = next(s for s in dashboard["views"][0]["sections"] if s.get("column_span") == 2)
     headings = [c for c in rooms["cards"] if c["type"] == "heading"]
     assert [(h["heading"], h["heading_style"]) for h in headings] == [("Rooms", "title")]
+
+
+async def test_ready_made_dashboard_is_deprecated(hass: HomeAssistant, device, hass_ws_client) -> None:
+    """The page "Proxon" replaces the ready-made dashboard (it goes in 2.0): a notice under Repairs while one exists, none
+    without it; the action still works until then."""
+    from homeassistant.helpers import issue_registry as ir
+    from homeassistant.setup import async_setup_component
+
+    from custom_components.proxon_control.panel import DEPRECATED_ISSUE, async_dashboard_notice
+
+    assert await async_setup_component(hass, "lovelace", {})
+    await setup(hass)
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, DEPRECATED_ISSUE) is None  # no dashboard: nothing to say
+    answer = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
+    assert answer["created"] is True
+    issue = issues.async_get_issue(DOMAIN, DEPRECATED_ISSUE)
+    assert issue and issue.severity is ir.IssueSeverity.WARNING and issue.translation_placeholders == {"url": "/proxon-dashboard"}
+    # deleted by hand: the notice goes (on the next start, when the page is registered again)
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "lovelace/dashboards/list"})
+    board = next(b for b in (await client.receive_json())["result"] if b["url_path"] == "proxon-dashboard")
+    await client.send_json_auto_id({"type": "lovelace/dashboards/delete", "dashboard_id": board["id"]})
+    assert (await client.receive_json())["success"]
+    async_dashboard_notice(hass)
+    assert issues.async_get_issue(DOMAIN, DEPRECATED_ISSUE) is None

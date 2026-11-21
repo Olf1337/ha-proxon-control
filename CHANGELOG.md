@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** no sliders in the settings of the page "Proxon" any more (every number with − and +, hold to
+repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); saved settings
+get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
+
 **New in 0.24.0:** on the page "Proxon", the hot-water target and the room targets are set with − and + (a swipe while
 scrolling no longer changes them); switched-on functions show as small chips in the status row of "Home" (a tap opens
 their settings); a refused action (e.g. solar surplus without a sensor) shows in the page's own hint.
@@ -98,6 +102,17 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **Keine Schieberegler mehr in den Einstellungen:** Jeder Zahlenwert auf der Seite „Proxon“ hat − und +; gedrückt halten
+  wiederholt, nach kurzer Zeit schneller. Erklärung und erlaubter Bereich stehen unter der Zeile.
+* **Fertiges Dashboard abgekündigt:** Die Seite „Proxon“ ersetzt das Dashboard „Proxon Control“. Es funktioniert bis
+  Version 2.0 weiter; solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*. (Vor 2.0 muss die Seite
+  auch weitere Anlagen zeigen – bisher haben die nur das Dashboard.)
+* **Vorbereitung auf 1.0:** Gespeicherte Einstellungen bekommen einen Migrationsschritt; Tests halten Entitäten, Aktionen,
+  Optionen und Vorlagen fest und öffnen die Seite „Proxon“ in einem echten Browser (dabei gefunden und behoben: eine Ansicht
+  konnte nach dem Tab-Wechsel ein paar Pixel verschoben stehen bleiben).
 
 ### Neu in Version 0.24.0
 
