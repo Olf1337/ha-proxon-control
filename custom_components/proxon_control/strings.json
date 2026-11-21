@@ -820,9 +820,6 @@
     "level_locked": {
       "message": "In ECO Comfort mode and during boost ventilation the unit sets the level itself."
     },
-    "room_limit": {
-      "message": "This room can only be set between {low} and {high} °C (the room's own value ± 3 °C)."
-    },
     "write_not_accepted": {
       "message": "The unit did not take over {name}: wanted {wanted}, it reports {actual}."
     },
@@ -888,6 +885,9 @@
     },
     "legionella_needs_sensor": {
       "message": "Legionella protection with solar needs the sensor for the surplus (feed-in). Choose it under Settings → Devices & services → Proxon Control → Configure, or use “Plan legionella protection” with a fixed day and time."
+    },
+    "room_base_missing": {
+      "message": "This room's own base value is missing from the last reading of the unit, so its target can't be set right now. Try again in a moment."
     }
   },
   "options": {

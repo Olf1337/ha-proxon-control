@@ -820,9 +820,6 @@
     "level_locked": {
       "message": "Im ECO Komfortbetrieb und während der Intensivlüftung regelt das Gerät die Stufe selbst."
     },
-    "room_limit": {
-      "message": "Dieser Raum kann nur zwischen {low} und {high} °C eingestellt werden (Sollwert des Raums ± 3 °C)."
-    },
     "write_not_accepted": {
       "message": "Die Anlage hat {name} nicht übernommen: gewünscht {wanted}, sie meldet {actual}."
     },
@@ -888,6 +885,9 @@
     },
     "legionella_needs_sensor": {
       "message": "Für „Legionellenschutz mit Sonne“ fehlt der Sensor für den Überschuss (Einspeisung). Wähle ihn unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren – oder nimm „Legionellenschutz planen“ mit festem Tag und fester Uhrzeit."
+    },
+    "room_base_missing": {
+      "message": "Der Grundwert dieses Raums fehlt in der letzten Antwort der Anlage, deshalb lässt sich sein Sollwert gerade nicht setzen. Bitte gleich noch einmal versuchen."
     }
   },
   "options": {

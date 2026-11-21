@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.proxon_control import registers as R
 
@@ -94,3 +95,46 @@ async def test_a_room_no_longer_reported_can_be_deleted(hass: HomeAssistant, dev
     entry.runtime_data.data["NBE1Verbunden"] = 0  # disconnected at the unit
     assert await async_remove_config_entry_device(hass, entry, room)
     assert not any([await async_remove_config_entry_device(hass, entry, d) for d in others if d.id != room.id])
+
+
+
+async def test_room_target_needs_the_rooms_base_value(hass: HomeAssistant, device) -> None:
+    """Without the room's own base value in the last reading the target isn't written against a guessed 20 °C."""
+    from homeassistant.exceptions import HomeAssistantError
+
+    entry = await setup(hass)
+    data = dict(entry.runtime_data.data)
+    data.pop("NBE1MittelTemperatur")
+    entry.runtime_data.async_set_updated_data(data)
+    await hass.async_block_till_done()
+    writes = len(device.writes)
+    thermostat = eid(hass, "climate", "NBE1Thermostat")
+    assert hass.states.get(thermostat).state == "unavailable"  # without its base the room has no target to show
+    await call(hass, "climate", "set_temperature", entity_id=thermostat, temperature=22)
+    assert len(device.writes) == writes  # nothing written against a guessed base
+    # the write itself refuses too (the reading can change between the check and the write)
+    from custom_components.proxon_control.registers import room_write
+
+    with pytest.raises(KeyError):
+        room_write(data, 1, 22.0)
+    entity = next(e for e in hass.data["climate"].entities if e.entity_id == thermostat)
+    with pytest.raises(HomeAssistantError) as err:
+        await entity.async_set_temperature(temperature=22)
+    assert err.value.translation_key == "room_base_missing" and len(device.writes) == writes
+
+
+async def test_rooms_not_deletable_without_a_fresh_reading(hass: HomeAssistant, device) -> None:
+    """A failed or empty reading would make every room look disconnected: no deleting then."""
+    from homeassistant.helpers import device_registry as dr
+
+    from custom_components.proxon_control import async_remove_config_entry_device
+
+    entry = await setup(hass)
+    room = next(d for d in dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id) if any(i[1].endswith("_room1") for i in d.identifiers))
+    entry.runtime_data.data["NBE1Verbunden"] = 0
+    assert await async_remove_config_entry_device(hass, entry, room)
+    entry.runtime_data.last_update_success = False
+    assert not await async_remove_config_entry_device(hass, entry, room)
+    entry.runtime_data.last_update_success = True
+    entry.runtime_data.data = {}
+    assert not await async_remove_config_entry_device(hass, entry, room)

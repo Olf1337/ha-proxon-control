@@ -70,6 +70,12 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         total, key, filled = r["energy_year"]
         # each counter rose 120.5 kWh (January and June): compressor, ventilation, hot water (heat pump + heater) = 4 x 120.5
         assert total.startswith("482") and "Warmwasser (geschätzt) 241 kWh" in key and filled == 2, f"{width}: {r['energy_year']}"
+        tz = r["energy_tz"]
+        assert tz["cols"][0] == 1 and tz["cols"][1] == 1 and sum(tz["cols"][2:]) == 0, f"{width}: rows by HA's days {tz}"
+        assert tz["total"].startswith("14") and "2,00" in tz["sub"], f"{width}: cost of its time + fixed price before {tz}"
+        failed_shown, empty_hidden, prev_disabled = r["energy_failed"]
+        assert not failed_shown and empty_hidden and not prev_disabled, f"{width}: a failed query {r['energy_failed']}"
+        assert any("@" in tag for tag in r["energy_tags"]), f"{width}: the running period is fetched per hour {r['energy_tags']}"
         assert r["cost_none"]["hint"], f"{width}: no price, no costs: a hint"
         c = r["cost"]
         assert not c["hint"] and len(c["rows"]) == 4, f"{width}: costs so far {c}"

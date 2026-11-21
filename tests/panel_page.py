@@ -153,6 +153,32 @@ def check(page, data: dict) -> dict:
       [...{root}.querySelectorAll('.e-col')].filter(c => c.children.length).length]""")
     js(f"() => {{ window.wsAnswer = null; {root}.querySelector('#e-per button[data-p=week]').click(); }}")
     page.wait_for_timeout(300)
+    # Home Assistant's time zone, not the browser's (Kiritimati, UTC+14, no daylight saving): last week's Monday row lands on
+    # Monday; Monday had a cost sensor (1,00 €), Tuesday not yet (4 kWh at the fixed 25 ct = 1,00 €)
+    js("""() => {
+      const h = window.hassFake; h.config = { currency: 'EUR', time_zone: 'Pacific/Kiritimati' }; window.panel.hass = { ...h };
+      window.panel._config.price = 25; window.panel._config.entities.Stromkosten = 'sensor.test_cost';
+      const k = new Date(Date.now() + 14 * 3600e3), back = (k.getUTCDay() + 6) % 7 + 7;
+      const mon = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate() - back) - 14 * 3600e3, tue = mon + 86400e3;
+      const E = window.panel._config.entities;
+      window.wsAnswer = msg => ({ [E.EnergieKompressor]: [{ start: mon, change: 10 }, { start: tue, change: 4 }],
+        [E.EnergieGesamt]: [{ start: mon, change: 10 }, { start: tue, change: 4 }], 'sensor.test_cost': [{ start: mon, change: 1 }] });
+      window.panel._eStats = {}; window.panel._eOff = -1; window.panel._updateEnergy();
+    }""")
+    page.wait_for_timeout(300)
+    r["energy_tz"] = js(f"""() => ({{ cols: [...{root}.querySelectorAll('.e-col')].map(c => c.children.length), total: {root}.getElementById('e-total').textContent,
+      sub: {root}.getElementById('e-sub').textContent }})""")
+    # a failed query: said so, not "no values", and earlier periods stay reachable; tried again later
+    js("() => { window.wsAnswer = () => { throw new Error('recorder down'); }; window.panel._eStats = {}; window.panel._updateEnergy(); }")
+    page.wait_for_timeout(300)
+    r["energy_failed"] = js(f"() => [{root}.getElementById('e-failed').hidden, {root}.getElementById('e-empty').hidden, {root}.getElementById('e-prev').disabled]")
+    # the running period is fetched again every hour (its finished days change after midnight)
+    js("() => { window.wsAnswer = null; window.panel._eOff = 0; window.panel._eStats = {}; window.panel._updateEnergy(); }")
+    page.wait_for_timeout(200)
+    r["energy_tags"] = js("() => Object.keys(window.panel._eStats)")
+    js("""() => { const h = window.hassFake; h.config = { currency: 'EUR' }; delete window.panel._config.entities.Stromkosten;
+                  window.panel._config.price = null; window.panel.hass = { ...h }; }""")
+    page.wait_for_timeout(200)
     # costs: without a price a hint; with a fixed price (25 ct/kWh) so far and expected, worked out from the consumption
     cost = f"""() => ({{ hint: !{root}.getElementById('e-cost-none').hidden, rows: [...{root}.querySelectorAll('#e-cost-run .e-run')].map(r => r.innerText),
       today: window.panel._eSum(['EnergieGesamt'], 'Heute') }})"""

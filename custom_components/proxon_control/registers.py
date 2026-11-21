@@ -732,8 +732,11 @@ def heating_channels(values: dict) -> list[str]:
 
 
 def room_write(values: dict, i: int, target: float) -> tuple[str, float]:
-    """Which value to write for a new room target. Other rooms store a whole-degree offset to their own base value."""
+    """Which value to write for a new room target. Other rooms store a whole-degree offset to their own base value; without
+    that value (not in the last reading) there is nothing to write against: KeyError."""
     if i == 0:
         return "NBE0MittelTemperatur", target
-    base = values.get(f"NBE{i}MittelTemperatur", 20.0)
+    base = values.get(f"NBE{i}MittelTemperatur")
+    if not isinstance(base, (int, float)):
+        raise KeyError(f"NBE{i}MittelTemperatur")
     return f"NBE{i}OffsetTemperatur", float(round(target - base))

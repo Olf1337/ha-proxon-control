@@ -164,7 +164,8 @@ async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEnt
     rooms it still reports can't (they would come back at the next start)."""
     coordinator = getattr(entry, "runtime_data", None)
     data = getattr(coordinator, "data", None) or {}
-    if coordinator is None:
+    # only on a fresh reading of the unit: a failed or empty one would make every room look disconnected
+    if coordinator is None or not coordinator.last_update_success or "NBE0MittelTemperatur" not in data:
         return False
     rooms = {room_identifier(coordinator, n): n for n in range(ROOM_COUNT)}
     return all(i in rooms and not room_connected(data, rooms[i]) for i in device.identifiers)

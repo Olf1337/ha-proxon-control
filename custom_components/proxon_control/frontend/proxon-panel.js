@@ -28,7 +28,7 @@ const TEXT = {
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
     e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
-      earlier: "Früher", later: "Später", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
+      earlier: "Früher", later: "Später", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
       avgMonth: "Im Schnitt pro Monat", ofWater: "davon Warmwasser {v}",
       noPrice: "Für die Kosten unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren einen Strompreis eintragen (fest oder als Sensor).", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
@@ -96,7 +96,7 @@ const TEXT = {
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
     e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
-      earlier: "Earlier", later: "Later", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
+      earlier: "Earlier", later: "Later", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
       avgMonth: "On average per month", ofWater: "of which hot water {v}",
       noPrice: "For the cost, enter an electricity price under Settings → Devices & services → Proxon Control → Configure (fixed or as a sensor).", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
@@ -1103,7 +1103,7 @@ class ProxonPanel extends HTMLElement {
         <div class="e-chart" id="e-chart" role="img"><div id="e-gridl"></div><div class="e-cols" id="e-cols"></div></div>
         <div class="e-xl" id="e-xl"></div>
         <div class="e-detail num" id="e-detail"></div>
-        <div class="e-key" id="e-key"></div><p class="hint" id="e-empty" hidden>${e.none}</p></section>
+        <div class="e-key" id="e-key"></div><p class="hint" id="e-empty" hidden>${e.none}</p><p class="hint" id="e-failed" hidden>${e.failed}</p></section>
       <section class="card e-card" id="e-cost"><span class="label">${e.cost}</span>
         <div class="e-cost-grid"><div><span class="sub">${e.running}</span><div id="e-cost-run"></div></div>
           <div id="e-cost-fc-wrap"><span class="sub">${e.expected}</span><div id="e-cost-fc"></div></div></div>
@@ -1126,11 +1126,42 @@ class ProxonPanel extends HTMLElement {
     try { return v.toLocaleString(this._hass.language || undefined, { style: "currency", currency: (this._hass.config || {}).currency || "EUR" }); } catch (_) { return this.fmt(v, 2); }
   }
   // what a period cost: the unit's cost sensor, the estimated hot water at the same average price
+  // Home Assistant's time zone: days, weeks, months and years follow it, not the browser's (a phone abroad shows the home's days)
+  _tz() { return (this._hass.config || {}).time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone; }
+  // a moment as a calendar day in that time zone (as a UTC date, for day arithmetic and names), and its wall-clock time
+  _civil(t) {
+    const tz = this._tz();
+    if (!this._tzFmt || this._tzZone !== tz) {
+      this._tzZone = tz;
+      this._tzFmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" });
+    }
+    const o = {}; for (const p of this._tzFmt.formatToParts(t)) o[p.type] = Number(p.value);
+    return { day: new Date(Date.UTC(o.year, o.month - 1, o.day)), wall: Date.UTC(o.year, o.month - 1, o.day, o.hour % 24, o.minute, o.second) };
+  }
+  _midnight(day) {  // the moment a calendar day begins in that time zone
+    let t = day.getTime();
+    for (let i = 0; i < 2; i++) t = day.getTime() - (this._civil(new Date(t)).wall - t);
+    return new Date(t);
+  }
+  // where the running day / week / month / year began (and ends)
+  _eBounds(suffix) {
+    const d = this._civil(new Date()).day, y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate(), wd = (d.getUTCDay() + 6) % 7;
+    const [a, b] = { Heute: [[y, m, day], [y, m, day + 1]], Woche: [[y, m, day - wd], [y, m, day - wd + 7]], Monat: [[y, m, 1], [y, m + 1, 1]],
+      Jahr: [[y, 0, 1], [y + 1, 0, 1]] }[suffix];
+    return [this._midnight(new Date(Date.UTC(...a))), this._midnight(new Date(Date.UTC(...b)))];
+  }
   // a fixed tariff (€/kWh), or null with a dynamic one
   _ePrice() { const ct = Number((this._config || {}).price); return ct > 0 ? ct / 100 : null; }
+  // whether a cost sensor has counted the whole running period (it only counts from when a price was set)
+  _eCostComplete(suffix) {
+    const since = ((this.st(`Stromkosten${suffix}`) || {}).attributes || {}).counting_since;
+    return !!since && new Date(since) - this._eBounds(suffix)[0] <= 60000;
+  }
+  // what the running period cost: the cost sensor where it counted the whole period (at the price of its time), else the
+  // consumption at the fixed price; the estimated hot water at the same average price
   _eCost(suffix, water) {
     const cost = this.num(`Stromkosten${suffix}`), unit = this.num(`EnergieGesamt${suffix}`), fixed = this._ePrice();
-    if (fixed !== null) return unit === null ? null : (unit + (water || 0)) * fixed;  // exact for a fixed tariff, every period
+    if (fixed !== null && !(cost !== null && this._eCostComplete(suffix))) return unit === null ? null : (unit + (water || 0)) * fixed;
     if (cost === null) return null;
     return cost + (water && unit > 0.01 ? water * cost / unit : 0);
   }
@@ -1138,69 +1169,70 @@ class ProxonPanel extends HTMLElement {
   // the same average price)
   _eForecast(fs) {
     const fc = this.num(`EnergieGesamt${fs}Prognose`); if (fc === null) return null;
-    const water = this._eSum(["EnergieWarmwasserWP", "EnergieHeizstab"].filter(k => this.id(k)), fs) || 0, now = new Date();
-    const end = fs === "Monat" ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : new Date(now.getFullYear() + 1, 0, 1);
+    const water = this._eSum(["EnergieWarmwasserWP", "EnergieHeizstab"].filter(k => this.id(k)), fs) || 0, now = new Date(), end = this._eBounds(fs)[1];
     const since = ((this.st(`EnergieWarmwasserWP${fs}`) || {}).attributes || {}).counting_since;
     let wfc = 0;
     if (water && since) { const done = now - new Date(since); if (done > (fs === "Monat" ? 12 : 72) * 3600000) wfc = water * (end - new Date(since)) / done; }
-    const fixed = this._ePrice();
-    if (fixed !== null) return { kwh: fc + wfc, cost: (fc + wfc) * fixed, waterCost: wfc * fixed };
-    const fcCost = this.num(`Stromkosten${fs}Prognose`), unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
+    const fixed = this._ePrice(), fcCost = this.num(`Stromkosten${fs}Prognose`);
+    if (fixed !== null && !(fcCost !== null && this._eCostComplete(fs))) return { kwh: fc + wfc, cost: (fc + wfc) * fixed, waterCost: wfc * fixed };
+    const unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
     const price = c !== null && unitE > 0.01 ? c / unitE : null;
     return { kwh: fc + wfc, cost: fcCost === null ? null : fcCost + (price ? wfc * price : 0), waterCost: price ? wfc * price : null };
   }
   _eKey(parts, values, unit = "kWh", fmt = v => this._kwh(v)) {
     return parts.map((p, i) => `<span><i style="background:var(${p.color})"></i>${this.t.e[p.k]} <b class="num">${fmt(values[i])} ${unit}</b></span>`).join("");
   }
-  // the period shown: its start and end, its columns (start of each day or month) and how they are named
+  // the period shown: its start and end (moments), its columns (calendar days or months, as UTC dates) and how they are named
   _ePeriod() {
-    const now = new Date(), per = this._ePer, off = this._eOff, lang = this._hass.language || undefined;
-    let start, end, cols = [], label, title;
+    const today = this._civil(new Date()).day, per = this._ePer, off = this._eOff, lang = this._hass.language || undefined;
+    const Y = today.getUTCFullYear(), M = today.getUTCMonth(), D = today.getUTCDate(), wd = (today.getUTCDay() + 6) % 7;
+    const cd = (y, m, d) => new Date(Date.UTC(y, m, d)), name = (d, o) => d.toLocaleDateString(lang, { ...o, timeZone: "UTC" });
+    let from, to, cols = [], label, title;
     if (per === "week") {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) + 7 * off);
-      end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
-      for (let i = 0; i < 7; i++) cols.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
-      label = d => this.t.daysShort[(d.getDay() + 6) % 7];
-      const last = new Date(end - 86400000);
-      title = off === 0 ? this.t.e.week : `${start.toLocaleDateString(lang, { day: "numeric", month: "short" })} – ${last.toLocaleDateString(lang, { day: "numeric", month: "short" })}`;
+      from = cd(Y, M, D - wd + 7 * off); to = cd(Y, M, D - wd + 7 * off + 7);
+      for (let i = 0; i < 7; i++) cols.push(cd(Y, M, D - wd + 7 * off + i));
+      label = d => this.t.daysShort[(d.getUTCDay() + 6) % 7];
+      title = off === 0 ? this.t.e.week : `${name(from, { day: "numeric", month: "short" })} – ${name(cols[6], { day: "numeric", month: "short" })}`;
     } else if (per === "month") {
-      start = new Date(now.getFullYear(), now.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-      for (let d = new Date(start); d < end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) cols.push(d);
-      label = d => ([1, 5, 10, 15, 20, 25, 30].includes(d.getDate()) ? String(d.getDate()) : "");
-      title = start.toLocaleDateString(lang, { month: "long", year: "numeric" });
+      from = cd(Y, M + off, 1); to = cd(Y, M + off + 1, 1);
+      for (let d = from; d < to; d = cd(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)) cols.push(d);
+      label = d => ([1, 5, 10, 15, 20, 25, 30].includes(d.getUTCDate()) ? String(d.getUTCDate()) : "");
+      title = name(from, { month: "long", year: "numeric" });
     } else {
-      start = new Date(now.getFullYear() + off, 0, 1); end = new Date(start.getFullYear() + 1, 0, 1);
-      for (let m = 0; m < 12; m++) cols.push(new Date(start.getFullYear(), m, 1));
-      label = d => d.toLocaleDateString(lang, { month: "narrow" });
-      title = String(start.getFullYear());
+      from = cd(Y + off, 0, 1); to = cd(Y + off + 1, 0, 1);
+      for (let m = 0; m < 12; m++) cols.push(cd(Y + off, m, 1));
+      label = d => name(d, { month: "narrow" });
+      title = String(Y + off);
     }
-    return { per, start, end, cols, label, title, gran: per === "year" ? "month" : "day", current: off === 0 };
+    return { per, start: this._midnight(from), end: this._midnight(to), cols, label, title, name, today, gran: per === "year" ? "month" : "day", current: off === 0 };
   }
   // Home Assistant's long-term statistics: each counter's rise per day / month in a period (only rows that exist count:
-  // a period before the counters existed stays empty). Fetched once per period.
+  // a period before the counters existed stays empty). Kept per period; the running one is fetched again every hour (the
+  // finished days of it change only then), a failed query is tried again after half a minute.
   _eFetch(tag, start, end, gran) {
-    if (this._eStats[tag]) return this._eStats[tag].done ? this._eStats[tag] : null;
-    const entry = this._eStats[tag] = { done: false, rows: {} };
+    const old = this._eStats[tag];
+    if (old && !(old.failed && Date.now() > old.retryAt)) return old.done ? old : null;
+    const entry = this._eStats[tag] = { done: false, failed: false, rows: {} };
     const keys = [...this._eParts().flatMap(p => p.keys), "EnergieGesamt", "Stromkosten"].filter(k => this.id(k));
-    const finish = res => {
+    const finish = (res, failed) => {
       keys.forEach(k => { entry.rows[k] = ((res || {})[this.id(k)] || []).map(r => ({ start: new Date(r.start), change: Number.isFinite(r.change) ? r.change : 0 })); });
-      entry.done = true;
+      entry.done = true; entry.failed = !!failed; entry.retryAt = Date.now() + 30000;
       if (this._current === "energy") this._updateEnergy();
     };
     if (!this._hass.callWS || !keys.length) finish({});
     else this._hass.callWS({ type: "recorder/statistics_during_period", start_time: start.toISOString(), end_time: end.toISOString(),
-      statistic_ids: keys.map(k => this.id(k)), period: gran, types: ["change"] }).then(finish, () => finish({}));
+      statistic_ids: keys.map(k => this.id(k)), period: gran, types: ["change"] }).then(r => finish(r), () => finish({}, true));
     return entry.done ? entry : null;
   }
   // costs: what today, this week, month and year cost so far, and what the month and the year will probably cost
   _updateCosts(parts) {
-    const e = this.t.e, lang = this._hass.language || undefined, now = new Date(), has = !!this.id("Stromkosten") || this._ePrice() !== null;
+    const e = this.t.e, lang = this._hass.language || undefined, today = this._civil(new Date()).day, has = !!this.id("Stromkosten") || this._ePrice() !== null;
     this.$("e-cost-none").hidden = has;
     this.$("v-energy").querySelector(".e-cost-grid").hidden = !has;
     if (!has) return;
     const waterKeys = ["EnergieWarmwasserWP", "EnergieHeizstab"].filter(k => this.id(k)), all = parts.flatMap(p => p.keys);
     const row = (label, cost, kwh) => `<div class="e-run"><span>${label}${kwh === null ? "" : `<small class="num">${this._kwh(kwh)} kWh</small>`}</span><b class="num">${this._money(cost) || "–"}</b></div>`;
-    const month = now.toLocaleDateString(lang, { month: "long" }), year = String(now.getFullYear());
+    const month = today.toLocaleDateString(lang, { month: "long", timeZone: "UTC" }), year = String(today.getUTCFullYear());
     this.$("e-cost-run").innerHTML = [["Heute", e.today], ["Woche", e.week], ["Monat", month], ["Jahr", year]].map(([sfx, label]) =>
       row(label, this._eCost(sfx, this._eSum(waterKeys, sfx) || 0), this._eSum(all, sfx))).join("");
     const fm = this._eForecast("Monat"), fy = this._eForecast("Jahr");
@@ -1214,36 +1246,46 @@ class ProxonPanel extends HTMLElement {
   }
   _updateEnergy() {
     if (!this._energyBuilt) return;
-    const t = this.t, e = t.e, parts = this._eParts(), lang = this._hass.language || undefined, P = this._ePeriod(), now = new Date();
+    const t = this.t, e = t.e, parts = this._eParts(), P = this._ePeriod();
     this.$("v-energy").querySelectorAll("#e-per button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === P.per));
     this.$("e-next").disabled = P.current;
-    const stats = this._eFetch(`${P.per}${P.start.getTime()}`, P.start, P.end, P.gran);
-    const sameBucket = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && (P.gran === "month" || a.getDate() === b.getDate());
+    const stats = this._eFetch(`${P.per}${P.start.getTime()}${P.current ? `@${Math.floor(Date.now() / 3600000)}` : ""}`, P.start, P.end, P.gran);
+    // a row belongs to the column of its day / month in Home Assistant's time zone
+    const sameBucket = (a, b) => a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && (P.gran === "month" || a.getUTCDate() === b.getUTCDate());
+    const dayOf = r => r.day || (r.day = this._civil(r.start).day);
     const liveSuffix = P.gran === "month" ? "Monat" : "Heute";
     // the columns: each part's rise per day / month; the running day / month comes live from the sensors
+    const inCol = (k, d) => (stats ? (stats.rows[k] || []).filter(r => sameBucket(dayOf(r), d)) : []);
     const cols = P.cols.map(d => {
-      const live = P.current && sameBucket(d, now), future = d > now && !live;
-      const values = parts.map(p => (future ? 0 : live ? this._eSum(p.keys, liveSuffix) || 0
-        : stats ? p.keys.reduce((a, k) => a + (stats.rows[k] || []).filter(r => sameBucket(r.start, d)).reduce((x, r) => x + r.change, 0), 0) : 0));
+      const live = P.current && sameBucket(d, P.today), future = d > P.today && !live;
+      const values = parts.map(p => (future ? 0 : live ? this._eSum(p.keys, liveSuffix) || 0 : p.keys.reduce((a, k) => a + inCol(k, d).reduce((x, r) => x + r.change, 0), 0)));
       return { d, values, total: values.reduce((a, b) => a + b, 0), future, live };
     });
     const hasRows = !!stats && parts.some(p => p.keys.some(k => (stats.rows[k] || []).length));
-    const empty = !!stats && !P.current && !hasRows;
+    const failed = !!stats && stats.failed, empty = !!stats && !failed && !P.current && !hasRows;
     this.$("e-prev").disabled = empty || this._eOff <= -60;
-    this.$("e-empty").hidden = !empty;
+    this.$("e-empty").hidden = !empty; this.$("e-failed").hidden = !failed;
     // the period's totals: live sensors for the running period, the statistics for earlier ones
     const suffix = { week: "Woche", month: "Monat", year: "Jahr" }[P.per];
     const totals = P.current ? parts.map(p => this._eSum(p.keys, suffix) || 0) : parts.map((p, i) => cols.reduce((a, c) => a + c.values[i], 0));
     const sum = totals.reduce((a, b) => a + b, 0), wi = parts.findIndex(p => p.k === "water"), water = wi >= 0 ? totals[wi] : 0;
+    // an earlier period's cost, column by column: what the cost sensor counted then (at the price of its time, the hot water at
+    // the same average price), else - before there was a cost sensor - the consumption at the fixed price
     let cost = null;
     if (P.current) cost = this._eCost(suffix, water);
-    else if (this._ePrice() !== null) cost = hasRows ? sum * this._ePrice() : null;
-    else if (stats && (stats.rows.Stromkosten || []).length) {
-      const c = stats.rows.Stromkosten.reduce((a, r) => a + r.change, 0), u = (stats.rows.EnergieGesamt || []).reduce((a, r) => a + r.change, 0);
-      cost = c + (water && u > 0.01 ? water * c / u : 0);
+    else if (hasRows) {
+      const fixed = this._ePrice();
+      cost = cols.reduce((a, c) => {
+        const cr = inCol("Stromkosten", c.d), w = wi >= 0 ? c.values[wi] : 0;
+        if (cr.length) {
+          const cc = cr.reduce((x, r) => x + r.change, 0), u = inCol("EnergieGesamt", c.d).reduce((x, r) => x + r.change, 0);
+          return (a ?? 0) + cc + (w && u > 0.01 ? w * cc / u : 0);
+        }
+        return fixed !== null ? (a ?? 0) + c.total * fixed : a;
+      }, null);
     }
     this.$("e-title").textContent = P.title;
-    this.$("e-total").innerHTML = empty ? "" : `${this._kwh(sum)}<small>kWh</small>`;
+    this.$("e-total").innerHTML = empty || failed ? "" : `${this._kwh(sum)}<small>kWh</small>`;
     let fcText = "";
     if (P.current && P.per !== "week") {
       const f = this._eForecast(P.per === "month" ? "Monat" : "Jahr");
@@ -1258,13 +1300,13 @@ class ProxonPanel extends HTMLElement {
     const sel = this._eSel ?? cols.findIndex(c => c.live);
     this.$("e-chart").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
     this.$("e-xl").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
-    this.$("e-cols").innerHTML = empty ? "" : cols.map((c, i) => `<button class="e-col${i === sel ? " sel" : ""}${c.future ? " future" : ""}" data-i="${i}" aria-label="${c.d.toLocaleDateString(lang)}: ${this._kwh(c.total)} kWh">${
+    this.$("e-cols").innerHTML = empty ? "" : cols.map((c, i) => `<button class="e-col${i === sel ? " sel" : ""}${c.future ? " future" : ""}" data-i="${i}" aria-label="${P.name(c.d, P.gran === "month" ? { month: "long", year: "numeric" } : { day: "numeric", month: "numeric", year: "numeric" })}: ${this._kwh(c.total)} kWh">${
       parts.map((p, j) => (c.values[j] > 0 ? `<span style="height:${(c.values[j] / max * 100).toFixed(2)}%;background:var(${p.color})"></span>` : "")).join("")}</button>`).join("");
     this.$("e-xl").innerHTML = empty ? "" : cols.map(c => `<span>${P.label(c.d)}</span>`).join("");
     this.$("e-chart").setAttribute("aria-label", `${P.title}: ${this._kwh(sum)} kWh`);
     const s = cols[sel];
-    this.$("e-detail").innerHTML = !empty && s ? `${s.live ? (P.gran === "month" ? s.d.toLocaleDateString(lang, { month: "long" }) : e.today)
-      : s.d.toLocaleDateString(lang, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
+    this.$("e-detail").innerHTML = !empty && s ? `${s.live ? (P.gran === "month" ? P.name(s.d, { month: "long" }) : e.today)
+      : P.name(s.d, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
       s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}` : "";
     this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
     this._updateCosts(parts);

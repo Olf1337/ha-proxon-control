@@ -12,9 +12,11 @@ from typing import Any
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature, HVACAction, HVACMode
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
+from .const import DOMAIN
 from .entity import ProxonEntity, room_device
 from .registers import MODE_OFF, ROOM_COUNT, room_connected, room_demand, room_heating, room_target, room_write
 
@@ -112,7 +114,10 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs: Any) -> None:
         if (target := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
-        key, raw = room_write(self._data, self._room, float(target))
+        try:
+            key, raw = room_write(self._data, self._room, float(target))
+        except KeyError as err:  # the room's own base value is missing from the last reading: don't guess it
+            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="room_base_missing") from err
         await self.coordinator.async_write(key, raw)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:

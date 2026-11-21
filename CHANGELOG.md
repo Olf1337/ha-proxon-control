@@ -125,6 +125,12 @@ nobody home).
 * **Neuer Tab „Energie“ auf der Seite „Proxon“:** Säulendiagramm des Verbrauchs, gestapelt aus Kompressor, Lüftung und
   Warmwasser, je Tag (Woche, Monat) oder je Monat (Jahr), mit Kosten und Hochrechnung; „‹ ›“ blättert zu früheren Zeiträumen
   (aus der Statistik von Home Assistant); ein Tipp auf eine Säule zeigt ihre Werte. Dazu Leistung jetzt und Laufzeiten von heute. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Korrekturen aus dem Review vor der Beta:** Der Energie-Tab holt die Werte des laufenden Zeitraums stündlich neu (eine
+  über Nacht offene Seite zeigte den Vortag sonst unvollständig), ordnet Tage und Monate nach der Zeitzone von Home
+  Assistant statt der des Geräts, sagt bei einer gescheiterten Statistik-Abfrage, dass sie gescheitert ist (statt „keine
+  Werte“), und rechnet Kosten mit dem Preis ihrer Zeit (Kosten-Sensor), den festen Preis nur für die Zeit davor. Ein Raum
+  wird nicht mehr gegen einen angenommenen Grundwert von 20 °C gestellt, wenn sein eigener fehlt, und ein Raum-Gerät lässt
+  sich nur mit einer frischen Antwort der Anlage löschen.
 * **Raumtemperaturen wie in der Proxon-App:** Die Nebenräume lassen sich auf 14–24 °C stellen (das Wohnzimmer wie bisher
   10–30 °C). Bisher erlaubte die Integration nur ±3 °C um den Grundwert des Raums, bei einem Grundwert von 21 °C also
   18–24 °C – nach unten enger als die App.
