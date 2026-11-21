@@ -63,6 +63,7 @@ const TEXT = {
       cooling: ["Nachtkühlung", "kühlt mit Stufe {l}"],
       season: ["Sommer/Winter automatisch"],
     }, fnOn: "eingeschaltet", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
+    chip: { holiday: "Urlaub", season: "Sommer/Winter", heat: "heizt auf {t}°", boost: "heizt bis {t}°", cool: "kühlt, Stufe {l}", hot: "heizt auf 60°", from: "ab {d}", until: "bis {d}" },
   },
   en: {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
@@ -122,6 +123,7 @@ const TEXT = {
       cooling: ["Night cooling", "cooling at level {l}"],
       season: ["Summer/winter automatically"],
     }, fnOn: "switched on", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
+    chip: { holiday: "Holiday", season: "Summer/winter", heat: "heating to {t}°", boost: "heating up to {t}°", cool: "cooling, level {l}", hot: "heating to 60°", from: "from {d}", until: "until {d}" },
   },
 };
 const fill = (s, v) => s.replace(/\{(\w)\}/g, (_, k) => (v[k] ?? ""));
@@ -304,12 +306,12 @@ button { font: inherit; color: inherit; }
 .backdrop i:nth-child(1) { width: 46vw; height: 46vw; left: -8vw; top: 4vh; background: var(--blob-a); }
 .backdrop i:nth-child(2) { width: 40vw; height: 40vw; right: -10vw; top: 36vh; background: var(--blob-b); }
 .backdrop i:nth-child(3) { width: 34vw; height: 34vw; left: 22vw; bottom: -10vh; background: var(--blob-c); }
-.card, .chip, .fn, .toast { background: var(--glass) !important; border: 0 !important; backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
-.chip, .fn { position: relative; }
-.card::before, .chip::before, .fn::before, .toast::before, .sheet::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+.card, .chip, .fchip, .toast { background: var(--glass) !important; border: 0 !important; backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
+.chip, .fchip { position: relative; }
+.card::before, .chip::before, .fchip::before, .toast::before, .sheet::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
   background: linear-gradient(160deg, var(--edge), var(--edge-low) 40%, var(--edge-low) 70%, var(--edge));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.card::after, .fn::after { content: ""; position: absolute; inset: 0 0 60% 0; border-radius: inherit; pointer-events: none;
+.card::after { content: ""; position: absolute; inset: 0 0 60% 0; border-radius: inherit; pointer-events: none;
   background: linear-gradient(180deg, rgba(255,255,255,.14), transparent); }
 .card { border-radius: 28px !important; }
 .page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; display: grid; gap: 20px;
@@ -481,15 +483,19 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); transition: scale 120ms ease-out; }
 .slider.dragging .s-knob { scale: 1.12; }
 .s-ends { display: flex; justify-content: space-between; font-size: .75rem; color: var(--fg-3); margin: -4px 0 4px; }
-.active-wrap { overflow: hidden; margin: -6px; padding: 6px; }
-.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
-.fn { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
-  box-shadow: var(--shadow); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); min-width: 0; }
-.fn-icon { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--tint) 12%, transparent); transition: background 300ms ease; }
-.fn.run .fn-icon { background: color-mix(in srgb, var(--tint) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tint) 14%, transparent); }
-.fn { cursor: pointer; transition: transform 120ms ease-out; }
-.fn:active { transform: scale(.98); }
-.fn-chev { flex: none; color: var(--fg-3); font-size: 1.2rem; }
+/* a switched-on function in the status row: icon, short name, what it does; tinted with a pulsing dot while it works */
+.fchip { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; min-width: 0; padding: 4px 12px 4px 4px; border-radius: 999px; font-size: .875rem;
+  cursor: pointer; transition: transform 120ms ease-out; touch-action: manipulation; }
+.fchip:active { transform: scale(.96); }
+.fchip .fi { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--tint) 16%, transparent); }
+.fchip .fi svg { width: 15px; height: 15px; }
+.fchip b { font-weight: 600; white-space: nowrap; }
+.fchip .ft { color: var(--fg-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fchip.run { background: color-mix(in srgb, var(--tint) 20%, var(--glass)) !important; }
+.fchip.run .ft { color: var(--fg); }
+.live { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tint); animation: live 1.8s ease-out infinite; }
+@keyframes live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tint) 55%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
+.fn-icon { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; }
 .fn-icon svg { width: 20px; height: 20px; }
 .fn-text { flex: 1; min-width: 0; }
 .fn-title { font-weight: 600; font-size: .9375rem; }
@@ -560,10 +566,10 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .toast button { flex: none; border: 0; background: var(--line); padding: 7px 12px; border-radius: 10px; font-weight: 600; color: var(--accent); cursor: pointer; }
 [hidden] { display: none !important; }
 @media (prefers-reduced-transparency: reduce) {
-  .card, .chip, .fn, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .card, .chip, .fchip, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .backdrop { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { button.card, .card.tap, .rs-btn, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .live { animation: none; } button.card, .card.tap, .rs-btn, .fchip, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
 `;
 
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
@@ -629,12 +635,11 @@ class ProxonPanel extends HTMLElement {
           <div class="tabs" role="tablist"><button role="tab" id="tab-home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>${t.home}</button><button role="tab" id="tab-settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M16 4.5v5M8 14.5v5"/></svg>${t.settings}</button></div>
         </header>
         <div class="view" id="v-home">
-        <div class="status">
+        <div class="status" id="status">
           <span class="chip">${t.outside} <b class="num" id="c-out">–</b></span>
           <span class="chip" id="c-op-wrap">${t.op} <b id="c-op">–</b></span>
           <span class="chip"><span class="dot" id="c-dot"></span><b id="c-ok">${t.ok}</b></span>
         </div>
-        <div class="active-wrap" id="active-wrap"><div class="active" id="active" aria-live="polite"></div></div>
         <section class="top">
           <section class="card" aria-label="${t.unit}">
             <div class="card-head"><span class="label">${t.unit}</span>
@@ -737,7 +742,6 @@ class ProxonPanel extends HTMLElement {
       done: () => { const s = this.$("w-saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400); },
     });
     this._fill = new Spring(0, () => {});  // the level of the tank; its surface is drawn with the air (one loop)
-    this._wrapH = new Spring(0, v => { this.$("active-wrap").style.height = `${v.toFixed(1)}px`; });
     this._buildSheet();
     this._buildToast();
     this._buildAir();
@@ -889,57 +893,50 @@ class ProxonPanel extends HTMLElement {
   }
   _fnDetail(f, running, planned) {
     const card = this._fnCards.get(f.k); if (!card) return;
-    const t = this.t, words = t.fn[f.k], lang = this._hass.language || undefined;
+    const t = this.t, words = t.fn[f.k], c = t.chip, lang = this._hass.language || undefined;
     const when = iso => new Date(iso).toLocaleString(lang, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+    const soon = iso => {  // short: the weekday and time within the next six days, else the date
+      const d = new Date(iso);
+      return d - Date.now() < 6 * 86400000 ? d.toLocaleString(lang, { weekday: "short", hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString(lang, { day: "numeric", month: "numeric" });
+    };
     const status = f.status && this.st(f.status), said = status ? (this._hass.formatEntityState ? this._hass.formatEntityState(status) : status.state) : t.fnOn;
-    let detail = said;
+    let full = said, short = said;
     if (f.k === "holiday") {
       const a = (this.st("Urlaubsmodus") || {}).attributes || {};
-      detail = planned ? fill(t.fnPlanned, { d: when(a.plan_on_at) }) : a.plan_off_at ? fill(words[2], { d: when(a.plan_off_at) }) : words[1];
-    } else if (running && f.temp) detail = fill(words[1], { t: this.fmt(this.num(f.temp), 0) });
-    else if (running && f.k === "cooling") detail = fill(words[1], { l: this.fmt(this.num("KuehlStufe"), 0) });
-    else if (running && words[1]) detail = words[1];
-    else if (f.k === "legionella" && status && status.attributes.planned_next) detail = fill(t.fnNext, { s: said, d: when(status.attributes.planned_next) });
-    card.querySelector(".fn-detail").textContent = detail;
-    card.classList.toggle("run", !!running);
-    card.setAttribute("aria-label", `${words[0]}: ${detail}`);
-  }
-  _relayout(change) {
-    const wrap = this.$("active-wrap"), before = new Map([...this._fnCards.values()].map(el => [el, el.getBoundingClientRect()]));
-    const h0 = wrap.offsetHeight;
-    change();
-    wrap.style.height = "auto";
-    const h1 = wrap.offsetHeight;
-    this._wrapH.set(h0); this._wrapH.to(h1, { damping: 1, response: 0.4, onRest: () => { wrap.style.height = "auto"; } });
-    for (const [el, r] of before) {
-      if (!el.isConnected || el.leaving) continue;
-      const n = el.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
-      if (!dx && !dy) continue;
-      const sp = el.flip || (el.flip = new Spring(0, v => { el.style.translate = `${(el.fdx * v).toFixed(1)}px ${(el.fdy * v).toFixed(1)}px`; }));
-      el.fdx = dx; el.fdy = dy; sp.set(1); sp.to(0, { damping: 1, response: 0.4 });
+      if (planned) { full = fill(t.fnPlanned, { d: when(a.plan_on_at) }); short = fill(c.from, { d: soon(a.plan_on_at) }); }
+      else if (a.plan_off_at) { full = fill(words[2], { d: when(a.plan_off_at) }); short = fill(c.until, { d: soon(a.plan_off_at) }); }
+      else full = short = words[1];
+    } else if (running && f.temp) {
+      full = fill(words[1], { t: this.fmt(this.num(f.temp), 0) }); short = fill(f.k === "boostww" ? c.boost : c.heat, { t: this.fmt(this.num(f.temp), 0) });
+    } else if (running && f.k === "cooling") {
+      full = fill(words[1], { l: this.fmt(this.num("KuehlStufe"), 0) }); short = fill(c.cool, { l: this.fmt(this.num("KuehlStufe"), 0) });
+    } else if (running && f.k === "legionella") { full = words[1]; short = c.hot; }
+    else if (f.k === "legionella" && status && status.attributes.planned_next) {
+      full = fill(t.fnNext, { s: said, d: when(status.attributes.planned_next) }); short = soon(status.attributes.planned_next);
     }
+    card.querySelector(".ft").textContent = short;
+    card.classList.toggle("run", !!running);
+    card.querySelector(".live").hidden = !running;
+    const name = words[0];
+    card.title = `${name}: ${full}`; card.setAttribute("aria-label", `${name}: ${full}`);
   }
-  _showFn(f) {  // a hint, not a switch: a tap opens the function's settings
-    const t = this.t, el = document.createElement("div");
-    el.className = "fn"; el.setAttribute("role", "button"); el.tabIndex = 0;
-    el.innerHTML = `<span class="fn-icon" style="--tint: var(${f.tint})"><svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="${f.icon}" fill="none" stroke="var(${f.tint})" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      <span class="fn-text"><div class="fn-title">${t.fn[f.k][0]}</div><div class="fn-detail"></div></span><span class="fn-chev" aria-hidden="true">›</span>`;
+  _showFn(f) {  // a chip in the status row, a hint and not a switch: a tap opens the function's settings
+    const t = this.t, el = document.createElement("button");
+    el.className = "fchip"; el.style.setProperty("--tint", `var(${f.tint})`);
+    el.innerHTML = `<span class="fi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${f.icon}" fill="none" stroke="var(${f.tint})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <b>${t.chip[f.k] || t.fn[f.k][0]}</b><span class="ft num"></span><span class="live" hidden></span>`;
     el.addEventListener("click", () => this._openSetting(f.sec));
-    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this._openSetting(f.sec); } });
-    el.appear = new Spring(0, v => { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.scale = (0.92 + 0.08 * v).toFixed(4); });
+    el.appear = new Spring(0, v => { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.scale = (0.85 + 0.15 * v).toFixed(4); });
     el.appear.set(0);
-    this._relayout(() => {
-      const order = FUNCS.map(x => x.k), next = order.slice(order.indexOf(f.k) + 1).map(k => this._fnCards.get(k)).find(c => c && !c.leaving);
-      this.$("active").insertBefore(el, next || null);
-      this._fnCards.set(f.k, el);
-    });
-    el.appear.to(1, { damping: 0.8, response: 0.4 });
+    const order = FUNCS.map(x => x.k), next = order.slice(order.indexOf(f.k) + 1).map(k => this._fnCards.get(k)).find(x => x && !x.leaving);
+    this.$("status").insertBefore(el, next || null);
+    this._fnCards.set(f.k, el);
+    el.appear.to(1, { damping: 0.75, response: 0.35 });
   }
   _hideFn(k) {
     const el = this._fnCards.get(k); if (!el || el.leaving) return;
     el.leaving = true; this._fnCards.delete(k);
-    el.appear.to(0, { damping: 1, response: 0.28, onRest: () => this._relayout(() => el.remove()) });
+    el.appear.to(0, { damping: 1, response: 0.25, onRest: () => el.remove() });
   }
   // the settings of a function: its section, an automatic function opened in place
   _openSetting(sec) {
