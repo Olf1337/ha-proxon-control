@@ -3,7 +3,7 @@
 How Proxon Control stands against Home Assistant's [Integration Quality Scale](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
 (made for integrations in Home Assistant itself; a custom integration can use it as a checklist). Checked for 1.0.
 
-**Bronze: met. Silver: met except test coverage (94 %, Silver asks for more than 95 %). Gold: mostly met, see the open points.**
+**Bronze and Silver: met. Gold: mostly met, see the open points.**
 
 ## Bronze
 
@@ -35,7 +35,7 @@ How Proxon Control stands against Home Assistant's [Integration Quality Scale](h
 | Reauthentication flow | ✅ | a refused password asks for the new one |
 | Integration owner | ✅ | `codeowners` in the manifest |
 | Docs: configuration and installation parameters | ✅ | README, options described in the dialogs |
-| Test coverage above 95 % | ⏳ | 94 % (`pytest --cov`); missing are mostly error paths of the Nabto helper |
+| Test coverage above 95 % | ✅ | 96 %; the tests on GitHub fail below 95 % (`--cov-fail-under=95`) |
 
 ## Gold
 

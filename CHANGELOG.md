@@ -116,8 +116,9 @@ nobody home).
 * **Lüftungsstufe mit vier Tasten:** Im Sheet der Lüftungsanlage wählt man die Stufe mit „1 2 3 4“ statt mit einem
   Schieberegler; im ECO-Komfortbetrieb und während der Intensivlüftung sind die Tasten gesperrt.
 * **Alter Raum löschbar:** Ein Raum, den die Anlage nicht mehr meldet, lässt sich auf seiner Geräteseite löschen.
-* **Qualitätsstufen:** Selbsteinschätzung in `docs/quality-scale.md` (Bronze und Silber erfüllt bis auf 94 statt 95 %
-  Testabdeckung); Änderungen gehen je Plattform einzeln an die Anlage (`PARALLEL_UPDATES`).
+* **Qualitätsstufen Bronze und Silber erfüllt:** Selbsteinschätzung in `docs/quality-scale.md`; Testabdeckung 96 % (die Tests
+  auf GitHub schlagen unter 95 % fehl), neue Tests für den Weg über den Proxon-Server und die Verbindungsfehler; Änderungen
+  gehen je Plattform einzeln an die Anlage (`PARALLEL_UPDATES`).
 * **Vorbereitung auf 1.0:** Gespeicherte Einstellungen bekommen einen Migrationsschritt; Tests halten Entitäten, Aktionen,
   Optionen und Vorlagen fest und öffnen die Seite „Proxon“ in einem echten Browser (dabei gefunden und behoben: eine Ansicht
   konnte nach dem Tab-Wechsel ein paar Pixel verschoben stehen bleiben).

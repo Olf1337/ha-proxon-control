@@ -59,8 +59,8 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
 
-**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub). **Qualität:** Selbsteinschätzung nach den
-Qualitätsstufen von Home Assistant in [docs/quality-scale.md](docs/quality-scale.md).
+**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub). **Qualität:** Bronze und Silber der
+Qualitätsstufen von Home Assistant, Selbsteinschätzung in [docs/quality-scale.md](docs/quality-scale.md).
 
 ## Die Seite „Proxon“
 

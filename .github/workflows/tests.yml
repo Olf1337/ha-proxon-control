@@ -15,7 +15,8 @@ jobs:
         with:
           python-version: "3.14"  # Home Assistant 2026.3 and newer
       - run: pip install -r requirements_test.txt
-      - run: python -m pytest -q
+      # Silver of Home Assistant's quality scale asks for more than 95 % test coverage: below it the check fails
+      - run: python -m pytest -q --cov=custom_components/proxon_control --cov-report=term --cov-fail-under=95
 
   checks:
     name: Code checks (ruff, mypy, bandit)
