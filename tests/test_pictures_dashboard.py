@@ -8,6 +8,7 @@ import xml.dom.minidom
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.yaml import dump, parse_yaml
+import pytest
 
 from custom_components.proxon_control import image as image_module
 from custom_components.proxon_control.const import DOMAIN
@@ -38,6 +39,13 @@ DATA = {
     "WarmwasserIstTemperatur": 41.1, "SollWassertemperatur": 46.0, "E-Heizstab": 0.0, "T300Betriebsart": 1.0, "Soll-E-Heizstab-Temperatur": 44.0,
 }
 
+
+
+@pytest.fixture(autouse=True)
+def pictures_on(monkeypatch):
+    """The pictures are off for new installs since 1.0; these tests are about them, so they are on (as for an install from
+    before, or after the action "create dashboard")."""
+    monkeypatch.setattr(image_module.ProxonPicture, "_attr_entity_registry_enabled_default", True)
 
 def valid(svg: str) -> str:
     xml.dom.minidom.parseString(svg)  # well-formed
@@ -650,3 +658,18 @@ async def test_ready_made_dashboard_is_deprecated(hass: HomeAssistant, device, h
     assert (await client.receive_json())["success"]
     async_dashboard_notice(hass)
     assert issues.async_get_issue(DOMAIN, DEPRECATED_ISSUE) is None
+
+
+
+async def test_pictures_off_for_new_installs_until_the_dashboard_is_made(hass: HomeAssistant, device, monkeypatch) -> None:
+    """Since 1.0 the pictures are off for a new install (the page "Proxon" doesn't need them); the dashboard action switches
+    them on, because the dashboard shows them."""
+    from homeassistant.helpers import entity_registry as er
+
+    monkeypatch.setattr(image_module.ProxonPicture, "_attr_entity_registry_enabled_default", False)
+    entry = await setup(hass)
+    reg = er.async_get(hass)
+    pictures = [e for e in er.async_entries_for_config_entry(reg, entry.entry_id) if e.domain == "image"]
+    assert pictures and all(e.disabled_by is er.RegistryEntryDisabler.INTEGRATION for e in pictures)
+    await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
+    assert all(reg.async_get(e.entity_id).disabled_by is None for e in pictures)

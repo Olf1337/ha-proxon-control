@@ -222,9 +222,6 @@
       "t13_compressor": {
         "name": "T13 compressor"
       },
-      "t14_suction_gas": {
-        "name": "T14 suction gas (unchecked)"
-      },
       "t300_suction": {
         "name": "Hot-water heat pump suction line"
       },
@@ -245,12 +242,6 @@
       },
       "valve_cooling": {
         "name": "Cooling valve"
-      },
-      "compressor_status": {
-        "name": "Compressor status"
-      },
-      "fan_status": {
-        "name": "Fan status"
       },
       "filter_lifetime": {
         "name": "Filter lifetime"
@@ -389,7 +380,7 @@
         }
       },
       "compressor_power_percent": {
-        "name": "Compressor power"
+        "name": "Compressor load"
       },
       "device_type": {
         "name": "Device type",
@@ -413,7 +404,7 @@
         "name": "Heating elements switch-off threshold"
       },
       "legionella_status": {
-        "name": "Legionella protection with solar",
+        "name": "Legionella protection status",
         "state": {
           "off": "Off",
           "waiting": "Done, waiting",
@@ -452,9 +443,6 @@
       },
       "energy_total_forecast_year": {
         "name": "Energy consumption forecast this year"
-      },
-      "hours_t300_compressor_unchecked": {
-        "name": "Hot-water compressor hours (unchecked)"
       }
     },
     "select": {
@@ -506,7 +494,7 @@
         "name": "Hot water target temperature"
       },
       "boost_temperature": {
-        "name": "Immersion / boost temperature"
+        "name": "Immersion heater up to"
       },
       "solar_surplus": {
         "name": "Solar surplus from"
@@ -547,13 +535,13 @@
         "name": "Boost ventilation"
       },
       "cooling": {
-        "name": "Cooling"
+        "name": "Cooling enabled"
       },
       "water_heat_pump": {
         "name": "Hot water heat pump"
       },
       "immersion_heater": {
-        "name": "Immersion / boost"
+        "name": "Immersion heater enabled"
       },
       "holiday": {
         "name": "Holiday mode"
@@ -628,7 +616,7 @@
         }
       },
       "legionella": {
-        "name": "Legionella protection"
+        "name": "Unit's legionella function"
       },
       "season_auto": {
         "name": "Automatic summer/winter switching"

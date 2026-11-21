@@ -140,13 +140,6 @@ SENSORS: list[ProxonSensorDescription] = [
     # diagnostics of the heat pump / air paths
     _temp("T12VorKondensator", "t12_pre_condenser", diag=True),
     _temp("T13Kompressor", "t13_compressor", diag=True),
-    # "suction gas": a real sensor (20.6 °C on a unit at standstill), but exactly 52.2 °C on two units while the compressor
-    # ran - too warm for suction gas, probably the end of its range; hidden, named "unchecked"
-    ProxonSensorDescription(
-        key="T14Sauggas", translation_key="t14_suction_gas", native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-        entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=False,
-    ),
     _temp("T300Saugleitung", "t300_suction", diag=True),
     _rpm("T300LuefterDrehzahl", "t300_fan_rpm"),
     ProxonSensorDescription(
@@ -158,8 +151,6 @@ SENSORS: list[ProxonSensorDescription] = [
     _raw("VentilHeizung", "valve_heating", "mdi:valve"),
     _raw("VentilVorwaerme", "valve_preheat", "mdi:valve"),
     _raw("VentilKuehlung", "valve_cooling", "mdi:valve"),
-    _raw("StatusKompressor", "compressor_status", "mdi:heat-pump", enabled=False),
-    _raw("StatusVentilatoren", "fan_status", "mdi:fan", enabled=False),
     # operating hours of the unit's parts (lifetime counters of the unit)
     *[
         ProxonSensorDescription(
@@ -169,13 +160,6 @@ SENSORS: list[ProxonSensorDescription] = [
         )
         for key in (*HOUR_COUNTERS, "T300StundenHeizstab")
     ],
-    # hours of the hot-water compressor as read: implausible on two real units (about twice the hours of the whole unit),
-    # so hidden unless switched on and named "unchecked"; the runtime of today is counted in Home Assistant instead
-    ProxonSensorDescription(
-        key="T300StundenKompressor", translation_key="hours_t300_compressor_unchecked", native_unit_of_measurement=UnitOfTime.HOURS,
-        device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
-        entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=False,
-    ),
     # today (counted in Home Assistant, yesterday as attribute)
     *[
         ProxonSensorDescription(

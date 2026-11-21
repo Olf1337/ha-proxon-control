@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import time
 
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 import voluptuous as vol
 
 from .const import CONF_PICTURE_THEME, DOMAIN
@@ -98,6 +99,15 @@ async def _write(coordinator: ProxonCoordinator, writes: list[tuple[str, int]]) 
         await coordinator.async_write(key, value)
 
 
+def _enable_pictures(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """The dashboard shows the pictures, which are off for new installs: switched on here (Home Assistant loads them a moment
+    later). Pictures switched off by hand stay off."""
+    reg = er.async_get(hass)
+    for ent in er.async_entries_for_config_entry(reg, entry.entry_id):
+        if ent.domain == "image" and ent.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
+            reg.async_update_entity(ent.entity_id, disabled_by=None)
+
+
 async def async_set_phase(
     hass: HomeAssistant, coordinator: ProxonCoordinator, day: int, phase: int, start: int | None, end: int | None, level: int | None,
 ) -> None:
@@ -146,6 +156,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         (created on the first run, written anew on every further one). With "paste only" it is just returned (starting
         with `views:`), to paste into the raw configuration editor of a dashboard of one's own."""
         entry = _entry(hass, call.data.get(ATTR_CONFIG_ENTRY))
+        _enable_pictures(hass, entry)
         config = build(hass, entry)
         if call.data.get(ATTR_PASTE_ONLY):
             return config

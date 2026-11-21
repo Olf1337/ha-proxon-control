@@ -46,6 +46,8 @@ from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
+REMOVED_BEFORE_1_0 = ("_T14Sauggas", "_T300StundenKompressor", "_StatusKompressor", "_StatusVentilatoren")
+
 PLATFORMS = [
     Platform.SENSOR,
     Platform.SELECT,
@@ -100,6 +102,9 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
             reg.async_remove(ent.entity_id)
         # the button "set the unit's clock" of 0.20.0: the unit refuses writing its clock over the network (NO_ACCESS)
         elif ent.domain == "button" and ent.unique_id.endswith("_UhrStellen"):
+            reg.async_remove(ent.entity_id)
+        # removed before 1.0: two readings whose meaning was never confirmed and two raw status words (all hidden by default)
+        elif ent.domain == "sensor" and ent.unique_id.endswith(REMOVED_BEFORE_1_0):
             reg.async_remove(ent.entity_id)
 
 

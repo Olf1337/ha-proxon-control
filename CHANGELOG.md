@@ -7,7 +7,8 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 **Not yet released:** no sliders in the settings of the page "Proxon" any more (every number with − and +, hold to
 repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); one unit per Home
-Assistant (a second one can't be added for now); saved settings
+Assistant (a second one can't be added for now); entities tidied (clearer names, four unchecked sensors removed, the pictures off for
+new installs); saved settings
 get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
 
 **New in 0.24.0:** on the page "Proxon", the hot-water target and the room targets are set with − and + (a swipe while
@@ -119,6 +120,14 @@ nobody home).
 * **Qualitätsstufen Bronze und Silber erfüllt:** Selbsteinschätzung in `docs/quality-scale.md`; Testabdeckung 96 % (die Tests
   auf GitHub schlagen unter 95 % fehl), neue Tests für den Weg über den Proxon-Server und die Verbindungsfehler; Änderungen
   gehen je Plattform einzeln an die Anlage (`PARALLEL_UPDATES`).
+* **Entitäten aufgeräumt vor 1.0:**
+  * Neue Anzeigenamen (bestehende Entitäts-IDs bleiben): „Kompressor-Auslastung“ (statt „Kompressor-Leistung“ in %),
+    „Legionellenschutz Status“, „Heizstab freigegeben“ und „Heizstab bis“ (statt „E-Heizstab / Boost“), „Kühlung
+    freigegeben“, „Legionellenschaltung der Anlage“.
+  * Entfernt (alle standardmäßig aus): „T14 Sauggas (ungeprüft)“, „Betriebsstunden Warmwasser-Kompressor (ungeprüft)“,
+    „Status Kompressor“, „Status Ventilatoren“. Vorhandene verschwinden beim Start; die Werte stehen weiter in der Diagnose.
+  * Die vier Bilder sind bei neuen Installationen aus (nur das abgekündigte Dashboard zeigt sie); „Dashboard erstellen“
+    schaltet sie bei Bedarf ein.
 * **Vorbereitung auf 1.0:** Gespeicherte Einstellungen bekommen einen Migrationsschritt; Tests halten Entitäten, Aktionen,
   Optionen und Vorlagen fest und öffnen die Seite „Proxon“ in einem echten Browser (dabei gefunden und behoben: eine Ansicht
   konnte nach dem Tab-Wechsel ein paar Pixel verschoben stehen bleiben).

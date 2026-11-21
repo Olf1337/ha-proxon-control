@@ -47,6 +47,9 @@ def _f(v) -> float | None:
 
 class ProxonPicture(ProxonEntity, ImageEntity):
     _attr_content_type = "image/svg+xml"
+    # only the deprecated ready-made dashboard shows them (the page "Proxon" draws by itself): off for new installs,
+    # they go with the dashboard in 2.0
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, hass: HomeAssistant, coordinator, key: str, tk: str, kind: str) -> None:
         ProxonEntity.__init__(self, coordinator, key, tk)

@@ -19,7 +19,7 @@ from custom_components.proxon_control import registers as R
 from custom_components.proxon_control.const import DOMAIN
 from custom_components.proxon_control.schedule import clock_drift
 
-from .test_integration import call, eid, setup
+from .test_integration import call, eid, no_entity, setup
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -106,8 +106,9 @@ async def test_new_values(hass: HomeAssistant, device) -> None:
     assert state(hass, "binary_sensor", "Bypass").state == "off"
     assert state(hass, "binary_sensor", "PVFreigabe").state == "on"
     assert state(hass, "binary_sensor", "BedienpanelGesperrt").state == "off"
-    # raw status words exist but are switched off by default
-    assert er.async_get(hass).async_get(eid(hass, "sensor", "StatusKompressor")).disabled_by is not None
+    # the raw status words have no sensor since 1.0 (their meaning is unknown); they are still read for the diagnostics
+    assert no_entity(hass, "sensor", "StatusKompressor")
+    assert hass.config_entries.async_entries("proxon_control")[0].runtime_data.data["StatusKompressor"] == 1
 
 
 async def test_filter_follows_the_units_lifetime(hass: HomeAssistant, device) -> None:

@@ -222,9 +222,6 @@
       "t13_compressor": {
         "name": "T13 Kompressor"
       },
-      "t14_suction_gas": {
-        "name": "T14 Sauggas (ungeprüft)"
-      },
       "t300_suction": {
         "name": "Warmwasser-Wärmepumpe Saugleitung"
       },
@@ -245,12 +242,6 @@
       },
       "valve_cooling": {
         "name": "Ventil Kühlung"
-      },
-      "compressor_status": {
-        "name": "Status Kompressor"
-      },
-      "fan_status": {
-        "name": "Status Ventilatoren"
       },
       "filter_lifetime": {
         "name": "Filter-Standzeit"
@@ -389,7 +380,7 @@
         }
       },
       "compressor_power_percent": {
-        "name": "Kompressor-Leistung"
+        "name": "Kompressor-Auslastung"
       },
       "device_type": {
         "name": "Gerätetyp",
@@ -413,7 +404,7 @@
         "name": "Wärmeelemente Ausschaltschwelle"
       },
       "legionella_status": {
-        "name": "Legionellenschutz mit Sonne",
+        "name": "Legionellenschutz Status",
         "state": {
           "off": "Aus",
           "waiting": "Erledigt, wartet",
@@ -452,9 +443,6 @@
       },
       "energy_total_forecast_year": {
         "name": "Energieverbrauch Hochrechnung Jahr"
-      },
-      "hours_t300_compressor_unchecked": {
-        "name": "Betriebsstunden Warmwasser-Kompressor (ungeprüft)"
       }
     },
     "select": {
@@ -506,7 +494,7 @@
         "name": "Warmwasser Soll-Temperatur"
       },
       "boost_temperature": {
-        "name": "Temperatur E-Heizstab / Boost"
+        "name": "Heizstab bis"
       },
       "solar_surplus": {
         "name": "Solar-Überschuss ab"
@@ -547,13 +535,13 @@
         "name": "Intensivlüftung"
       },
       "cooling": {
-        "name": "Kühlung"
+        "name": "Kühlung freigegeben"
       },
       "water_heat_pump": {
         "name": "Warmwasser-Wärmepumpe"
       },
       "immersion_heater": {
-        "name": "E-Heizstab / Boost"
+        "name": "Heizstab freigegeben"
       },
       "holiday": {
         "name": "Urlaubsmodus"
@@ -628,7 +616,7 @@
         }
       },
       "legionella": {
-        "name": "Legionellenschaltung"
+        "name": "Legionellenschaltung der Anlage"
       },
       "season_auto": {
         "name": "Automatische Sommer/Winter-Umschaltung"
