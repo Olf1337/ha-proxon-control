@@ -341,14 +341,15 @@ button { font: inherit; color: inherit; }
 /* settings: the list of sections and the chosen one */
 #v-settings { container-type: inline-size; }
 .sa { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
-.sa-list.card { padding: 8px; display: grid; gap: 2px; position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
-.sa-item { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 9px 10px; border-radius: 18px; text-align: left; cursor: pointer; }
+/* the list keeps its column: a long summary is cut with "…" instead of widening its row over the section beside it */
+.sa-list.card { padding: 8px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
+.sa-item { min-width: 0; display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 9px 10px; border-radius: 18px; text-align: left; cursor: pointer; }
 .sa-item[aria-current="true"] { background: var(--glass-strong); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 .sa-item::after { content: "›"; color: var(--fg-3); font-size: 1.2rem; }
 .sa-t { flex: 1; min-width: 0; }
 .sa-t b { display: block; font-weight: 600; }
 .sa-t small { display: block; color: var(--fg-2); font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sa-detail { min-width: 0; display: grid; gap: 6px; }
+.sa-detail { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .group h2.sa-h { display: flex; align-items: center; gap: 12px; font: 700 1.5rem/1.15 var(--font-display); letter-spacing: -.02em; text-transform: none; color: var(--fg); margin: 4px 4px 8px; }
 .sa-back { display: none; justify-self: start; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 1.0625rem; padding: 2px 0 6px; cursor: pointer; }
 .ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; }

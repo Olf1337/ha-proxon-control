@@ -29,6 +29,9 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.23.1:** on the page "Proxon", a long summary in the settings list (e.g. the weekly schedule) no longer widens
+its row over the section beside it; it is cut with "…".
+
 **New in 0.23.0:** the settings tab of the page "Proxon" is a list of sections with a short status each and the chosen
 section beside it (on a phone: the list, and the section opened over it); the automatic functions are grouped in one
 section; on a phone the tabs sit in a bar at the bottom; the humidity and CO₂ limits show the value measured now.
@@ -141,6 +144,12 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.23.1
+
+* **Seite „Proxon“, Tab „Einstellungen“:** Eine lange Kurzinfo in der Liste (z. B. das Wochenprogramm mit zwei Phasen)
+  machte ihre Zeile breiter als die Liste, so dass sie über den Bereich daneben ragte. Jetzt bleibt die Zeile in der
+  Liste, und die Kurzinfo endet mit „…“.
 
 ## Neu in Version 0.23.0
 
