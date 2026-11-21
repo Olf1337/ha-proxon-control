@@ -59,7 +59,8 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
 
-**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub).
+**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub). **Qualität:** Selbsteinschätzung nach den
+Qualitätsstufen von Home Assistant in [docs/quality-scale.md](docs/quality-scale.md).
 
 ## Die Seite „Proxon“
 
@@ -155,6 +156,15 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 * **„Mit Device ID + Passwort anmelden“** – Device ID und Passwort eingeben, Verbindung wählen (Standard: „Heimnetz zuerst“), optional die IP-Adresse der
   Anlage. Auf dem Raspberry Pi entfällt die Auswahl (nur Heimnetz). Oder
 * **„Über das Proxon-Bridge-Add-on“** (nur wenn Sie das Add-on nutzen) – Adresse `homeassistant.local` (oder die IP von Home Assistant) und Port `8765`.
+
+## Entfernen
+
+1. *Einstellungen → Geräte & Dienste → Proxon Control* → ⋮ → **Löschen**. Damit verschwinden Geräte, Entitäten und die Seite „Proxon“.
+2. In HACS (*Einstellungen → Marketplace*) „Proxon Control“ → ⋮ → **Entfernen**, dann Home Assistant neu starten.
+3. Optional: den Ordner `/config/proxon_control/` (heruntergeladene Bibliothek und Zertifikat) löschen, ebenso ein früher
+   angelegtes Dashboard „Proxon Control“ (*Einstellungen → Dashboards*) und die Theme-Datei `/config/themes/proxon_control.yaml`.
+
+Ein Raum, den die Anlage nicht mehr meldet, lässt sich auf seiner Geräteseite einzeln löschen.
 
 ## Hinweise
 
