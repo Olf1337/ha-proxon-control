@@ -123,7 +123,9 @@ SENSORS: list[ProxonSensorDescription] = [
             key=key, translation_key=tk, native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER,
             state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0,
         )
-        for key, tk in (("LeistungGesamt", "power_total"), ("LeistungKompressor", "power_compressor"), ("LeistungLueftung", "power_ventilation"))
+        for key, tk in (("LeistungGesamt", "power_total"), ("LeistungKompressor", "power_compressor"), ("LeistungLueftung", "power_ventilation"),
+                        # estimated (rated power while running; the unit doesn't measure the hot-water module)
+                        ("LeistungWarmwasserWP", "power_hot_water_pump"), ("LeistungHeizstab", "power_immersion_heater"))
     ],
     ProxonSensorDescription(
         key="WarmwasserLadezustand", translation_key="water_charge", native_unit_of_measurement=PERCENTAGE,
@@ -341,7 +343,9 @@ class ProxonSensor(ProxonEntity, SensorEntity):
 
 # energy counters for the Energy dashboard: (key, power value they add up, translation key)
 ENERGY = [("EnergieGesamt", "LeistungGesamt", "energy_total"), ("EnergieKompressor", "LeistungKompressor", "energy_compressor"),
-          ("EnergieLueftung", "LeistungLueftung", "energy_ventilation")]
+          ("EnergieLueftung", "LeistungLueftung", "energy_ventilation"),
+          # the hot-water module, estimated (not part of the unit's total, which the unit measures)
+          ("EnergieWarmwasserWP", "LeistungWarmwasserWP", "energy_hot_water_pump"), ("EnergieHeizstab", "LeistungHeizstab", "energy_immersion_heater")]
 # a gap between two readings longer than this (or three query intervals; Home Assistant stopped, unit not reachable) isn't counted
 MAX_GAP_SECONDS = 15 * 60
 

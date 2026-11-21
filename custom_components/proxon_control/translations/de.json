@@ -443,6 +443,42 @@
       },
       "energy_total_forecast_year": {
         "name": "Energieverbrauch Hochrechnung Jahr"
+      },
+      "power_hot_water_pump": {
+        "name": "Leistung Warmwasser-Wärmepumpe (geschätzt)"
+      },
+      "power_immersion_heater": {
+        "name": "Leistung Heizstab (geschätzt)"
+      },
+      "energy_hot_water_pump": {
+        "name": "Energieverbrauch Warmwasser-Wärmepumpe (geschätzt)"
+      },
+      "energy_immersion_heater": {
+        "name": "Energieverbrauch Heizstab (geschätzt)"
+      },
+      "energy_hot_water_pump_day": {
+        "name": "Energieverbrauch Warmwasser-Wärmepumpe heute (geschätzt)"
+      },
+      "energy_hot_water_pump_week": {
+        "name": "Energieverbrauch Warmwasser-Wärmepumpe diese Woche (geschätzt)"
+      },
+      "energy_hot_water_pump_month": {
+        "name": "Energieverbrauch Warmwasser-Wärmepumpe diesen Monat (geschätzt)"
+      },
+      "energy_hot_water_pump_year": {
+        "name": "Energieverbrauch Warmwasser-Wärmepumpe dieses Jahr (geschätzt)"
+      },
+      "energy_immersion_heater_day": {
+        "name": "Energieverbrauch Heizstab heute (geschätzt)"
+      },
+      "energy_immersion_heater_week": {
+        "name": "Energieverbrauch Heizstab diese Woche (geschätzt)"
+      },
+      "energy_immersion_heater_month": {
+        "name": "Energieverbrauch Heizstab diesen Monat (geschätzt)"
+      },
+      "energy_immersion_heater_year": {
+        "name": "Energieverbrauch Heizstab dieses Jahr (geschätzt)"
       }
     },
     "select": {
@@ -871,7 +907,9 @@
           "picture_theme": "Dashboard-Bilder",
           "upper_floor_rooms": "Räume im Obergeschoss",
           "basement_rooms": "Räume im Keller",
-          "house_photo": "Hausfoto (optional)"
+          "house_photo": "Hausfoto (optional)",
+          "hot_water_pump_power": "Leistung der Warmwasser-Wärmepumpe",
+          "hot_water_heater_power": "Leistung des Heizstabs"
         },
         "data_description": {
           "mode": "Heimnetz zuerst: am schnellsten, der Proxon-Server wird nur genutzt, wenn die Anlage direkt nicht erreichbar ist.",
@@ -885,7 +923,9 @@
           "picture_theme": "Hell oder dunkel wie das anzeigende Gerät (automatisch), oder immer hell / immer dunkel.",
           "upper_floor_rooms": "Diese Räume stehen im Dashboard und in den Bildern unter „Obergeschoss“, die übrigen (ohne Keller) im Erdgeschoss. Vorausgewählt nach den Raumnamen (Schlaf-, Kinderzimmer …). Nichts auswählen bei einem Bungalow.",
           "basement_rooms": "Diese Räume stehen im Dashboard und im Grundriss unter „Keller“. Vorausgewählt nach den Raumnamen (Keller, UG, Hobbyraum, Werkstatt …). Nichts auswählen, wenn es keinen Keller gibt.",
-          "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: das gezeichnete Haus wird gezeigt."
+          "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: das gezeichnete Haus wird gezeigt.",
+          "hot_water_pump_power": "Für den geschätzten Warmwasser-Verbrauch (die Anlage misst ihn nicht): die Nennleistung, solange die Wärmepumpe läuft. Datenblatt PROXON T300: 430 W.",
+          "hot_water_heater_power": "Die Nennleistung, solange der Heizstab läuft. T300: 1500 W; mit der Option BOOST 4500 oder 9000 W."
         }
       }
     },

@@ -443,6 +443,42 @@
       },
       "energy_total_forecast_year": {
         "name": "Energy consumption forecast this year"
+      },
+      "power_hot_water_pump": {
+        "name": "Power hot-water heat pump (estimated)"
+      },
+      "power_immersion_heater": {
+        "name": "Power immersion heater (estimated)"
+      },
+      "energy_hot_water_pump": {
+        "name": "Energy hot-water heat pump (estimated)"
+      },
+      "energy_immersion_heater": {
+        "name": "Energy immersion heater (estimated)"
+      },
+      "energy_hot_water_pump_day": {
+        "name": "Energy hot-water heat pump today (estimated)"
+      },
+      "energy_hot_water_pump_week": {
+        "name": "Energy hot-water heat pump this week (estimated)"
+      },
+      "energy_hot_water_pump_month": {
+        "name": "Energy hot-water heat pump this month (estimated)"
+      },
+      "energy_hot_water_pump_year": {
+        "name": "Energy hot-water heat pump this year (estimated)"
+      },
+      "energy_immersion_heater_day": {
+        "name": "Energy immersion heater today (estimated)"
+      },
+      "energy_immersion_heater_week": {
+        "name": "Energy immersion heater this week (estimated)"
+      },
+      "energy_immersion_heater_month": {
+        "name": "Energy immersion heater this month (estimated)"
+      },
+      "energy_immersion_heater_year": {
+        "name": "Energy immersion heater this year (estimated)"
       }
     },
     "select": {
@@ -871,7 +907,9 @@
           "picture_theme": "Dashboard pictures",
           "upper_floor_rooms": "Rooms on the upper floor",
           "basement_rooms": "Rooms in the basement",
-          "house_photo": "House photo (optional)"
+          "house_photo": "House photo (optional)",
+          "hot_water_pump_power": "Power of the hot-water heat pump",
+          "hot_water_heater_power": "Power of the immersion heater"
         },
         "data_description": {
           "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
@@ -885,7 +923,9 @@
           "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark.",
           "upper_floor_rooms": "These rooms are shown under \"Upper floor\" on the dashboard and in the pictures, the others (except the basement) on the ground floor. Preselected by the room names (bedrooms, children's rooms …). Choose none for a bungalow.",
           "basement_rooms": "These rooms are shown under \"Basement\" on the dashboard and in the floor plan. Preselected by the room names (Keller, UG, hobby room, workshop …). Choose none if there is no basement.",
-          "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown."
+          "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown.",
+          "hot_water_pump_power": "For the estimated hot-water consumption (the unit doesn't measure it): the rated power while the heat pump runs. PROXON T300 datasheet: 430 W.",
+          "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W."
         }
       }
     },

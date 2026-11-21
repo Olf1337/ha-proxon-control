@@ -42,12 +42,16 @@ from .const import (
     CONF_SURPLUS_SENSOR,
     CONF_TOKEN,
     CONF_UPPER_FLOOR,
+    CONF_WATER_HEATER_POWER,
+    CONF_WATER_PUMP_POWER,
     CONNECTION_BRIDGE,
     CONNECTION_DIRECT,
     DEFAULT_MODE,
     DEFAULT_PICTURE_THEME,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_WATER_HEATER_POWER,
+    DEFAULT_WATER_PUMP_POWER,
     DOMAIN,
     ENTRY_MINOR_VERSION,
     ENTRY_VERSION,
@@ -84,6 +88,9 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 data[CONF_FEED_IN_NEGATIVE] = True
             if (price := user_input.get(CONF_FIXED_PRICE)) and float(price) > 0:
                 data[CONF_FIXED_PRICE] = float(price)
+            for key, default in ((CONF_WATER_PUMP_POWER, DEFAULT_WATER_PUMP_POWER), (CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER)):
+                if user_input.get(key) and int(user_input[key]) != default:  # kept only when it differs from the datasheet
+                    data[key] = int(user_input[key])
             if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
                 data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
             rooms = self._rooms()
@@ -140,6 +147,13 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 # a fixed tariff: the price for the electricity cost when no price sensor is chosen
                 vol.Optional(CONF_FIXED_PRICE): NumberSelector(
                     NumberSelectorConfig(min=0, max=200, step=0.01, unit_of_measurement="ct/kWh", mode=NumberSelectorMode.BOX)
+                ),
+                # the hot-water module's power for its estimated consumption (datasheet T300 as default)
+                vol.Optional(CONF_WATER_PUMP_POWER, default=DEFAULT_WATER_PUMP_POWER): NumberSelector(
+                    NumberSelectorConfig(min=100, max=2000, step=10, unit_of_measurement="W", mode=NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_WATER_HEATER_POWER, default=DEFAULT_WATER_HEATER_POWER): NumberSelector(
+                    NumberSelectorConfig(min=500, max=9000, step=100, unit_of_measurement="W", mode=NumberSelectorMode.BOX)
                 ),
                 # dashboard pictures: light / dark
                 vol.Optional(CONF_PICTURE_THEME, default=DEFAULT_PICTURE_THEME): SelectSelector(

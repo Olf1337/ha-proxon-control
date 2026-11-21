@@ -28,6 +28,12 @@ CONF_PORT = "port"
 CONF_SURPLUS_SENSOR = "surplus_sensor"
 CONF_FEED_IN_NEGATIVE = "feed_in_negative"
 CONF_PRICE_SENSOR = "price_sensor"
+# hot water: the unit doesn't measure the hot-water module's power; it is estimated from whether its compressor / heater run,
+# with their rated power (datasheet PROXON T300: heat pump 0.43 kW, heater 1.5 kW; BOOST heaters 4.5 or 9 kW)
+CONF_WATER_PUMP_POWER = "hot_water_pump_power"
+CONF_WATER_HEATER_POWER = "hot_water_heater_power"
+DEFAULT_WATER_PUMP_POWER = 430
+DEFAULT_WATER_HEATER_POWER = 1500
 CONF_FIXED_PRICE = "fixed_price"  # ct/kWh of a fixed tariff: for the electricity cost when no price sensor is chosen
 # dashboard pictures: follow the device's light/dark mode, or always light / dark
 CONF_PICTURE_THEME = "picture_theme"

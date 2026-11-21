@@ -14,7 +14,18 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import AuthError, BridgeApi, DirectApi, HybridApi, ProxonError, WriteNotAccepted
-from .const import CONF_READ_ONLY, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_SCAN_INTERVAL, MIN_SCAN_INTERVAL
+from .const import (
+    CONF_READ_ONLY,
+    CONF_SCAN_INTERVAL,
+    CONF_WATER_HEATER_POWER,
+    CONF_WATER_PUMP_POWER,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_WATER_HEATER_POWER,
+    DEFAULT_WATER_PUMP_POWER,
+    DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+)
 from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
@@ -74,6 +85,7 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if (drift := clock_drift(data, dt_util.now())) is not None:
                 data["UhrAbweichung"] = float(drift)
             data.update(self.heating.update(data))
+            data.update(self.water_power(data))
             interval = self.update_interval.total_seconds() if self.update_interval else 0
             data.update(self.runtime.update(data, dt_util.now(), max(MAX_GAP_SECONDS, 3 * interval)))
             self._runtime_store.async_delay_save(self.runtime.dump, 120)
@@ -90,6 +102,17 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except ProxonError as err:
             raise UpdateFailed(str(err)) from err
+
+    def water_power(self, data: dict[str, Any]) -> dict[str, float]:
+        """Power of the hot-water module, estimated: its rated power while its compressor / heater runs (the unit doesn't
+        measure it). Only with the hot-water module."""
+        if "T300Betriebsart" not in data or "T300RelaisKompressor" not in data:
+            return {}
+        options = self.config_entry.options if self.config_entry else {}
+        pump = float(options.get(CONF_WATER_PUMP_POWER, DEFAULT_WATER_PUMP_POWER))
+        heater = float(options.get(CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER))
+        return {"LeistungWarmwasserWP": pump if data.get("T300RelaisKompressor") else 0.0,
+                "LeistungHeizstab": heater if data.get("T300RelaisHeizstab") else 0.0}
 
     @property
     def read_only(self) -> bool:
