@@ -140,6 +140,9 @@ const FUNCS = [
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
 ];
 
+// numbers set with − and + instead of a slider (the hot-water target: a slider or a swipe changed it by accident)
+const STEPPED = new Set(["SollWassertemperatur"]);
+
 // limits shown with the value measured now (CO2 only with a CO2 sensor that delivers values)
 const NOW_OF = { GrenzwertFeuchte: "LuftfeuchteRel", GrenzwertCO2: "CurrentCO2" };
 
@@ -461,9 +464,13 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .card-head .working { margin-top: 0; }
 .working { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
   background: color-mix(in srgb, var(--water-hot) 14%, transparent); font-size: .8125rem; font-weight: 600; }
-.water-set { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; font-size: .875rem; color: var(--fg-2); position: relative; }
-.water-set b { color: var(--fg); font-weight: 600; }
-#water { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.water-set { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .9375rem; color: var(--fg-2); }
+.w-set-l { display: flex; align-items: center; gap: 10px; }
+.w-set-l .saved { position: static; }
+.card.tap { cursor: pointer; transition: transform 120ms ease-out; -webkit-user-select: none; user-select: none; }
+.card.tap:active:not(:has(.stepper:active)) { transform: scale(.985); }
+.stepper button:disabled { opacity: .35; cursor: default; }
+.row:has(> .stepper) .row-label { flex-basis: 80px; }  /* − value + stays on the label's line, also on a phone */
 .srow { padding: 14px 0 6px; border-top: 1px solid var(--line); }
 .srow-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .sval { font: 700 1.25rem var(--font-display); letter-spacing: -.02em; white-space: nowrap; }
@@ -551,7 +558,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   .card, .chip, .fn, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .backdrop { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { button.card, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
+@media (prefers-reduced-motion: reduce) { button.card, .card.tap, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
 `;
 
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
@@ -673,7 +680,7 @@ class ProxonPanel extends HTMLElement {
               </div>
             </button>
           </section>
-          <button class="card" id="water" aria-label="${t.water}">
+          <div class="card tap" id="water" role="button" tabindex="0" aria-label="${t.water}">
             <div class="card-head"><span class="label">${t.water}</span>
               <span class="working" id="w-working" hidden><svg width="14" height="14" viewBox="0 0 28 37" aria-hidden="true">${FLAME}</svg><span id="w-who"></span></span>
               <span class="hint" id="w-hint">${t.tapUnit}</span></div>
@@ -699,9 +706,9 @@ class ProxonPanel extends HTMLElement {
                 <div class="fact"><span class="huge num" id="w-temp">–</span><span>${t.middle}<span id="w-charge-wrap"> · ${t.charge} <b class="num" id="w-charge">–</b></span></span></div>
               </div>
             </div>
-            <div id="w-set-wrap"><div class="water-set"><span>${t.target} <b class="num" id="w-target">–</b></span><span class="saved" id="w-saved">${t.sent}</span></div>
-              <div class="track" id="w-track" aria-hidden="true"><span class="now-mark" id="w-now"></span><span class="mark" id="w-mark"></span></div></div>
-          </button>
+            <div class="water-set" id="w-set-wrap"><span class="w-set-l">${t.target}<span class="saved" id="w-saved">${t.sent}</span></span>
+              <div class="stepper"><button id="w-dn" aria-label="${t.colder}">−</button><output class="num" id="w-target">–</output><button id="w-up" aria-label="${t.warmer}">+</button></div></div>
+          </div>
         </section>
         <div id="floors"></div>
         </div>
@@ -717,13 +724,12 @@ class ProxonPanel extends HTMLElement {
     this.$("tab-home").addEventListener("click", () => this._tab("home"));
     this.$("tab-settings").addEventListener("click", () => this._tab("settings"));
     this.$("unit").addEventListener("click", e => this._sheetVentilation(e.currentTarget));
-    this.$("water").addEventListener("click", e => { if (!this._wCtl.dragged()) this._sheetWater(e.currentTarget); });
-    this._wCtl = this._numberDrag(this.$("water"), this.$("w-track"), "SollWassertemperatur", {
-      tile: true,
-      show: (v, snapped, r) => {
-        this.$("w-mark").style.transform = `translateX(${((v - r.min) / (r.max - r.min) * this.$("w-track").clientWidth).toFixed(1)}px)`;
-        this.$("w-target").textContent = `${this.fmt(snapped, 0)}°`;
-      },
+    // the card opens the sheet; the target changes only with − and + (a swipe over the card while scrolling changed it)
+    const water = this.$("water");
+    water.addEventListener("click", e => { if (!e.target.closest(".stepper")) this._sheetWater(water); });
+    water.addEventListener("keydown", e => { if (e.target === water && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this._sheetWater(water); } });
+    this._wStep = this._stepper(this.$("w-dn"), this.$("w-up"), this.$("w-target"), "SollWassertemperatur", {
+      fmt: v => `${this.fmt(v, 0)}°`,
       done: () => { const s = this.$("w-saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400); },
     });
     this._fill = new Spring(0, () => {});  // the level of the tank; its surface is drawn with the air (one loop)
@@ -811,10 +817,9 @@ class ProxonPanel extends HTMLElement {
       const sh = this.num("WarmwasserDuschminuten");
       this.$("w-shower-wrap").hidden = sh === null; this.$("w-shower").textContent = `${this.fmt(sh, 0)} ${t.min}`;
       this.$("w-bottom").textContent = deg("WarmwasserUntenTemperatur");
-      const wt = this.num("SollWassertemperatur"), wn = this.st("SollWassertemperatur");
+      const wn = this.st("SollWassertemperatur");
       this.$("w-set-wrap").hidden = !wn;
-      if (wn && w !== null) this.$("w-now").style.left = `${(clamp((w - wn.attributes.min) / (wn.attributes.max - wn.attributes.min), 0, 1) * 100).toFixed(1)}%`;
-      this._wCtl.sync();
+      this._wStep.sync();
       const ch = this.num("WarmwasserLadezustand");
       this.$("w-charge-wrap").hidden = ch === null; this.$("w-charge").textContent = `${this.fmt(ch, 0)} %`;
       this.$("w-liters-wrap").hidden = ch === null; this.$("w-liters").textContent = `≈ ${this.fmt(Math.round(TANK_L * ch / 100 / 10) * 10, 0)} l`;
@@ -1102,7 +1107,7 @@ class ProxonPanel extends HTMLElement {
         const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
         return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
       }
-      if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
+      if (kind === "num" && (this._isLong(key) || STEPPED.has(key))) return `<div class="row"><span class="row-label">${this._label(key)}</span>
         <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
       if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint, NOW_OF[key]);
       if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
@@ -1142,7 +1147,10 @@ class ProxonPanel extends HTMLElement {
     const v = this.$("v-settings");
     for (const sec of SETTINGS) for (const [kind, key] of sec.rows) {
       if (kind === "switch" && v.querySelector(`#set-${CSS.escape(key)}`)) v.querySelector(`#set-${CSS.escape(key)}`).addEventListener("click", () => this._toggle(key));
-      if (kind === "num" && v.querySelector(`#out-${CSS.escape(key)}`)) this._wireStepper(key);
+      if (kind === "num" && v.querySelector(`#out-${CSS.escape(key)}`)) {
+        const q = id => v.querySelector(`#${id}-${CSS.escape(key)}`);
+        this._settingCtl.push(this._stepper(q("dn"), q("up"), q("out"), key, { factor: this._isLong(key) ? 5 : 1, fmt: this._unit(key, 0) }));
+      }
       if (kind === "num" && v.querySelector(`#num-${CSS.escape(key)}`)) {
         const st = this.st(key), d = st && Number(st.attributes.step) < 1 ? 1 : 0;
         this._settingCtl.push(this._numberSlider(v.querySelector(`#num-${CSS.escape(key)}`), key, this._unit(key, d)));
@@ -1228,19 +1236,36 @@ class ProxonPanel extends HTMLElement {
   }
   _autoOn({ main, rows }) { return main ? this.swOn(main) : rows.some(([kind, key]) => kind === "switch" && this.swOn(key)); }
   _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }
-  _wireStepper(key) {  // taps in a row are sent once, 0.6 s after the last
-    const v = this.$("v-settings"), out = v.querySelector(`#out-${CSS.escape(key)}`), fmt = this._unit(key, 0);
-    const a = this.st(key).attributes, step = (Number(a.step) || 1) * 5;
-    let want = null, timer = 0;
-    const show = () => { out.textContent = fmt(want ?? this.num(key)); };
-    const go = d => {
-      want = clamp(Math.round(((want ?? this.num(key)) + d * step) / step) * step || Number(a.min), Number(a.min), Number(a.max)); show();
-      clearTimeout(timer);
-      timer = setTimeout(() => { const x = want; this.call("number", "set_value", { entity_id: this.id(key), value: x }).then(() => { want = null; show(); }, () => { want = null; show(); }); }, 600);
+  // − and +: a tap moves the value on screen at once; taps in a row are sent once, 0.6 s after the last. Until the unit
+  // reports the new value (at most 8 s) the sent one stays on screen. factor: steps per tap (5 for long ranges).
+  _stepper(dn, up, out, key, { factor = 1, fmt, done } = {}) {
+    let want = null, sent = null, timer = 0;
+    const attrs = () => (this.st(key) || {}).attributes || {};
+    const value = () => {
+      if (sent && (this.num(key) === sent.v || Date.now() - sent.at > 8000)) sent = null;
+      return want ?? (sent ? sent.v : this.num(key));
     };
-    v.querySelector(`#dn-${CSS.escape(key)}`).addEventListener("click", () => go(-1));
-    v.querySelector(`#up-${CSS.escape(key)}`).addEventListener("click", () => go(1));
-    this._settingCtl.push({ sync: () => { if (want === null) show(); } });
+    const show = () => {
+      const v = value(), a = attrs();
+      out.textContent = v === null ? "–" : fmt(v);
+      dn.disabled = v === null || v <= Number(a.min); up.disabled = v === null || v >= Number(a.max);
+    };
+    const go = d => {
+      const a = attrs(), step = (Number(a.step) || 1) * factor, base = value();
+      if (base === null) return;
+      want = clamp(Math.round((base + d * step) / step) * step, Number(a.min), Number(a.max)); show();
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const v = want; want = null;
+        if (v === this.num(key)) { show(); return; }
+        sent = { v, at: Date.now() }; show();
+        this.call("number", "set_value", { entity_id: this.id(key), value: v }).then(() => done && done(), () => { sent = null; show(); });
+      }, 600);
+    };
+    dn.addEventListener("click", e => { e.stopPropagation(); go(-1); });
+    up.addEventListener("click", e => { e.stopPropagation(); go(1); });
+    show();
+    return { sync: () => { if (want === null) show(); } };
   }
   _confirmButton(btn, act) {  // asks once, inline: a second tap within 4 s does it
     const label = btn.textContent; let armed = 0;
@@ -1489,10 +1514,10 @@ class ProxonPanel extends HTMLElement {
   _sheetWater(from) {
     const t = this.t, n = this.st("SollWassertemperatur");
     this._openSheet(`<h3>${t.water}</h3><p class="sub" id="w-sub"></p>
-      ${n ? this._sliderRow("wt-row", t.waterTarget) : ""}
+      ${n ? `<div class="row"><span class="row-label">${t.waterTarget}</span><div class="stepper"><button id="wt-dn" aria-label="${t.colder}">−</button><output class="num" id="wt-out"></output><button id="wt-up" aria-label="${t.warmer}">+</button></div></div>` : ""}
       ${this.id("T300Betriebsart") ? this._sw("s-pump", t.pump, t.pumpSub) : ""}${this.id("E-Heizstab") ? this._sw("s-heater", t.heater, t.heaterSub) : ""}
       <button class="link" id="w-more">${t.more}</button>`, from, () => {
-      this._sheetCtl = n ? [this._numberSlider(this.$("wt-row"), "SollWassertemperatur", v => `${this.fmt(v, 0)} °C`)] : [];
+      this._sheetCtl = n ? [this._stepper(this.$("wt-dn"), this.$("wt-up"), this.$("wt-out"), "SollWassertemperatur", { fmt: v => `${this.fmt(v, 0)} °C` })] : [];
       ["s-pump", "s-heater"].forEach((id, i) => { const b = this.$(id); if (b) b.addEventListener("click", () => this._toggle(i ? "E-Heizstab" : "T300Betriebsart")); });
       this.$("w-more").addEventListener("click", () => this._sheetAll("water", from));
     }, () => {
