@@ -20,7 +20,7 @@ const TEXT = {
     ventilation: "Lüftung", mode: "Betriebsart", boostSub: "läuft {m} Minuten, dann zurück", waterTarget: "Solltemperatur",
     pump: "Wärmepumpe", pumpSub: "heizt das Wasser sparsam", heater: "Heizstab", heaterSub: "schneller, braucht mehr Strom",
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
-    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", dragHint: "Auf der Kachel geht es schneller: zur Seite ziehen.",
+    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
     close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
     end: "{f} beenden", unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
@@ -78,7 +78,7 @@ const TEXT = {
     ventilation: "Ventilation", mode: "Operating mode", boostSub: "runs {m} minutes, then back", waterTarget: "Target temperature",
     pump: "Heat pump", pumpSub: "heats the water efficiently", heater: "Immersion heater", heaterSub: "faster, uses more power",
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
-    releasedSub: "heats electrically when the room is too cold", dragHint: "Quicker on the tile: drag it sideways.",
+    releasedSub: "heats electrically when the room is too cold",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
     close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
     end: "End {f}", unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
@@ -212,13 +212,13 @@ const SETTING = 0.99;  // deceleration for targets and levels: a flick moves a s
 const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-// A value set by dragging sideways (room and hot-water tiles, the sliders in sheets and settings): 1:1 with the finger,
-// a rubber band past the ends, a short momentum, a spring into the nearest step, sent when it rests. On a tile the whole
-// tile is the handle and a move that starts vertical stays a scroll; on a slider the knob jumps to the finger.
+// A value set with a slider (in sheets and settings): the knob jumps to the finger and follows it 1:1, a rubber band past
+// the ends, a short momentum, a spring into the nearest step, sent when it rests. (Tiles are no longer dragged: a swipe
+// while scrolling changed them by accident; they have − and +.)
 // o: range() -> {min, max, step} or null, value() -> the value to show at rest, show(v, snapped, range) on every frame,
-// commit(v), tile (bool).
+// commit(v).
 function dragValue(handle, track, o) {
-  let start = null, dragging = false, hist = [], dragged = false, held = false;
+  let start = null, dragging = false, hist = [], held = false;
   const snap = (v, r) => clamp(Math.round(v / r.step) * r.step, r.min, r.max);
   const pos = new Spring(0, v => { const r = o.range(); if (r) o.show(v, snap(v, r), r); });
   const per = r => track.clientWidth / Math.max(1e-9, r.max - r.min);
@@ -228,27 +228,18 @@ function dragValue(handle, track, o) {
   const band = (v, r) => (v > r.max ? r.max + rubber(v - r.max, (r.max - r.min) * 0.15) : v < r.min ? r.min - rubber(r.min - v, (r.max - r.min) * 0.15) : v);
   handle.addEventListener("pointerdown", e => {
     const r = o.range(); if (!r || (e.button !== undefined && e.button > 0)) return;
-    start = { x: e.clientX, y: e.clientY, v: pos.x, id: e.pointerId, moved: false }; hist = [{ x: e.clientX, t: e.timeStamp }];
-    if (o.tile) { dragging = false; handle.classList.add("pressed"); return; }
-    dragging = true; held = true; try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
+    start = { x: e.clientX, id: e.pointerId, moved: false }; hist = [{ x: e.clientX, t: e.timeStamp }];
+    dragging = true; held = true; handle.classList.add("dragging"); try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
     pos.set(band(at(e.clientX, r), r));
   });
   handle.addEventListener("pointermove", e => {
     if (!start || e.pointerId !== start.id) return;
     const r = o.range(); if (!r) return;
-    const dx = e.clientX - start.x, dy = e.clientY - start.y;
-    if (!dragging) {
-      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { start = null; handle.classList.remove("pressed"); return; }  // a scroll
-      if (Math.abs(dx) < 10) return;
-      dragging = true; held = true; handle.classList.remove("pressed"); handle.classList.add("dragging");
-      try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
-    }
     start.moved = true;
     hist.push({ x: e.clientX, t: e.timeStamp }); if (hist.length > 6) hist.shift();
-    pos.set(band(o.tile ? start.v + dx / per(r) : at(e.clientX, r), r));
+    pos.set(band(at(e.clientX, r), r));
   });
   const end = () => {
-    handle.classList.remove("pressed");
     if (!start) return;
     const r = o.range();
     if (dragging && r) {
@@ -257,7 +248,6 @@ function dragValue(handle, track, o) {
       const carry = clamp(project(vel * per(r), SETTING) / per(r), -2 * r.step, 2 * r.step);
       settle(snap(pos.x + carry, r), vel ? clamp(vel, -8 * r.step / 0.35, 8 * r.step / 0.35) : undefined);
       handle.classList.remove("dragging");
-      if (o.tile) { dragged = true; setTimeout(() => { dragged = false; }, 0); }  // the click that ends a drag opens nothing
     }
     start = null; dragging = false;
   };
@@ -270,7 +260,7 @@ function dragValue(handle, track, o) {
     settle(snap((activeSprings.has(pos) ? pos.target : o.value()) + d * r.step, r));
   });
   return {
-    pos, dragged: () => dragged,
+    pos,
     sync() { if (!held && !activeSprings.has(pos) && o.range()) pos.set(o.value()); },  // follow the entity while untouched
     back(v) { held = false; pos.to(v, { damping: 1, response: 0.35 }); },  // a write that failed: back to what the unit has
   };
@@ -404,7 +394,7 @@ button { font: inherit; color: inherit; }
   backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); padding: 18px 18px 16px; text-align: left;
   width: 100%; display: block; }
 button.card { cursor: pointer; touch-action: manipulation; transition: transform 120ms ease-out; }
-button.card:active, .card.pressed { transform: scale(.985); }
+button.card:active { transform: scale(.985); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .label { font-size: .8125rem; font-weight: 600; letter-spacing: .02em; color: var(--fg-2); text-transform: uppercase; }
 .hint { font-size: .8125rem; color: var(--fg-3); }
@@ -468,7 +458,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .w-set-l { display: flex; align-items: center; gap: 10px; }
 .w-set-l .saved { position: static; }
 .card.tap { cursor: pointer; transition: transform 120ms ease-out; -webkit-user-select: none; user-select: none; }
-.card.tap:active:not(:has(.stepper:active)) { transform: scale(.985); }
+.card.tap:active:not(:has(button:active)) { transform: scale(.985); }
 .stepper button:disabled { opacity: .35; cursor: default; }
 .row:has(> .stepper) .row-label { flex-basis: 80px; }  /* − value + stays on the label's line, also on a phone */
 .srow { padding: 14px 0 6px; border-top: 1px solid var(--line); }
@@ -500,7 +490,15 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .floor h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: -.01em; margin: 6px 2px 0; }
 .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); gap: 12px; }
 @media (max-width: 420px) { .rooms { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-.room { padding: 14px 14px 12px; touch-action: pan-y; user-select: none; -webkit-user-select: none; overflow: hidden; }
+.room { padding: 14px 14px 12px; overflow: hidden; }
+.room-step { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 10px; }
+.rs-btn { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--line); font-size: 1.25rem; cursor: pointer; transition: transform 100ms ease-out; }
+.rs-btn:active { transform: scale(.92); }
+.rs-btn:disabled { opacity: .35; cursor: default; }
+.rs-v { display: grid; justify-items: center; line-height: 1.15; min-width: 0; }
+.rs-v small { font-size: .75rem; color: var(--fg-2); }
+.rs-v b { font-weight: 600; transition: color 200ms ease; }
+.rs-v.ok b { color: var(--fine); }
 .room .state { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 2px var(--ring, transparent); opacity: .55; }
 .room-name { font-size: .9375rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
 .room-name span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -510,10 +508,6 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .room-target b { color: var(--fg); font-weight: 600; }
 .saved { position: absolute; right: 0; top: 0; color: var(--fine); font-weight: 600; opacity: 0; transition: opacity 200ms ease; }
 .saved.show { opacity: 1; }
-.track { position: relative; height: 4px; border-radius: 4px; background: var(--line); margin-top: 12px; }
-.mark { position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.2); }
-.now-mark { position: absolute; top: -3px; width: 2px; height: 10px; margin-left: -1px; border-radius: 2px; background: var(--fg-3); }
-.dragging .mark { background: var(--accent); }
 .elem { width: 20px; height: 20px; flex: none; }
 .elem.off { opacity: .28; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); opacity: 0; pointer-events: none; z-index: 20; }
@@ -558,7 +552,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   .card, .chip, .fn, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .backdrop { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { button.card, .card.tap, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
+@media (prefers-reduced-motion: reduce) { button.card, .card.tap, .rs-btn, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
 `;
 
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
@@ -999,24 +993,16 @@ class ProxonPanel extends HTMLElement {
       element: el ? el.state : c.state === "heat" ? "ready" : "off", entity: c.entity_id,
     };
   }
-  _roomTile(n) {
-    const t = this.t, el = document.createElement("button");
-    el.className = "card room";
+  _roomTile(n) {  // the tile opens the room's sheet; its target changes only with − and + (a swipe just scrolls)
+    const t = this.t, el = document.createElement("div");
+    el.className = "card room tap"; el.setAttribute("role", "button"); el.tabIndex = 0;
     el.innerHTML = `<span class="state"></span><div class="room-name"><span class="nm"></span><span class="icon"></span></div>
-      <div class="room-temp num"></div><div class="room-target"><span>${t.target} <b class="num tv"></b></span><span class="saved">${t.sent}</span></div>
-      <div class="track" aria-hidden="true"><span class="now-mark"></span><span class="mark"></span></div>`;
-    const $ = s => el.querySelector(s), track = $(".track"), mark = $(".mark");
-    let r = null, shown = null;
-    const frac = v => r ? (v - r.min) / (r.max - r.min) : 0;
+      <div class="room-temp num"></div>
+      <div class="room-step"><button class="rs-btn" data-d="-1" aria-label="${t.colder}">−</button>
+        <span class="rs-v"><small>${t.target}</small><b class="num tv"></b></span><button class="rs-btn" data-d="1" aria-label="${t.warmer}">+</button></div>`;
+    const $ = s => el.querySelector(s), [dn, up] = el.querySelectorAll(".rs-btn");
+    let r = null;
     const digits = () => (r && r.step < 1 ? 1 : 0);
-    const ctl = dragValue(el, track, {
-      tile: true, range: () => r && { min: r.min, max: r.max, step: r.step }, value: () => r.target,
-      show: (v, snapped) => {
-        mark.style.transform = `translateX(${(frac(v) * track.clientWidth).toFixed(1)}px)`;
-        if (snapped !== shown) { shown = snapped; $(".tv").textContent = `${this.fmt(snapped, digits())}°`; }
-      },
-      commit: v => commit(v),
-    });
     const ring = x => { const d = x.temp - x.target; return d < -1 ? "var(--cold)" : d > 1 ? "var(--warm)" : "var(--fine)"; };
     const render = () => {
       r = this._room(n); if (!r) return;
@@ -1026,23 +1012,34 @@ class ProxonPanel extends HTMLElement {
       $(".icon").title = t.element[r.element] || "";
       $(".room-temp").innerHTML = r.temp === undefined || r.temp === null ? "–" : `${this.fmt(r.temp)}<small>°</small>`;
       $(".state").style.setProperty("--ring", r.available && r.temp != null ? ring(r) : "transparent");
-      $(".now-mark").style.left = `${(clamp(frac(r.temp), 0, 1) * 100).toFixed(1)}%`;
+      $(".tv").textContent = `${this.fmt(r.target, digits())}°`;
+      dn.disabled = !r.available || r.target <= r.min; up.disabled = !r.available || r.target >= r.max;
       el.setAttribute("aria-label", `${r.name}: ${this.fmt(r.temp)} °C, ${t.target} ${this.fmt(r.target, digits())} °C, ${t.element[r.element] || ""}`);
-      ctl.sync();
     };
-    const commit = v => {
-      if (!r || v === r.target) return;
-      this._pending.set(n, { v, at: Date.now() });
-      this.call("climate", "set_temperature", { entity_id: r.entity, temperature: v }).then(() => {
-        const s = $(".saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400);
-      }, () => { this._pending.delete(n); render(); ctl.back(this._room(n).target); });
-    };
-    el.addEventListener("click", () => { if (!ctl.dragged() && r) this._sheetRoom(n, el); });
+    const saved = () => { const v = $(".rs-v"); v.classList.add("ok"); setTimeout(() => v.classList.remove("ok"), 1400); };
+    [dn, up].forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); this._roomStep(n, Number(btn.dataset.d), saved); }));
+    el.addEventListener("click", e => { if (!e.target.closest(".rs-btn") && r) this._sheetRoom(n, el); });
+    el.addEventListener("keydown", e => { if (e.target === el && r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this._sheetRoom(n, el); } });
     return { el, render };
   }
+  // one step of a room's target: shown at once (tile and sheet); taps in a row are sent once, 0.6 s after the last
+  _roomStep(n, d, done) {
+    const r = this._room(n); if (!r || !r.available) return;
+    const v = clamp(Math.round((r.target + d * r.step) / r.step) * r.step, r.min, r.max);
+    this._pending.set(n, { v, at: Date.now() }); this._update();
+    const timers = this._roomTimers || (this._roomTimers = new Map());
+    clearTimeout(timers.get(n));
+    timers.set(n, setTimeout(() => {
+      timers.delete(n);
+      const cur = this._room(n), p = this._pending.get(n);
+      if (!cur || !p) return;  // back where it was: nothing to send
+      this._pending.set(n, { v: p.v, at: Date.now() });
+      this.call("climate", "set_temperature", { entity_id: cur.entity, temperature: p.v }).then(() => done && done(), () => { this._pending.delete(n); this._update(); });
+    }, 600));
+  }
 
-  // ---------- a number entity set by dragging (tile or slider); what was sent shows until the unit reports it ----------
-  _numberDrag(handle, track, key, { tile = false, show, done } = {}) {
+  // ---------- a number entity set with a slider; what was sent shows until the unit reports it ----------
+  _numberDrag(handle, track, key, { show, done } = {}) {
     const pend = this._pendingNum || (this._pendingNum = new Map());
     const range = () => {
       const st = this.st(key); if (!st || st.state === "unavailable") return null;
@@ -1057,7 +1054,7 @@ class ProxonPanel extends HTMLElement {
       return pend.has(key) ? pend.get(key).v : cur ?? range().min;
     };
     const ctl = dragValue(handle, track, {
-      tile, range, value, show,
+      range, value, show,
       commit: v => {
         if (v === this.num(key)) return;
         pend.set(key, { v, at: Date.now() });
@@ -1529,19 +1526,11 @@ class ProxonPanel extends HTMLElement {
   _sheetRoom(n, from) {
     const t = this.t, r = this._room(n), d = r.step < 1 ? 1 : 0;
     this._openSheet(`<h3>${r.name}</h3><p class="sub" id="r-sub"></p>
-      ${this._sliderRow("rt-row", t.target, fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) }))}
-      ${this._sw("s-elem", t.released, t.releasedSub)}<p class="hint">${t.dragHint}</p><button class="link" id="r-more">${t.more}</button>`, from, () => {
-      const row = this.$("rt-row"), sl = row.querySelector(".slider");
-      const ctl = dragValue(sl, sl, {
-        range: () => { const c = this._room(n); return c && { min: c.min, max: c.max, step: c.step }; },
-        value: () => this._room(n).target, show: this._sliderShow(row, v => `${this.fmt(v, d)} °C`),
-        commit: v => {
-          const cur = this._room(n); if (v === cur.target) return;
-          this._pending.set(n, { v, at: Date.now() }); this._updateRooms();
-          this.call("climate", "set_temperature", { entity_id: cur.entity, temperature: v }).catch(() => { this._pending.delete(n); this._update(); ctl.back(this._room(n).target); });
-        },
-      });
-      this._sheetCtl = [ctl]; requestAnimationFrame(() => ctl.sync());
+      <div class="row"><span class="row-label">${t.target}<small>${fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) })}</small></span>
+        <div class="stepper"><button id="rt-dn" aria-label="${t.colder}">−</button><output class="num" id="rt-out"></output><button id="rt-up" aria-label="${t.warmer}">+</button></div></div>
+      ${this._sw("s-elem", t.released, t.releasedSub)}<button class="link" id="r-more">${t.more}</button>`, from, () => {
+      this.$("rt-dn").addEventListener("click", () => this._roomStep(n, -1));
+      this.$("rt-up").addEventListener("click", () => this._roomStep(n, 1));
       this.$("s-elem").addEventListener("click", () => {
         const cur = this._room(n);
         this.call("climate", "set_hvac_mode", { entity_id: cur.entity, hvac_mode: cur.mode === "heat" ? "auto" : "heat" }).catch(() => {});
@@ -1550,7 +1539,8 @@ class ProxonPanel extends HTMLElement {
     }, () => {
       const cur = this._room(n); if (!cur) return;
       this.$("r-sub").textContent = `${t.now} ${this.fmt(cur.temp)}° · ${t.element[cur.element] || ""}`;
-      (this._sheetCtl || []).forEach(c => c.sync());
+      this.$("rt-out").textContent = `${this.fmt(cur.target, d)} °C`;
+      this.$("rt-dn").disabled = !cur.available || cur.target <= cur.min; this.$("rt-up").disabled = !cur.available || cur.target >= cur.max;
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
     });
   }
