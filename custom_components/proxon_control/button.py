@@ -14,6 +14,10 @@ from .services import async_copy_day
 COPIES = [("ZeitprogrammMoDiFr", "copy_monday_weekdays", [1, 2, 3, 4]), ("ZeitprogrammMoAlle", "copy_monday_all", [1, 2, 3, 4, 5, 6])]
 
 
+# one change at a time per platform: the unit allows only a few sessions, and every write is read back
+PARALLEL_UPDATES = 1
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     entities: list[ButtonEntity] = [ProxonClearHolidayPlanButton(coordinator)]

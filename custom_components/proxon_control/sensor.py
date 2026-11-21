@@ -245,6 +245,10 @@ SENSORS: list[ProxonSensorDescription] = [
 ]
 
 
+# values come from the coordinator, nothing is fetched per entity
+PARALLEL_UPDATES = 0
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}

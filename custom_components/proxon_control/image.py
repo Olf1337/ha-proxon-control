@@ -24,6 +24,10 @@ from .registers import active_faults, room_heating, room_target
 TEMPERATURES_EVERY = 60  # seconds: changed temperatures are shown at most this often
 
 
+# values come from the coordinator, nothing is fetched per entity
+PARALLEL_UPDATES = 0
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}

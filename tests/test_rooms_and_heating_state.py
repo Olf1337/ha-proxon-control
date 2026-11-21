@@ -76,3 +76,21 @@ async def test_heating_state_comes_from_the_compressor(hass: HomeAssistant, devi
     assert hass.states.get(eid(hass, "climate", "NBE1Thermostat")).attributes["hvac_action"] == "fan"
     await call(hass, "select", "select_option", entity_id=eid(hass, "select", "Betriebsart"), option="off")
     assert hass.states.get(living).attributes["hvac_action"] == "off"
+
+
+async def test_a_room_no_longer_reported_can_be_deleted(hass: HomeAssistant, device) -> None:
+    """A room disconnected at the unit keeps its device until deleted by hand; only such a room may be deleted, not the
+    unit, a schedule day or a room the unit still reports."""
+    from homeassistant.helpers import device_registry as dr
+
+    from custom_components.proxon_control import async_remove_config_entry_device
+
+    entry = await setup(hass)
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    room = next(d for d in devices if any(i[1].endswith("_room1") for i in d.identifiers))
+    others = [d for d in devices if d.id != room.id]
+    assert not await async_remove_config_entry_device(hass, entry, room)  # still connected
+    assert not any([await async_remove_config_entry_device(hass, entry, d) for d in others])
+    entry.runtime_data.data["NBE1Verbunden"] = 0  # disconnected at the unit
+    assert await async_remove_config_entry_device(hass, entry, room)
+    assert not any([await async_remove_config_entry_device(hass, entry, d) for d in others if d.id != room.id])

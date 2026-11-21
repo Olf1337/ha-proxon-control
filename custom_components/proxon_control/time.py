@@ -19,6 +19,9 @@ from .registers import SCHEDULE_PHASES
 from .schedule import read_day
 from .services import async_set_phase, schedule_day_device
 
+# one change at a time per platform: the unit allows only a few sessions, and every write is read back
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data

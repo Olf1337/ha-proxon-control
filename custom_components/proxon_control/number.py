@@ -50,6 +50,10 @@ NUMBERS: list[ProxonNumberDescription] = [
 ]
 
 
+# one change at a time per platform: the unit allows only a few sessions, and every write is read back
+PARALLEL_UPDATES = 1
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}

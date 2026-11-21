@@ -17,6 +17,10 @@ LEVEL_OPTIONS = ["off", "1", "2", "3", "4"]
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
 
+# one change at a time per platform: the unit allows only a few sessions, and every write is read back
+PARALLEL_UPDATES = 1
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     entities: list[SelectEntity] = [ProxonModeSelect(coordinator)]

@@ -40,7 +40,7 @@ from .holiday import HolidayMode
 from .nabto import library_supported
 from .panel import async_register as async_register_panel
 from .panel import async_unregister as async_unregister_panel
-from .registers import ROOM_COUNT
+from .registers import ROOM_COUNT, room_connected
 from .repairs_watch import remove_issues, update_issues
 from .services import async_setup_services
 
@@ -152,6 +152,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     # the "Proxon" page in the sidebar (our own interface)
     await async_register_panel(hass, entry)
     return True
+
+
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device: dr.DeviceEntry) -> bool:
+    """A room the unit no longer reports can be deleted by hand (device page → Delete); the unit, its schedule days and the
+    rooms it still reports can't (they would come back at the next start)."""
+    coordinator = getattr(entry, "runtime_data", None)
+    data = getattr(coordinator, "data", None) or {}
+    if coordinator is None:
+        return False
+    rooms = {room_identifier(coordinator, n): n for n in range(ROOM_COUNT)}
+    return all(i in rooms and not room_connected(data, rooms[i]) for i in device.identifiers)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
