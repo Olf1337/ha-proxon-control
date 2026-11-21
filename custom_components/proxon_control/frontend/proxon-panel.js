@@ -22,8 +22,8 @@ const TEXT = {
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
-    close: "Schließen", warmer: "Wärmer", colder: "Kälter", off: "{f} aus", undo: "Rückgängig",
-    end: "{f} beenden", unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
+    close: "Schließen", warmer: "Wärmer", colder: "Kälter", undo: "Rückgängig",
+    unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
     holidayNeedsPlan: "Bitte zuerst Abreise und Rückkehr eintragen, dann lässt sich der Urlaubsmodus einschalten.",
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", settings: "Einstellungen", status: "Status",
@@ -61,7 +61,8 @@ const TEXT = {
       boostww: ["Warmwasser-Boost", "Heizstab an, bis {t} °C erreicht sind"],
       legionella: ["Legionellenschutz", "heizt das Warmwasser auf 60 °C"],
       cooling: ["Nachtkühlung", "kühlt mit Stufe {l}"],
-    },
+      season: ["Sommer/Winter automatisch"],
+    }, fnOn: "eingeschaltet", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
   },
   en: {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
@@ -80,8 +81,8 @@ const TEXT = {
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
     releasedSub: "heats electrically when the room is too cold",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
-    close: "Close", warmer: "Warmer", colder: "Colder", off: "{f} off", undo: "Undo",
-    end: "End {f}", unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
+    close: "Close", warmer: "Warmer", colder: "Colder", undo: "Undo",
+    unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
     holidayNeedsPlan: "Please enter departure and return first, then holiday mode can be switched on.",
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", settings: "Settings", status: "Status",
@@ -119,25 +120,31 @@ const TEXT = {
       boostww: ["Hot-water boost", "heater on until {t} °C"],
       legionella: ["Legionella protection", "heating the hot water to 60 °C"],
       cooling: ["Night cooling", "cooling at level {l}"],
-    },
+      season: ["Summer/winter automatically"],
+    }, fnOn: "switched on", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
   },
 };
 const fill = (s, v) => s.replace(/\{(\w)\}/g, (_, k) => (v[k] ?? ""));
 
-// the automatic functions: shown while they run; their switch ends them
+// the automatic functions: a hint at the top of "Home" while one is switched on (or holiday mode is planned); it shows what
+// the function is doing and is lit while it works; a tap opens its settings. on: its switches, status: its status sensor,
+// run(st of the first switch, panel): working now, sec: its section in the settings.
 const FUNCS = [
-  { k: "holiday", sw: "Urlaubsmodus", run: st => st.state === "on", tint: "--fresh",
+  { k: "holiday", on: ["Urlaubsmodus"], sec: "holiday", run: st => st.state === "on", tint: "--fresh",
     icon: "M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 7h16v12H4zM9 7v12M15 7v12" },
-  { k: "solar", sw: "SolarWarmwasser", run: st => st.attributes.status === "heating_solar", tint: "--supply", temp: "SpeicherTemperatur",
+  { k: "solar", on: ["SolarWarmwasser"], status: "Energiemanager", sec: "store", run: st => st.attributes.status === "heating_solar", tint: "--supply", temp: "SpeicherTemperatur",
     icon: "M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" },
-  { k: "price", sw: "PreisWarmwasser", run: st => st.attributes.status === "heating_price", tint: "--fine", temp: "SpeicherTemperatur",
+  { k: "price", on: ["PreisWarmwasser"], status: "Energiemanager", sec: "store", run: st => st.attributes.status === "heating_price", tint: "--fine", temp: "SpeicherTemperatur",
     icon: "M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.7 7 7.6c0 4.8 10 2.6 10 7.8 0 2-2.2 3.1-5 3.1s-5-1.2-5-3.1" },
-  { k: "boostww", sw: "WarmwasserBoost", run: st => st.attributes.status === "heating", tint: "--warm", temp: "BoostGrenze",
+  { k: "boostww", on: ["WarmwasserBoost"], status: "BoostStatus", sec: "boost", run: st => st.attributes.status === "heating", tint: "--warm", temp: "BoostGrenze",
     icon: "M13 2L4 14h7l-1 8 9-12h-7z" },
-  { k: "legionella", sw: "LegionellenStatus", off: ["LegionellenSonne", "LegionellenGeplant"], run: st => String(st.state || "").startsWith("heating"), tint: "--water-hot",
+  { k: "legionella", on: ["LegionellenSonne", "LegionellenGeplant"], status: "LegionellenStatus", sec: "legionella",
+    run: (st, p) => String((p.st("LegionellenStatus") || {}).state || "").startsWith("heating"), tint: "--water-hot",
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
-  { k: "cooling", sw: "Nachtkuehlung", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
+  { k: "cooling", on: ["Nachtkuehlung"], status: "NachtkuehlungStatus", sec: "cooling", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
+  { k: "season", on: ["SaisonAutomatik"], status: "SaisonStatus", sec: "season", run: () => false, tint: "--exhaust",
+    icon: "M12 3v18M4 7l16 10M20 7L4 17" },
 ];
 
 // numbers set with − and + instead of a slider (the hot-water target: a slider or a swipe changed it by accident)
@@ -478,7 +485,11 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .active { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
 .fn { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
   box-shadow: var(--shadow); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); min-width: 0; }
-.fn-icon { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; }
+.fn-icon { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--tint) 12%, transparent); transition: background 300ms ease; }
+.fn.run .fn-icon { background: color-mix(in srgb, var(--tint) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tint) 14%, transparent); }
+.fn { cursor: pointer; transition: transform 120ms ease-out; }
+.fn:active { transform: scale(.98); }
+.fn-chev { flex: none; color: var(--fg-3); font-size: 1.2rem; }
 .fn-icon svg { width: 20px; height: 20px; }
 .fn-text { flex: 1; min-width: 0; }
 .fn-title { font-weight: 600; font-size: .9375rem; }
@@ -567,7 +578,6 @@ class ProxonPanel extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._built = false; this._rooms = new Map(); this._fnCards = new Map(); this._pending = new Map();
-    this._ending = new Map();  // functions switched off here, until the unit reports them off (holiday mode takes a moment)
   }
   set panel(p) { this._config = (p && p.config) || {}; if (this._hass) this._update(); }
   set narrow(n) { this._narrow = n; if (this._built) this.$("menu").hidden = !n; }
@@ -866,27 +876,33 @@ class ProxonPanel extends HTMLElement {
     const t = this.t;
     let who = "";
     for (const f of FUNCS) {
-      const st = this.st(f.sw), card = this._fnCards.get(f.k);
-      let running = !!st && f.run(st);
-      if (!running) this._ending.delete(f.k);
-      else if (Date.now() - (this._ending.get(f.k) || 0) < 20000) running = false;
+      const sts = f.on.map(k => this.st(k)).filter(Boolean), on = sts.some(st => st.state === "on");
+      const planned = f.k === "holiday" && !on && !!(sts[0] && sts[0].attributes.plan_on_at);
+      const shown = on || planned, running = on && f.run(sts.find(st => st.state === "on"), this);
       if (running && ["solar", "price", "boostww", "legionella"].includes(f.k) && !who) who = t.fn[f.k][0];
-      if (running && !card) this._showFn(f);
-      else if (!running && card && !card.leaving) this._hideFn(f.k);
-      if (running) this._fnDetail(f);
+      const card = this._fnCards.get(f.k);
+      if (shown && !card) this._showFn(f);
+      else if (!shown && card && !card.leaving) this._hideFn(f.k);
+      if (shown) this._fnDetail(f, running, planned);
     }
     this.$("w-working").hidden = !who; this.$("w-who").textContent = who; this.$("w-hint").hidden = !!who;
   }
-  _fnDetail(f) {
+  _fnDetail(f, running, planned) {
     const card = this._fnCards.get(f.k); if (!card) return;
-    const t = this.t.fn[f.k];
-    let detail = t[1];
+    const t = this.t, words = t.fn[f.k], lang = this._hass.language || undefined;
+    const when = iso => new Date(iso).toLocaleString(lang, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+    const status = f.status && this.st(f.status), said = status ? (this._hass.formatEntityState ? this._hass.formatEntityState(status) : status.state) : t.fnOn;
+    let detail = said;
     if (f.k === "holiday") {
-      const off = (this.st("Urlaubsmodus").attributes || {}).plan_off_at;
-      if (off) detail = fill(t[2], { d: new Date(off).toLocaleString(this._hass.language || undefined, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) });
-    } else if (f.temp) detail = fill(t[1], { t: this.fmt(this.num(f.temp), 0) });
-    else if (f.k === "cooling") detail = fill(t[1], { l: this.fmt(this.num("KuehlStufe"), 0) });
+      const a = (this.st("Urlaubsmodus") || {}).attributes || {};
+      detail = planned ? fill(t.fnPlanned, { d: when(a.plan_on_at) }) : a.plan_off_at ? fill(words[2], { d: when(a.plan_off_at) }) : words[1];
+    } else if (running && f.temp) detail = fill(words[1], { t: this.fmt(this.num(f.temp), 0) });
+    else if (running && f.k === "cooling") detail = fill(words[1], { l: this.fmt(this.num("KuehlStufe"), 0) });
+    else if (running && words[1]) detail = words[1];
+    else if (f.k === "legionella" && status && status.attributes.planned_next) detail = fill(t.fnNext, { s: said, d: when(status.attributes.planned_next) });
     card.querySelector(".fn-detail").textContent = detail;
+    card.classList.toggle("run", !!running);
+    card.setAttribute("aria-label", `${words[0]}: ${detail}`);
   }
   _relayout(change) {
     const wrap = this.$("active-wrap"), before = new Map([...this._fnCards.values()].map(el => [el, el.getBoundingClientRect()]));
@@ -903,21 +919,14 @@ class ProxonPanel extends HTMLElement {
       el.fdx = dx; el.fdy = dy; sp.set(1); sp.to(0, { damping: 1, response: 0.4 });
     }
   }
-  _showFn(f) {
+  _showFn(f) {  // a hint, not a switch: a tap opens the function's settings
     const t = this.t, el = document.createElement("div");
-    el.className = "fn";
-    el.innerHTML = `<span class="fn-icon" style="background: color-mix(in srgb, var(${f.tint}) 16%, transparent)"><svg viewBox="0 0 24 24" aria-hidden="true">
+    el.className = "fn"; el.setAttribute("role", "button"); el.tabIndex = 0;
+    el.innerHTML = `<span class="fn-icon" style="--tint: var(${f.tint})"><svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="${f.icon}" fill="none" stroke="var(${f.tint})" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      <span class="fn-text"><div class="fn-title">${t.fn[f.k][0]}</div><div class="fn-detail"></div></span>
-      <button class="switch" role="switch" aria-checked="true" aria-label="${fill(t.end, { f: t.fn[f.k][0] })}"></button>`;
-    el.querySelector(".switch").addEventListener("click", () => {
-      const entity = this.id((f.off || [f.sw]).find(k => (this.st(k) || {}).state === "on") || f.sw);
-      this._ending.set(f.k, Date.now());
-      this.call("switch", "turn_off", { entity_id: entity }).then(
-        () => this._toast(fill(t.off, { f: t.fn[f.k][0] }), () => { this._ending.delete(f.k); return this.call("switch", "turn_on", { entity_id: entity }); }),
-        () => { this._ending.delete(f.k); this._update(); });
-      this._hideFn(f.k);
-    });
+      <span class="fn-text"><div class="fn-title">${t.fn[f.k][0]}</div><div class="fn-detail"></div></span><span class="fn-chev" aria-hidden="true">›</span>`;
+    el.addEventListener("click", () => this._openSetting(f.sec));
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this._openSetting(f.sec); } });
     el.appear = new Spring(0, v => { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.scale = (0.92 + 0.08 * v).toFixed(4); });
     el.appear.set(0);
     this._relayout(() => {
@@ -930,8 +939,18 @@ class ProxonPanel extends HTMLElement {
   _hideFn(k) {
     const el = this._fnCards.get(k); if (!el || el.leaving) return;
     el.leaving = true; this._fnCards.delete(k);
-    el.querySelector(".switch").setAttribute("aria-checked", "false");
     el.appear.to(0, { damping: 1, response: 0.28, onRest: () => this._relayout(() => el.remove()) });
+  }
+  // the settings of a function: its section, an automatic function opened in place
+  _openSetting(sec) {
+    if (this._current !== "settings") this._tab("settings");
+    const auto = SETTINGS.some(x => x.id === sec && x.auto);
+    this._showSection(auto ? "auto" : sec, true);
+    const head = auto && this.$(`ah-${sec}`);
+    if (head) {
+      if (head.getAttribute("aria-expanded") !== "true") head.click();
+      requestAnimationFrame(() => head.scrollIntoView({ block: "center", behavior: reduceMotion.matches ? "auto" : "smooth" }));
+    }
   }
 
   // ---------- rooms ----------
