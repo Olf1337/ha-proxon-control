@@ -553,6 +553,37 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .toast span { overflow: hidden; text-overflow: ellipsis; }
 .toast button { flex: none; border: 0; background: var(--line); padding: 7px 12px; border-radius: 10px; font-weight: 600; color: var(--accent); cursor: pointer; }
 [hidden] { display: none !important; }
+/* ---------- the look "Soft" (option): one calm surface colour, cards raised by a light and a dark shadow from the top
+   left, buttons and switches pressed in; full-contrast text, a fine edge and coloured states stay as in the glass look ---------- */
+:host([softui]) {
+  --bg: #e7ecf1; --s-hi: #ffffff; --s-lo: #c2cad3; --edge: rgba(20,32,45,.07); --edge-low: rgba(20,32,45,.07);
+  --glass: var(--bg); --glass-strong: var(--bg); --surface: var(--bg);
+  --shadow: 6px 6px 14px var(--s-lo), -6px -6px 14px var(--s-hi);
+  --raised: 3px 3px 7px var(--s-lo), -3px -3px 7px var(--s-hi);
+  --pressed: inset 3px 3px 7px var(--s-lo), inset -3px -3px 7px var(--s-hi);
+}
+:host([softui][dark]) { --bg: #1c2229; --s-hi: #29313b; --s-lo: #11151a; --edge: rgba(255,255,255,.06); --edge-low: rgba(255,255,255,.06); }
+:host([softui]) .backdrop { display: none; }
+:host([softui]) .card, :host([softui]) .chip, :host([softui]) .fchip, :host([softui]) .toast, :host([softui]) .sheet {
+  background: var(--bg) !important; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: var(--shadow); }
+:host([softui]) .sheet { box-shadow: 0 -8px 24px var(--s-lo); }
+:host([softui]) .chip, :host([softui]) .fchip { box-shadow: var(--raised); }
+:host([softui]) .fchip.run { background: color-mix(in srgb, var(--tint) 16%, var(--bg)) !important; }
+:host([softui]) .card::after { display: none; }
+/* buttons stand out and press in */
+:host([softui]) .stepper button, :host([softui]) .rs-btn, :host([softui]) .e-nav button, :host([softui]) .close, :host([softui]) .toast button {
+  background: var(--bg); box-shadow: var(--raised); transition: box-shadow 120ms ease; }
+:host([softui]) .stepper button:active, :host([softui]) .rs-btn:active, :host([softui]) .e-nav button:active { box-shadow: var(--pressed); transform: none; }
+:host([softui]) .stepper button:disabled, :host([softui]) .rs-btn:disabled { box-shadow: none; }
+/* wells: segmented controls, the tabs, the switch's track, the chart */
+:host([softui]) .seg, :host([softui]) .tabs, :host([softui]) .e-chart { background: var(--bg); box-shadow: var(--pressed); }
+:host([softui]) .e-chart { border-radius: 14px; }
+:host([softui]) .seg button[aria-pressed="true"], :host([softui]) .tabs button[aria-selected="true"] { background: var(--bg); box-shadow: var(--raised); }
+:host([softui]) .switch { background: var(--bg); box-shadow: var(--pressed); }
+:host([softui]) .switch[aria-checked="true"] { background: var(--accent); box-shadow: inset 2px 2px 5px rgba(0,0,0,.25); }
+:host([softui]) .pill-switch { background: var(--bg); box-shadow: var(--raised); border-color: transparent; }
+:host([softui]) .sa-item[aria-current="true"] { background: var(--bg); box-shadow: var(--pressed); }
+@media (max-width: 600px) { :host([softui]) .tabs { box-shadow: var(--shadow); } :host([softui]) .tabs button[aria-selected="true"] { box-shadow: var(--pressed); } }
 @media (prefers-reduced-transparency: reduce) {
   .card, .chip, .fchip, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .backdrop { display: none; }
@@ -767,6 +798,7 @@ class ProxonPanel extends HTMLElement {
     if (!this._built || !this._hass) return;
     const t = this.t, dark = this._hass.themes && this._hass.themes.darkMode;
     this.toggleAttribute("dark", !!dark);
+    this.toggleAttribute("softui", (this._config || {}).look === "soft");  // the look chosen in the options
     const deg = key => { const v = this.num(key); return v === null ? "–" : `${this.fmt(v)}°`; };
     this.$("c-out").textContent = deg("T3Frischluft");
     const op = this.st("AktuellerBetrieb");

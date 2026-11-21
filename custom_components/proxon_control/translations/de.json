@@ -909,7 +909,8 @@
           "basement_rooms": "Räume im Keller",
           "house_photo": "Hausfoto (optional)",
           "hot_water_pump_power": "Leistung der Warmwasser-Wärmepumpe",
-          "hot_water_heater_power": "Leistung des Heizstabs"
+          "hot_water_heater_power": "Leistung des Heizstabs",
+          "panel_look": "Design der Seite „Proxon“"
         },
         "data_description": {
           "mode": "Heimnetz zuerst: am schnellsten, der Proxon-Server wird nur genutzt, wenn die Anlage direkt nicht erreichbar ist.",
@@ -925,7 +926,8 @@
           "basement_rooms": "Diese Räume stehen im Dashboard und im Grundriss unter „Keller“. Vorausgewählt nach den Raumnamen (Keller, UG, Hobbyraum, Werkstatt …). Nichts auswählen, wenn es keinen Keller gibt.",
           "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: das gezeichnete Haus wird gezeigt.",
           "hot_water_pump_power": "Für den geschätzten Warmwasser-Verbrauch (die Anlage misst ihn nicht): die Nennleistung, solange die Wärmepumpe läuft. Datenblatt PROXON T300: 430 W.",
-          "hot_water_heater_power": "Die Nennleistung, solange der Heizstab läuft. T300: 1500 W; mit der Option BOOST 4500 oder 9000 W."
+          "hot_water_heater_power": "Die Nennleistung, solange der Heizstab läuft. T300: 1500 W; mit der Option BOOST 4500 oder 9000 W.",
+          "panel_look": "Liquid Glass: durchscheinende Karten über farbigen Flächen. Soft: erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche."
         }
       }
     },
@@ -1031,6 +1033,12 @@
         "auto": "Heimnetz zuerst, Proxon-Server als Ausweichweg",
         "local": "Nur Heimnetz",
         "cloud": "Nur Proxon-Server"
+      }
+    },
+    "panel_look": {
+      "options": {
+        "glass": "Liquid Glass",
+        "soft": "Soft"
       }
     }
   },

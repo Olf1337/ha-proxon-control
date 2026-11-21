@@ -9,7 +9,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); one unit per Home
 Assistant (a second one can't be added for now); a new tab "Energy" on the page (stacked columns per day or month for
 week/month/year, earlier periods from the statistics, a cost overview so far and expected, power now, running
-times); hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
+times); a second look "Soft" for the page (raised cards, pressed buttons), chosen under Configure; hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
 new installs); saved settings
 get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
 
@@ -125,6 +125,9 @@ nobody home).
 * **Neuer Tab „Energie“ auf der Seite „Proxon“:** Säulendiagramm des Verbrauchs, gestapelt aus Kompressor, Lüftung und
   Warmwasser, je Tag (Woche, Monat) oder je Monat (Jahr), mit Kosten und Hochrechnung; „‹ ›“ blättert zu früheren Zeiträumen
   (aus der Statistik von Home Assistant); ein Tipp auf eine Säule zeigt ihre Werte. Dazu Leistung jetzt und Laufzeiten von heute. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Zweites Design „Soft“ für die Seite „Proxon“:** unter *Konfigurieren* wählbar neben Liquid Glass – erhabene Karten
+  und gedrückte Knöpfe, Schalter und Tasten auf einer ruhigen Fläche (angelehnt an Neumorphismus), mit vollem Textkontrast,
+  feiner Kante und farbigen Zuständen; hell und dunkel. Nur Farben und Schatten ändern sich, keine Funktionen.
 * **Kostenübersicht im Tab „Energie“:** bisherige Kosten für heute, diese Woche, diesen Monat und dieses Jahr und die
   voraussichtlichen für Monat und Jahr (Hochrechnung), dazu der Schnitt pro Monat und der Anteil des Warmwassers. Mit einem
   festen Strompreis werden die Kosten aller Zeiträume aus dem Verbrauch gerechnet (auch rückwirkend); mit einem

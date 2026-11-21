@@ -33,6 +33,7 @@ from .const import (
     CONF_HOUSE_PHOTO,
     CONF_LOCAL_HOST,
     CONF_MODE,
+    CONF_PANEL_LOOK,
     CONF_PASSWORD,
     CONF_PICTURE_THEME,
     CONF_PORT,
@@ -47,6 +48,7 @@ from .const import (
     CONNECTION_BRIDGE,
     CONNECTION_DIRECT,
     DEFAULT_MODE,
+    DEFAULT_PANEL_LOOK,
     DEFAULT_PICTURE_THEME,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -58,6 +60,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     MODES,
+    PANEL_LOOKS,
     PICTURE_THEMES,
 )
 from .entity import house_rooms, room_name
@@ -91,6 +94,8 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
             for key, default in ((CONF_WATER_PUMP_POWER, DEFAULT_WATER_PUMP_POWER), (CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER)):
                 if user_input.get(key) and int(user_input[key]) != default:  # kept only when it differs from the datasheet
                     data[key] = int(user_input[key])
+            if user_input.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK) != DEFAULT_PANEL_LOOK:
+                data[CONF_PANEL_LOOK] = user_input[CONF_PANEL_LOOK]
             if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
                 data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
             rooms = self._rooms()
@@ -154,6 +159,10 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 ),
                 vol.Optional(CONF_WATER_HEATER_POWER, default=DEFAULT_WATER_HEATER_POWER): NumberSelector(
                     NumberSelectorConfig(min=500, max=9000, step=100, unit_of_measurement="W", mode=NumberSelectorMode.BOX)
+                ),
+                # the look of the page "Proxon"
+                vol.Optional(CONF_PANEL_LOOK, default=DEFAULT_PANEL_LOOK): SelectSelector(
+                    SelectSelectorConfig(options=PANEL_LOOKS, mode=SelectSelectorMode.LIST, translation_key=CONF_PANEL_LOOK)
                 ),
                 # dashboard pictures: light / dark
                 vol.Optional(CONF_PICTURE_THEME, default=DEFAULT_PICTURE_THEME): SelectSelector(

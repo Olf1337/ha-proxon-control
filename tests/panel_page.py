@@ -165,6 +165,15 @@ def check(page, data: dict) -> dict:
     js("() => { window.panel._config.price = null; window.panel._updateEnergy(); }")
     page.wait_for_timeout(300)
 
+    # the look "Soft" (option): set on the page, the glass backdrop gone, nothing runs out sideways
+    js("() => { window.panel._config.look = 'soft'; window.panel.hass = { ...window.hassFake }; }")
+    page.wait_for_timeout(200)
+    r["soft"] = js(f"""() => ({{ on: window.panel.hasAttribute('softui'), backdrop: getComputedStyle({root}.querySelector('.backdrop')).display,
+      card: getComputedStyle({root}.querySelector('.card')).backdropFilter, overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }})""")
+    js("() => { window.panel._config.look = 'glass'; window.panel.hass = { ...window.hassFake }; }")
+    page.wait_for_timeout(200)
+    r["glass_again"] = js("() => window.panel.hasAttribute('softui')")
+
     # settings: every section; the list stays in its column, nothing runs out sideways
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(400)

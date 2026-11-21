@@ -39,6 +39,10 @@ CONF_FIXED_PRICE = "fixed_price"  # ct/kWh of a fixed tariff: for the electricit
 CONF_PICTURE_THEME = "picture_theme"
 PICTURE_THEMES = ["auto", "light", "dark"]
 DEFAULT_PICTURE_THEME = "auto"
+# the look of the page "Proxon": liquid glass (translucent over colour) or soft (raised and pressed, one surface colour)
+CONF_PANEL_LOOK = "panel_look"
+PANEL_LOOKS = ["glass", "soft"]
+DEFAULT_PANEL_LOOK = "glass"
 # house picture: the rooms on the upper floor (room numbers; guessed from the names until chosen), the user's own house photo
 CONF_UPPER_FLOOR = "upper_floor_rooms"
 CONF_BASEMENT = "basement_rooms"

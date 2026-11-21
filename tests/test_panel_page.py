@@ -74,6 +74,9 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         c = r["cost"]
         assert not c["hint"] and len(c["rows"]) == 4, f"{width}: costs so far {c}"
         assert c["today"] == 4 and "1,00" in c["rows"][0], f"{width}: today 4 kWh x 25 ct = 1,00 € {c}"
+        soft = r["soft"]
+        assert soft["on"] and soft["backdrop"] == "none" and soft["card"] in ("none", "") and soft["overflow"] <= 0, f"{width}: soft {soft}"
+        assert r["glass_again"] is False
         for sec, s in r["settings"].items():
             assert s["shown"] and s["rows"], f"{width}/{sec}: the section is empty"
             assert s["overflow"] <= 0 and s["rows_out"] == 0, f"{width}/{sec}: runs out sideways: {s}"

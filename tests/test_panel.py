@@ -67,3 +67,21 @@ def test_panel_script_is_shipped() -> None:
     for key in ("T1Zuluft", "T3Frischluft", "T4Fortluft", "T7Abluft", "DrehzahlZuluft", "DrehzahlAbluft", "Intensivlueftung",
                 "WarmwasserLadezustand", "WarmwasserDuschminuten", "SollWassertemperatur", "Urlaubsmodus", "SolarWarmwasser"):
         assert f'"{key}"' in script
+
+
+async def test_look_of_the_page(hass: HomeAssistant, device) -> None:
+    """The page's look comes from the options: liquid glass unless "soft" was chosen; only a choice other than glass is kept."""
+    from homeassistant.data_entry_flow import FlowResultType
+
+    entry = await setup(hass)
+    assert P.panel_config(hass, entry)["look"] == "glass"
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    schema = {str(k): k for k in flow["data_schema"].schema}
+    assert schema["panel_look"].default() == "glass"
+    result = await hass.config_entries.options.async_configure(flow["flow_id"], {"scan_interval": 10, "panel_look": "soft"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY and entry.options["panel_look"] == "soft"
+    await hass.async_block_till_done()
+    assert P.panel_config(hass, entry)["look"] == "soft"
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    await hass.config_entries.options.async_configure(flow["flow_id"], {"scan_interval": 10, "panel_look": "glass"})
+    assert "panel_look" not in entry.options

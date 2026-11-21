@@ -909,7 +909,8 @@
           "basement_rooms": "Rooms in the basement",
           "house_photo": "House photo (optional)",
           "hot_water_pump_power": "Power of the hot-water heat pump",
-          "hot_water_heater_power": "Power of the immersion heater"
+          "hot_water_heater_power": "Power of the immersion heater",
+          "panel_look": "Look of the page \"Proxon\""
         },
         "data_description": {
           "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
@@ -925,7 +926,8 @@
           "basement_rooms": "These rooms are shown under \"Basement\" on the dashboard and in the floor plan. Preselected by the room names (Keller, UG, hobby room, workshop …). Choose none if there is no basement.",
           "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown.",
           "hot_water_pump_power": "For the estimated hot-water consumption (the unit doesn't measure it): the rated power while the heat pump runs. PROXON T300 datasheet: 430 W.",
-          "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W."
+          "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W.",
+          "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour."
         }
       }
     },
@@ -1031,6 +1033,12 @@
         "auto": "Home network first, Proxon server as fallback",
         "local": "Home network only",
         "cloud": "Proxon server only"
+      }
+    },
+    "panel_look": {
+      "options": {
+        "glass": "Liquid glass",
+        "soft": "Soft"
       }
     }
   },
