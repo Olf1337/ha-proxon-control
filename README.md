@@ -29,6 +29,10 @@ source is included.
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
 
+**New in 0.24.0:** on the page "Proxon", the hot-water target and the room targets are set with − and + (a swipe while
+scrolling no longer changes them); switched-on functions show as small chips in the status row of "Home" (a tap opens
+their settings); a refused action (e.g. solar surplus without a sensor) shows in the page's own hint.
+
 **New in 0.23.1:** on the page "Proxon", a long summary in the settings list (e.g. the weekly schedule) no longer widens
 its row over the section beside it; it is cut with "…".
 
@@ -144,6 +148,21 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Meldungen | „Filterwechsel bald nötig“, „Kompressor läuft“, „Störung“ (Fehlerwörter der Anlage als Attribute), Bypass, Erdwärmetauscher, PV-Eingang; Filterwechsel, Störung und eine falsch gehende Anlagenuhr erscheinen zusätzlich unter *Einstellungen → Reparaturen*, ebenso eine Woche ohne 60 °C im Warmwasser ohne Legionellenschutz |
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
+
+## Neu in Version 0.24.0
+
+* **Sollwerte mit − und + statt Wischen:** Auf der Seite „Proxon“ war die ganze Warmwasser-Karte ein Schieberegler –
+  ein leicht schräges Wischen beim Scrollen auf dem Handy hat die Warmwasser-Solltemperatur verstellt (z. B. auf 52 oder
+  55 °C). Jetzt ändern Warmwasser-Karte, ihr Sheet und die Einstellungen den Sollwert nur mit − und + (1 °C je Tipp,
+  mehrere Tipps werden einmal gesendet). Die Raum-Kacheln und ihre Sheets genauso, in Schritten des Thermostats. Ein
+  Tipp auf die Karte oder Kachel öffnet wie bisher die Details.
+* **Eingeschaltete Funktionen in der Statuszeile:** Oben auf „Zuhause“ steht jede eingeschaltete Funktion als kleine
+  Kapsel neben Außentemperatur und Betrieb – mit dem Wichtigsten in wenigen Wörtern, z. B. „Urlaub ab So., 16:52“,
+  „Legionellenschutz So., 14:00“ oder „Sommer/Winter Winter“. Arbeitet eine Funktion gerade, ist sie farbig hinterlegt
+  und hat einen pulsierenden Punkt. Ein Tipp öffnet ihre Einstellung. Bisher erschien eine Funktion nur, während sie
+  heizte oder kühlte, und dann als große Karte mit Schalter.
+* **Hinweise im Design der Seite:** Wird eine Aktion abgelehnt – z. B. PV-Überschuss ohne gewählten Sensor –, erscheint
+  der Hinweis unten auf der Seite wie der Hinweis zur Urlaubsplanung, nicht mehr als Fehlermeldung von Home Assistant.
 
 ## Neu in Version 0.23.1
 
