@@ -36,8 +36,9 @@ const TEXT = {
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
+    yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
-      vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
+      auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
       season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
@@ -93,8 +94,9 @@ const TEXT = {
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
+    yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
-      vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
+      auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
       season: "Summer/winter automatic", night: "Night setback", heating: "Heating",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
@@ -141,20 +143,37 @@ const FUNCS = [
 // limits shown with the value measured now (CO2 only with a CO2 sensor that delivers values)
 const NOW_OF = { GrenzwertFeuchte: "LuftfeuchteRel", GrenzwertCO2: "CurrentCO2" };
 
-// the settings tab: sections of rows (shown when their entities exist); a status sensor says what the function is doing
+// the settings tab, like the iPad's settings: a list of sections on the left, the chosen one on the right (on a phone the
+// list, and a section pushed over it). Sections hold rows (shown when their entities exist); the automatic functions are
+// one section ("auto"), each a row with its status that opens its limits in place; `main` is the switch in that row.
+const ICONS = {
+  vent: "M12 12c0-4 1-7 4-7s3 4-4 7zm0 0c4 0 7 1 7 4s-4 3-7-4zm0 0c0 4-1 7-4 7s-3-4 4-7zm0 0c-4 0-7-1-7-4s4-3 7 4z",
+  schedule: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h3M13 14h3M8 17h3",
+  holiday: "M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 7h16v12H4zM9 7v12M15 7v12",
+  water: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z",
+  auto: "M13 2L4 14h7l-1 8 9-12h-7z",
+  boost: "M13 2L4 14h7l-1 8 9-12h-7z",
+  store: "M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z",
+  legionella: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z",
+  cooling: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
+  season: "M12 3v18M4 7l16 10M20 7L4 17",
+  night: "M3 17h18M7 13a5 5 0 0 1 10 0M12 4v2",
+};
 const SETTINGS = [
-  { id: "vent", rows: [["num", "IntensivlueftungsDauer"], ["num", "GrenzwertCO2"], ["num", "GrenzwertFeuchte"]] },
-  { id: "schedule", rows: [["switch", "ZeitprogrammAktiv"], ["days"]] },
-  { id: "holiday", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
-  { id: "water", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
-  { id: "boost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
-  { id: "store", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
-  { id: "legionella", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
+  { id: "vent", color: "#3b8fd9", rows: [["num", "IntensivlueftungsDauer"], ["num", "GrenzwertCO2"], ["num", "GrenzwertFeuchte"]] },
+  { id: "schedule", color: "#5856d6", rows: [["switch", "ZeitprogrammAktiv"], ["days"]] },
+  { id: "holiday", color: "#ff9f0a", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
+  { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
+  { id: "boost", auto: true, color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
+  { id: "store", auto: true, color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
+  { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
-  { id: "cooling", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
-  { id: "season", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
-  { id: "night", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
+  { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
+  { id: "season", auto: true, color: "#8e8e93", main: "SaisonAutomatik", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
+  { id: "night", color: "#6e6ad6", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
 ];
+const AUTO_COLOR = "#1d8a7a";
+const icon = (id, color) => `<span class="ico" style="background:${color}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${ICONS[id]}"/></svg></span>`;
 
 // ---------------- springs ----------------
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -293,12 +312,24 @@ button { font: inherit; color: inherit; }
 .card::after, .fn::after { content: ""; position: absolute; inset: 0 0 60% 0; border-radius: inherit; pointer-events: none;
   background: linear-gradient(180deg, rgba(255,255,255,.14), transparent); }
 .card { border-radius: 28px !important; }
-.page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+.page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; display: grid; gap: 20px;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(48px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .head h1 { font: 700 1.6rem/1.1 var(--font-display); letter-spacing: -.02em; margin: 0 auto 0 0; display: flex; align-items: center; gap: 6px; }
 .tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--line); }
 .tabs button { border: 0; background: transparent; padding: 7px 14px; border-radius: 9px; font-size: .9375rem; font-weight: 600; color: var(--fg-2); cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--surface-solid); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.tabs svg { display: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* on a phone the tabs are a bar at the bottom, where the thumb is (the top is under the status bar and out of reach) */
+@media (max-width: 600px) {
+  .page { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+  .tabs { position: fixed; z-index: 15; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); gap: 4px; padding: 5px;
+    border-radius: 999px; background: var(--glass-strong); box-shadow: var(--sheet-shadow); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); }
+  .tabs button { display: grid; justify-items: center; gap: 2px; min-width: 104px; padding: 7px 18px 6px; border-radius: 999px; font-size: .6875rem; }
+  .tabs button[aria-selected="true"] { color: var(--accent); }
+  .tabs svg { display: block; }
+  .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important; }
+}
 .view { display: grid; gap: 20px; }
 .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .group { display: grid; gap: 6px; }
@@ -306,8 +337,41 @@ button { font: inherit; color: inherit; }
 .group .card { padding: 0 16px; }
 .group .card > :first-child { border-top: 0; }
 .group .foot { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
-.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
-.sgrid > *, .group .card { min-width: 0; }
+.group .card { min-width: 0; }
+/* settings: the list of sections and the chosen one */
+#v-settings { container-type: inline-size; }
+.sa { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+.sa-list.card { padding: 8px; display: grid; gap: 2px; position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
+.sa-item { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 9px 10px; border-radius: 18px; text-align: left; cursor: pointer; }
+.sa-item[aria-current="true"] { background: var(--glass-strong); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.sa-item::after { content: "›"; color: var(--fg-3); font-size: 1.2rem; }
+.sa-t { flex: 1; min-width: 0; }
+.sa-t b { display: block; font-weight: 600; }
+.sa-t small { display: block; color: var(--fg-2); font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-detail { min-width: 0; display: grid; gap: 6px; }
+.group h2.sa-h { display: flex; align-items: center; gap: 12px; font: 700 1.5rem/1.15 var(--font-display); letter-spacing: -.02em; text-transform: none; color: var(--fg); margin: 4px 4px 8px; }
+.sa-back { display: none; justify-self: start; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 1.0625rem; padding: 2px 0 6px; cursor: pointer; }
+.ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; }
+.ico svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.auto { border-top: 1px solid var(--line); }
+.auto-head { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; }
+.auto-l { flex: 1; min-width: 0; font-weight: 600; }
+.auto-l small { display: block; font-weight: 400; color: var(--fg-2); font-size: .8125rem; }
+.tag { flex: none; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; background: var(--line); color: var(--fg-2); }
+.tag.on { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.disc { flex: none; color: var(--fg-3); font-size: 1.2rem; transition: transform 250ms ease; }
+.auto-head[aria-expanded="true"] .disc { transform: rotate(90deg); }
+.auto-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms cubic-bezier(.2,.9,.25,1); }
+.auto-more.open { grid-template-rows: 1fr; }
+.auto-more > div { min-height: 0; overflow: hidden; }
+@container (min-width: 520px) { .auto-more > div { padding-left: 46px; } }
+@container (max-width: 700px) {
+  .sa { grid-template-columns: minmax(0, 1fr); }
+  .sa:not(.open) .sa-detail, .sa.open .sa-list { display: none; }
+  .sa-list.card { position: static; }
+  .sa-back { display: block; }
+  .sa-item[aria-current="true"] { background: none; box-shadow: none; }
+}
 .version { margin: 28px 0 0; text-align: center; font-size: .75rem; color: var(--fg-3); }  /* a section never grows wider than its column (long texts wrap inside it) */
 /* a weekday: its name, the phases below it (wrapping), the chevron on the right */
 .day.sched { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; }
@@ -486,7 +550,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   .card, .chip, .fn, .toast, .sheet { background: var(--surface-solid) !important; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .backdrop { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { button.card, .switch::after, .stepper button, .unit-tap, .pill-switch { transition: none; } }
+@media (prefers-reduced-motion: reduce) { button.card, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
 `;
 
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
@@ -534,7 +598,7 @@ class ProxonPanel extends HTMLElement {
       <div class="page">
         <header class="head">
           <h1><button class="menu" id="menu" aria-label="Menu" ${this._narrow ? "" : "hidden"}><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><span id="h-title">${t.home}</span></h1>
-          <div class="tabs" role="tablist"><button role="tab" id="tab-home" aria-selected="true">${t.home}</button><button role="tab" id="tab-settings" aria-selected="false">${t.settings}</button></div>
+          <div class="tabs" role="tablist"><button role="tab" id="tab-home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>${t.home}</button><button role="tab" id="tab-settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M16 4.5v5M8 14.5v5"/></svg>${t.settings}</button></div>
         </header>
         <div class="view" id="v-home">
         <div class="status">
@@ -658,7 +722,7 @@ class ProxonPanel extends HTMLElement {
   // ---------- tabs: home and settings; the new one slides in from its side ----------
   _tab(name, instant) {
     const home = name === "home";
-    if (this._current === name) return;
+    if (this._current === name) { if (!home) this._closeSection(); return; }  // the tab again: back to the list
     this._current = name;
     try { sessionStorage.setItem("proxon-tab", name); } catch (_) { /* no storage */ }
     this.$("tab-home").setAttribute("aria-selected", home); this.$("tab-settings").setAttribute("aria-selected", !home);
@@ -1013,30 +1077,51 @@ class ProxonPanel extends HTMLElement {
   _buildSettings() {
     this._settingsBuilt = true; this._settingCtl = [];
     const t = this.t, has = k => !!this.id(k);
-    const html = SETTINGS.map(sec => {
-      const rows = sec.rows.filter(r => r[0] === "days" ? has("Zeitprogramm0") : has(r[1]));
-      if (!rows.length) return "";
-      const body = rows.map(([kind, key]) => {
-        const hint = (t.hint || {})[key];
-        if (kind === "switch") return this._sw(`set-${key}`, this._label(key), hint);
-        if (kind === "select") {
-          const st = this.st(key), opts = st ? st.attributes.options || [] : [];
-          const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
-          return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
-        }
-        if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
-          <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
-        if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint, NOW_OF[key]);
-        if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
-        if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
-        if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
-        return t.days.map((name, d) => `<button class="day sched" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
-      }).join("");
-      const status = sec.status && has(sec.status) ? `<p class="foot" id="foot-${sec.id}"></p>` : "";
-      return `<section class="group"><h2>${t.s[sec.id]}</h2><div class="card">${body}</div>${status}</section>`;
+    const body = rows => rows.map(([kind, key]) => {
+      const hint = (t.hint || {})[key];
+      if (kind === "switch") return this._sw(`set-${key}`, this._label(key), hint);
+      if (kind === "select") {
+        const st = this.st(key), opts = st ? st.attributes.options || [] : [];
+        const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
+        return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
+      }
+      if (kind === "num" && this._isLong(key)) return `<div class="row"><span class="row-label">${this._label(key)}</span>
+        <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
+      if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint, NOW_OF[key]);
+      if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
+      if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
+      if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
+      return t.days.map((name, d) => `<button class="day sched" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
     }).join("");
+    // the pages: one per section, the automatic functions together on one
+    const pages = [], autos = [];
+    this._autoSecs = [];
+    for (const sec of SETTINGS) {
+      const rows = sec.rows.filter(r => r[0] === "days" ? has("Zeitprogramm0") : has(r[1]));
+      if (!rows.length) continue;
+      if (!sec.auto) {
+        const status = sec.status && has(sec.status) ? `<p class="foot" id="foot-${sec.id}"></p>` : "";
+        pages.push({ id: sec.id, color: sec.color, html: `<div class="card">${body(rows)}</div>${status}` });
+        continue;
+      }
+      if (!autos.length) pages.push({ id: "auto", color: AUTO_COLOR });
+      const main = sec.main && has(sec.main) ? sec.main : null;
+      this._autoSecs.push({ sec, main, rows });
+      autos.push(`<div class="auto"><div class="auto-head" role="button" tabindex="0" aria-expanded="false" id="ah-${sec.id}">${icon(sec.id, sec.color)}
+          <span class="auto-l">${t.s[sec.id]}<small id="foot-${sec.id}"></small></span>
+          ${main ? `<button class="switch" role="switch" id="set-${main}" aria-label="${this._label(main)}" aria-checked="false"></button>` : `<span class="tag" id="tag-${sec.id}"></span>`}
+          <span class="disc" aria-hidden="true">›</span></div>
+        <div class="auto-more" id="am-${sec.id}" inert><div>${body(rows.filter(r => r[1] !== main))}</div></div></div>`);
+    }
+    const auto = pages.find(p => p.id === "auto");
+    if (auto) auto.html = `<div class="card">${autos.join("")}</div>`;
     const ver = (this._config || {}).version;
-    this.$("v-settings").innerHTML = `<div class="sgrid">${html}</div>${ver ? `<p class="version num">Proxon Control ${ver}</p>` : ""}`;
+    this.$("v-settings").innerHTML = `<div class="sa" id="sa">
+        <nav class="card sa-list" aria-label="${t.sections}">${pages.map(p => `<button class="sa-item" data-p="${p.id}" aria-current="false">${icon(p.id, p.color)}
+          <span class="sa-t"><b>${t.s[p.id]}</b><small id="navsum-${p.id}"></small></span></button>`).join("")}</nav>
+        <div class="sa-detail"><button class="sa-back" id="sa-back">‹ ${t.settings}</button>
+          ${pages.map(p => `<section class="group sa-page" id="page-${p.id}" hidden><h2 class="sa-h">${icon(p.id, p.color)}${t.s[p.id]}</h2>${p.html}</section>`).join("")}</div>
+      </div>${ver ? `<p class="version num">Proxon Control ${ver}</p>` : ""}`;
     const v = this.$("v-settings");
     for (const sec of SETTINGS) for (const [kind, key] of sec.rows) {
       if (kind === "switch" && v.querySelector(`#set-${CSS.escape(key)}`)) v.querySelector(`#set-${CSS.escape(key)}`).addEventListener("click", () => this._toggle(key));
@@ -1055,7 +1140,76 @@ class ProxonPanel extends HTMLElement {
       if (kind === "button" && btn) this._confirmButton(btn, () => this.call("button", "press", { entity_id: this.id(key) }).catch(() => {}));
     }
     for (let d = 0; d < 7; d++) { const b = v.querySelector(`#day-${d}`); if (b) b.addEventListener("click", () => this._sheetDay(d, b)); }
+    // an automatic function opens its limits in place (its switch only switches)
+    for (const { sec } of this._autoSecs) {
+      const head = this.$(`ah-${sec.id}`), more = this.$(`am-${sec.id}`);
+      const flip = () => { const open = head.getAttribute("aria-expanded") !== "true"; head.setAttribute("aria-expanded", open); more.classList.toggle("open", open); more.inert = !open; };
+      head.addEventListener("click", e => { if (!e.target.closest(".switch")) flip(); });
+      head.addEventListener("keydown", e => { if (e.target === head && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); flip(); } });
+    }
+    v.querySelectorAll(".sa-item").forEach(b => b.addEventListener("click", () => this._showSection(b.dataset.p, true)));
+    this.$("sa-back").addEventListener("click", () => this._closeSection());
+    let sec = null; try { sec = sessionStorage.getItem("proxon-sec"); } catch (_) { /* no storage */ }
+    this._showSection(sec, false);
   }
+  _narrowSettings() { const b = this.$("sa-back"); return !!b && getComputedStyle(b).display !== "none"; }
+  _showSection(id, open) {  // the chosen section on the right; on a phone it is pushed over the list
+    const sa = this.$("sa"); if (!sa) return;
+    if (!id || !this.$(`page-${id}`)) id = sa.querySelector(".sa-item").dataset.p;
+    this._section = id;
+    try { sessionStorage.setItem("proxon-sec", id); } catch (_) { /* no storage */ }
+    sa.querySelectorAll(".sa-item").forEach(b => b.setAttribute("aria-current", b.dataset.p === id));
+    sa.querySelectorAll(".sa-page").forEach(p => { p.hidden = p.id !== `page-${id}`; });
+    if (!open) return;
+    const push = this._narrowSettings() && !sa.classList.contains("open");
+    sa.classList.add("open");
+    if (push) {
+      this.shadowRoot.querySelector(".page").scrollIntoView({ block: "start" });
+      this._shownView = sa.querySelector(".sa-detail"); this._viewDir = 1; this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 });
+      requestAnimationFrame(() => this.$("sa-back").focus());
+    }
+  }
+  _closeSection() {
+    const sa = this.$("sa"); if (!sa || !sa.classList.contains("open")) return;
+    const narrow = this._narrowSettings();
+    sa.classList.remove("open");
+    if (!narrow) return;
+    this._shownView = sa.querySelector(".sa-list"); this._viewDir = -1; this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 });
+    const item = sa.querySelector(`.sa-item[data-p="${this._section}"]`); if (item) item.focus();
+  }
+  // the line under a section in the list: what matters at a glance
+  _secSummary(id) {
+    const t = this.t, on = k => this.swOn(k), yn = k => (on(k) ? t.yes : t.no), deg = k => { const v = this.num(k); return v === null ? "–" : `${this.fmt(v, 0)}°`; };
+    const lang = this._hass.language || undefined;
+    if (id === "vent") {
+      const co2 = this.num("CurrentCO2"), hum = this.num("LuftfeuchteRel"), parts = [];
+      if (co2 !== null && co2 > 0) parts.push(`CO₂ ${this.fmt(co2, 0)} ppm`);
+      if (hum !== null) parts.push(`${t.humidity} ${this.fmt(hum, 0)} %`);
+      return parts.length ? `${t.nowLabel}: ${parts.join(" · ")}` : "";
+    }
+    if (id === "schedule") {
+      const mon = this._daySummary(0), day = mon === t.empty ? "" : `${t.daysShort[0]} ${mon}`;
+      return [this.id("ZeitprogrammAktiv") ? yn("ZeitprogrammAktiv") : "", day].filter(Boolean).join(" · ");
+    }
+    if (id === "holiday") {
+      const at = k => { const st = this.st(k); const d = st ? new Date(st.state) : null; return d && !isNaN(d) ? d : null; };
+      const day = d => d.toLocaleDateString(lang, { day: "numeric", month: "short" }), from = at("UrlaubAb"), to = at("UrlaubBis");
+      if (on("Urlaubsmodus")) return to ? fill(t.onUntil, { d: day(to) }) : t.yes;
+      return from && to && to > new Date() ? fill(t.planned, { a: day(from), b: day(to) }) : t.noPlan;
+    }
+    if (id === "water") return [`${t.target} ${deg("SollWassertemperatur")}`, this.id("T300Betriebsart") ? `${t.pump} ${yn("T300Betriebsart").toLowerCase()}` : ""].filter(Boolean).join(" · ");
+    if (id === "auto") {
+      const n = (this._autoSecs || []).filter(a => this._autoOn(a)).length;
+      return fill(t.nOn, { a: n, b: (this._autoSecs || []).length });
+    }
+    if (id === "night") {
+      if (!on("NachtabsenkungAktiv")) return t.no;
+      const tm = k => { const st = this.st(k); return st && /^\d\d:\d\d/.test(st.state) ? st.state.slice(0, 5) : ""; };
+      return [t.yes, deg("NachtabsenkungTemperatur"), tm("NachtabsenkungStart") && `${tm("NachtabsenkungStart")}–${tm("NachtabsenkungEnde")}`].filter(Boolean).join(" · ");
+    }
+    return "";
+  }
+  _autoOn({ main, rows }) { return main ? this.swOn(main) : rows.some(([kind, key]) => kind === "switch" && this.swOn(key)); }
   _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }
   _wireStepper(key) {  // taps in a row are sent once, 0.6 s after the last
     const v = this.$("v-settings"), out = v.querySelector(`#out-${CSS.escape(key)}`), fmt = this._unit(key, 0);
@@ -1100,7 +1254,8 @@ class ProxonPanel extends HTMLElement {
         }
       }
       const foot = v.querySelector(`#foot-${sec.id}`), st = sec.status && this.st(sec.status);
-      if (foot && st) foot.textContent = `${this.t.status}: ${this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state}`;
+      const said = st ? (this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state) : "";
+      if (foot && st) foot.textContent = sec.auto ? said : `${this.t.status}: ${said}`;
     }
     // the value measured now, at the limits it is compared with
     for (const [limit, sensor] of Object.entries(NOW_OF)) {
@@ -1119,6 +1274,11 @@ class ProxonPanel extends HTMLElement {
       const el = v.querySelector(`#day-sum-${d}`);
       if (el) el.textContent = this._daySummary(d);
     }
+    for (const a of this._autoSecs || []) {
+      const tag = this.$(`tag-${a.sec.id}`);  // a function without its own switch in the row: "on" while one of its switches is
+      if (tag) { const on = this._autoOn(a); tag.textContent = (on ? this.t.yes : this.t.no).toLowerCase(); tag.classList.toggle("on", on); }
+    }
+    v.querySelectorAll(".sa-item").forEach(b => { const el = this.$(`navsum-${b.dataset.p}`); if (el) el.textContent = this._secSummary(b.dataset.p); });
     (this._settingCtl || []).forEach(c => c.sync());
   }
   _daySummary(d) {
@@ -1231,10 +1391,10 @@ class ProxonPanel extends HTMLElement {
     const problem = !start || !end ? t.holidayNeedsPlan : end <= new Date() ? t.holidayReturnPast : end <= start ? t.holidayOrder : null;
     if (!problem) return true;
     this._toast(problem, null);
-    if (this._current === "settings") {
-      const i = this.$(`dt-${!start ? "UrlaubAb" : "UrlaubBis"}`);
-      if (i) { i.scrollIntoView({ block: "center", behavior: reduceMotion.matches ? "auto" : "smooth" }); i.focus(); }
-    } else this._tab("settings");
+    if (this._current !== "settings") this._tab("settings");
+    this._showSection("holiday", true);
+    const i = this.$(`dt-${!start ? "UrlaubAb" : "UrlaubBis"}`);
+    if (i) requestAnimationFrame(() => { i.scrollIntoView({ block: "center", behavior: reduceMotion.matches ? "auto" : "smooth" }); i.focus(); });
     return false;
   }
 
