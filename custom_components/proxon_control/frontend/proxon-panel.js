@@ -662,7 +662,6 @@ class ProxonPanel extends HTMLElement {
         <button class="close" id="sheet-close" aria-label="${t.close}">✕</button><div id="sheet-body"></div></div>`;
     this.$("menu").addEventListener("click", () => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })));
     this.$("boost").addEventListener("click", () => this._toggle("Intensivlueftung"));
-    this._viewIn = new Spring(1, v => { const el = this._shownView; if (el) { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.translate = `${((1 - v) * this._viewDir * 24).toFixed(1)}px 0`; } });
     this.$("tab-home").addEventListener("click", () => this._tab("home"));
     this.$("tab-settings").addEventListener("click", () => this._tab("settings"));
     this.$("unit").addEventListener("click", e => this._sheetVentilation(e.currentTarget));
@@ -693,9 +692,16 @@ class ProxonPanel extends HTMLElement {
     this.$("h-title").textContent = home ? this.t.home : this.t.settings;
     if (!home && !this._settingsBuilt) this._buildSettings();
     this.$("v-home").hidden = !home; this.$("v-settings").hidden = home;
-    this._shownView = this.$(home ? "v-home" : "v-settings"); this._viewDir = home ? -1 : 1;
-    if (instant) this._viewIn.set(1); else { this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 }); }
+    this._slideIn(this.$(home ? "v-home" : "v-settings"), home ? -1 : 1, instant);
     if (!home) this._updateSettings();
+  }
+
+  // a view slides in from its side (a tab, a settings section on a phone); each view has its own spring, so starting
+  // one never leaves another stopped half-way (shifted sideways)
+  _slideIn(el, dir, instant) {
+    const sp = el._in || (el._in = new Spring(1, v => { el.style.opacity = clamp(v, 0, 1).toFixed(3); el.style.translate = `${((1 - v) * el._dir * 24).toFixed(1)}px 0`; }));
+    el._dir = dir;
+    if (instant) sp.set(1); else { sp.set(0); sp.to(1, { damping: 1, response: 0.35 }); }
   }
 
   // ---------- live values ----------
@@ -1084,7 +1090,7 @@ class ProxonPanel extends HTMLElement {
     sa.classList.add("open");
     if (push) {
       this.shadowRoot.querySelector(".page").scrollIntoView({ block: "start" });
-      this._shownView = sa.querySelector(".sa-detail"); this._viewDir = 1; this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 });
+      this._slideIn(sa.querySelector(".sa-detail"), 1);
       requestAnimationFrame(() => this.$("sa-back").focus());
     }
   }
@@ -1093,7 +1099,7 @@ class ProxonPanel extends HTMLElement {
     const narrow = this._narrowSettings();
     sa.classList.remove("open");
     if (!narrow) return;
-    this._shownView = sa.querySelector(".sa-list"); this._viewDir = -1; this._viewIn.set(0); this._viewIn.to(1, { damping: 1, response: 0.35 });
+    this._slideIn(sa.querySelector(".sa-list"), -1);
     const item = sa.querySelector(`.sa-item[data-p="${this._section}"]`); if (item) item.focus();
   }
   // the line under a section in the list: what matters at a glance
