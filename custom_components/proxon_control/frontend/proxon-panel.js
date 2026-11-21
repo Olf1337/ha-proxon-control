@@ -27,7 +27,8 @@ const TEXT = {
     holidayNeedsPlan: "Bitte zuerst Abreise und Rückkehr eintragen, dann lässt sich der Urlaubsmodus einschalten.",
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
-    e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
+    e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
+      earlier: "Früher", later: "Später", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
       start: "1 Start", starts: "{n} Starts", prev: "Jahr davor", next: "Jahr danach", sofar: "bisher",
       empty: "Für {y} gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.",
@@ -92,7 +93,8 @@ const TEXT = {
     holidayNeedsPlan: "Please enter departure and return first, then holiday mode can be switched on.",
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
-    e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", yesterday: "yesterday {v}", forecast: "Forecast {v}",
+    e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
+      earlier: "Earlier", later: "Later", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
       start: "1 start", starts: "{n} starts", prev: "Year before", next: "Year after", sofar: "so far",
       empty: "There are no values for {y} yet. Home Assistant keeps them only since the energy counters exist.",
@@ -286,30 +288,36 @@ button { font: inherit; color: inherit; }
 /* energy: one colour per part of the consumption */
 :host { --e-comp: #8e6fd6; --e-vent: #3b8fd9; --e-water: #f07a3a; }
 :host([dark]) { --e-comp: #a98cf0; --e-vent: #5aa8ec; --e-water: #f58a4c; }
-.e-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.e-year { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 12px; background: var(--line); }
-.e-year button { width: 36px; height: 32px; border: 0; border-radius: 9px; background: none; font-size: 1.2rem; cursor: pointer; color: var(--fg); }
-.e-year button:disabled { opacity: .3; cursor: default; }
-.e-year b { min-width: 52px; text-align: center; font-weight: 600; }
 .e-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; align-items: start; }
-.e-side { display: grid; gap: 16px; }
 .e-card { display: grid; gap: 10px; align-content: start; }
-.e-today { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-.e-ring { width: 132px; height: 132px; flex: none; }
 .e-big { font: 700 2.6rem/1 var(--font-display); letter-spacing: -.03em; }
 .e-big small, .e-mid small { font-size: 1.05rem; color: var(--fg-2); font-weight: 600; margin-left: 4px; letter-spacing: 0; }
 .e-mid { font: 700 1.45rem/1.15 var(--font-display); letter-spacing: -.02em; }
 .e-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8125rem; color: var(--fg-2); }
 .e-key i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; }
 .e-key b { color: var(--fg); font-weight: 600; }
-.e-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
-.e-bar span { display: block; height: 100%; }
-.e-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
-.e-tile { display: grid; gap: 6px; align-content: start; padding: 14px 16px; }
 .e-run { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
 .e-run:first-child { border-top: 0; padding-top: 0; }
 .e-run b { font-weight: 600; white-space: nowrap; }
 .e-note { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
+/* stacked columns: one per day (week, month) or month (year), drawn with boxes so the text stays sharp at any width */
+.e-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.e-nav { display: inline-flex; align-items: center; gap: 2px; }
+.e-nav button { width: 34px; height: 32px; border: 0; border-radius: 9px; background: var(--line); font-size: 1.15rem; cursor: pointer; color: var(--fg); }
+.e-nav button:disabled { opacity: .3; cursor: default; }
+.e-chart { position: relative; height: 190px; margin: 8px 0 0 34px; }
+.e-grid-l { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--line); }
+.e-grid-l span { position: absolute; right: calc(100% + 6px); top: -.6em; font-size: .6875rem; color: var(--fg-3); white-space: nowrap; }
+.e-cols { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap, 4px); }
+.e-col { flex: 1 1 0; min-width: 0; max-width: 44px; height: 100%; display: flex; flex-direction: column-reverse; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 4px 4px 0 0; }
+.e-col span { display: block; width: 100%; }
+.e-col span:last-child { border-radius: 4px 4px 0 0; }
+.e-col.sel { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.e-col.future { opacity: .35; }
+.e-xl { display: flex; justify-content: space-between; gap: var(--gap, 4px); margin-left: 34px; font-size: .6875rem; color: var(--fg-3); }
+.e-xl span { flex: 1 1 0; min-width: 0; max-width: 44px; text-align: center; white-space: nowrap; overflow: visible; }
+.e-detail { min-height: 1.4em; font-size: .875rem; color: var(--fg-2); }
+.e-detail b { color: var(--fg); }
 .tabs svg { display: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* on a phone the tabs are a bar at the bottom, where the thumb is (the top is under the status bar and out of reach) */
 @media (max-width: 600px) {
@@ -1042,27 +1050,28 @@ class ProxonPanel extends HTMLElement {
     return v => `${this.fmt(v, d)}${u ? (u === "°C" || u === "%" ? (u === "%" ? " %" : "°") : ` ${u}`) : ""}`;
   }
 
-  // ---------- energy: today first, the week, month and year below; earlier years from Home Assistant's statistics ----------
+  // ---------- energy: stacked columns per day (week, month) or month (year), from Home Assistant's statistics; today and
+  // the running month live from the sensors. Back and forth through weeks, months and years. ----------
   _buildEnergy() {
-    this._energyBuilt = true; this._eThisYear = new Date().getFullYear(); this._eYear = this._eThisYear; this._eStats = {};
+    this._energyBuilt = true; this._ePer = "week"; this._eOff = 0; this._eSel = null; this._eStats = {};
     const t = this.t, e = t.e;
-    const tile = p => `<section class="card e-tile"><span class="label" id="e-l-${p}"></span><div class="e-mid num" id="e-v-${p}"></div>
-      <span class="sub num" id="e-c-${p}"></span><div class="e-bar" id="e-b-${p}"></div><span class="sub num" id="e-f-${p}"></span></section>`;
-    this.$("v-energy").innerHTML = `<div class="e-top"><span class="label">${e.usage}</span>
-        <div class="e-year"><button id="e-prev" aria-label="${e.prev}">‹</button><b class="num" id="e-yr"></b><button id="e-next" aria-label="${e.next}">›</button></div></div>
-      <div id="e-cur" style="display:grid;gap:16px">
-        <div class="e-grid"><section class="card e-card"><span class="label">${e.today}</span>
-            <div class="e-today"><svg class="e-ring" viewBox="0 0 140 140" id="e-ring" role="img"></svg>
-              <div style="display:grid;gap:6px"><div class="e-big num" id="e-today"></div><div class="sub num" id="e-today-sub"></div></div></div>
-            <div class="e-key" id="e-today-key"></div></section>
-          <div class="e-side"><section class="card e-card"><span class="label">${t.now}</span><div class="e-mid num" id="e-now"></div><div class="e-key" id="e-now-key"></div></section>
-            <section class="card e-card" id="e-run-card"><span class="label">${e.runtime}</span><div id="e-run"></div></section></div></div>
-        <div class="e-tiles">${tile("Woche")}${tile("Monat")}${tile("Jahr")}</div></div>
-      <section class="card e-card" id="e-past" hidden><span class="label" id="ep-title"></span><div class="e-big num" id="ep-total"></div>
-        <div class="sub num" id="ep-cost"></div><div class="e-bar" id="ep-bar"></div><div class="e-key" id="ep-key"></div><p class="hint" id="ep-empty" hidden></p></section>
+    this.$("v-energy").innerHTML = `<section class="card e-card">
+        <div class="e-head"><div style="display:grid;gap:4px"><span class="label" id="e-title"></span><div class="e-big num" id="e-total"></div><div class="sub num" id="e-sub"></div></div>
+          <div style="display:grid;gap:8px;justify-items:end"><div class="seg" id="e-per">${["week", "month", "year"].map(p => `<button data-p="${p}">${e.per[p]}</button>`).join("")}</div>
+            <div class="e-nav"><button id="e-prev" aria-label="${e.earlier}">‹</button><button id="e-next" aria-label="${e.later}">›</button></div></div></div>
+        <div class="e-chart" id="e-chart" role="img"><div id="e-gridl"></div><div class="e-cols" id="e-cols"></div></div>
+        <div class="e-xl" id="e-xl"></div>
+        <div class="e-detail num" id="e-detail"></div>
+        <div class="e-key" id="e-key"></div><p class="hint" id="e-empty" hidden>${e.none}</p></section>
+      <div class="e-grid"><section class="card e-card"><span class="label">${t.now}</span><div class="e-mid num" id="e-now"></div><div class="e-key" id="e-now-key"></div></section>
+        <section class="card e-card" id="e-run-card"><span class="label">${e.runtime}</span><div id="e-run"></div></section></div>
       <p class="e-note">${e.note}</p>`;
-    this.$("e-prev").addEventListener("click", () => { this._eYear -= 1; this._updateEnergy(); });
-    this.$("e-next").addEventListener("click", () => { this._eYear = Math.min(this._eThisYear, this._eYear + 1); this._updateEnergy(); });
+    this.$("v-energy").querySelectorAll("#e-per button").forEach(b => b.addEventListener("click", () => {
+      this._ePer = b.dataset.p; this._eOff = 0; this._eSel = null; this._updateEnergy();
+    }));
+    this.$("e-prev").addEventListener("click", () => { this._eOff -= 1; this._eSel = null; this._updateEnergy(); });
+    this.$("e-next").addEventListener("click", () => { this._eOff = Math.min(0, this._eOff + 1); this._eSel = null; this._updateEnergy(); });
+    this.$("e-cols").addEventListener("click", ev => { const c = ev.target.closest(".e-col"); if (c) { this._eSel = +c.dataset.i; this._updateEnergy(); } });
   }
   _eParts() { return ENERGY_PARTS.filter(p => this.id(p.keys[0])); }
   _eSum(keys, suffix = "") { const v = keys.map(k => this.num(k + suffix)).filter(x => x !== null); return v.length ? v.reduce((a, b) => a + b, 0) : null; }
@@ -1080,74 +1089,108 @@ class ProxonPanel extends HTMLElement {
   _eKey(parts, values, unit = "kWh", fmt = v => this._kwh(v)) {
     return parts.map((p, i) => `<span><i style="background:var(${p.color})"></i>${this.t.e[p.k]} <b class="num">${fmt(values[i])} ${unit}</b></span>`).join("");
   }
-  _eBar(parts, values) {
-    const sum = values.reduce((a, b) => a + (b || 0), 0);
-    return sum > 0 ? parts.map((p, i) => `<span style="width:${((values[i] || 0) / sum * 100).toFixed(1)}%;background:var(${p.color})"></span>`).join("") : "";
+  // the period shown: its start and end, its columns (start of each day or month) and how they are named
+  _ePeriod() {
+    const now = new Date(), per = this._ePer, off = this._eOff, lang = this._hass.language || undefined;
+    let start, end, cols = [], label, title;
+    if (per === "week") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) + 7 * off);
+      end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+      for (let i = 0; i < 7; i++) cols.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+      label = d => this.t.daysShort[(d.getDay() + 6) % 7];
+      const last = new Date(end - 86400000);
+      title = off === 0 ? this.t.e.week : `${start.toLocaleDateString(lang, { day: "numeric", month: "short" })} – ${last.toLocaleDateString(lang, { day: "numeric", month: "short" })}`;
+    } else if (per === "month") {
+      start = new Date(now.getFullYear(), now.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+      for (let d = new Date(start); d < end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) cols.push(d);
+      label = d => ([1, 5, 10, 15, 20, 25, 30].includes(d.getDate()) ? String(d.getDate()) : "");
+      title = start.toLocaleDateString(lang, { month: "long", year: "numeric" });
+    } else {
+      start = new Date(now.getFullYear() + off, 0, 1); end = new Date(start.getFullYear() + 1, 0, 1);
+      for (let m = 0; m < 12; m++) cols.push(new Date(start.getFullYear(), m, 1));
+      label = d => d.toLocaleDateString(lang, { month: "narrow" });
+      title = String(start.getFullYear());
+    }
+    return { per, start, end, cols, label, title, gran: per === "year" ? "month" : "day", current: off === 0 };
   }
-  _eRing(parts, values) {
-    const r = 54, C = 2 * Math.PI * r, sum = values.reduce((a, b) => a + (b || 0), 0);
-    let at = 0;
-    const arcs = sum > 0 ? parts.map((p, i) => {
-      const len = (values[i] || 0) / sum * C, gap = len > 8 ? 3 : 0;
-      const arc = len > 0 ? `<circle cx="70" cy="70" r="${r}" fill="none" stroke="var(${p.color})" stroke-width="14" stroke-linecap="round"
-        stroke-dasharray="${Math.max(0.1, len - 2 * gap).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-(at + gap)).toFixed(1)}" transform="rotate(-90 70 70)"/>` : "";
-      at += len; return arc;
-    }).join("") : "";
-    return `<circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--line)" stroke-width="14"/>${arcs}`;
-  }
-  // Home Assistant's long-term statistics: how much each counter rose between two times, from its rows per day / month
-  // (only rows that exist count: a year before the counters existed stays empty). Fetched once per period.
-  _eFetch(tag, start, end, period) {
+  // Home Assistant's long-term statistics: each counter's rise per day / month in a period (only rows that exist count:
+  // a period before the counters existed stays empty). Fetched once per period.
+  _eFetch(tag, start, end, gran) {
     if (this._eStats[tag]) return this._eStats[tag].done ? this._eStats[tag] : null;
-    const entry = this._eStats[tag] = { done: false };
+    const entry = this._eStats[tag] = { done: false, rows: {} };
     const keys = [...this._eParts().flatMap(p => p.keys), "EnergieGesamt", "Stromkosten"].filter(k => this.id(k));
-    const ids = keys.map(k => this.id(k));
-    const finish = rows => {
-      keys.forEach((k, i) => {
-        const list = (rows || {})[ids[i]] || [];
-        entry[k] = list.length ? list.reduce((a, r) => a + (Number.isFinite(r.change) ? r.change : 0), 0) : null;
-      });
+    const finish = res => {
+      keys.forEach(k => { entry.rows[k] = ((res || {})[this.id(k)] || []).map(r => ({ start: new Date(r.start), change: Number.isFinite(r.change) ? r.change : 0 })); });
       entry.done = true;
       if (this._current === "energy") this._updateEnergy();
     };
-    if (!this._hass.callWS || !ids.length) finish({});
+    if (!this._hass.callWS || !keys.length) finish({});
     else this._hass.callWS({ type: "recorder/statistics_during_period", start_time: start.toISOString(), end_time: end.toISOString(),
-      statistic_ids: ids, period, types: ["change"] }).then(finish, () => finish({}));
+      statistic_ids: keys.map(k => this.id(k)), period: gran, types: ["change"] }).then(finish, () => finish({}));
     return entry.done ? entry : null;
   }
   _updateEnergy() {
     if (!this._energyBuilt) return;
-    const t = this.t, e = t.e, parts = this._eParts(), lang = this._hass.language || undefined, current = this._eYear === this._eThisYear;
-    this.$("e-yr").textContent = this._eYear;
-    this.$("e-next").disabled = current;
-    this.$("e-cur").hidden = !current; this.$("e-past").hidden = current;
-    if (!current) {
-      const stats = this._eFetch(`y${this._eYear}`, new Date(this._eYear, 0, 1), new Date(this._eYear + 1, 0, 1), "month");
-      const values = parts.map(p => (stats ? p.keys.reduce((a, k) => a + (stats[k] || 0), 0) : null));
-      const empty = !!stats && parts.every(p => p.keys.every(k => stats[k] === null || stats[k] === undefined));
-      this.$("ep-title").textContent = this._eYear;
-      this.$("ep-total").innerHTML = stats && !empty ? `${this._kwh(values.reduce((a, b) => a + b, 0))}<small>kWh</small>` : stats ? "" : "…";
-      const water = stats && parts.some(p => p.k === "water") ? values[parts.findIndex(p => p.k === "water")] : 0;
-      this.$("ep-cost").textContent = stats && !empty && stats.Stromkosten !== null && stats.Stromkosten !== undefined
-        ? this._money(stats.Stromkosten + (water && stats.EnergieGesamt > 0.01 ? water * stats.Stromkosten / stats.EnergieGesamt : 0)) : "";
-      this.$("ep-bar").innerHTML = stats && !empty ? this._eBar(parts, values) : "";
-      this.$("ep-key").innerHTML = stats && !empty ? this._eKey(parts, values) : "";
-      this.$("ep-empty").hidden = !empty; this.$("ep-empty").textContent = fill(e.empty, { y: this._eYear });
-      this.$("e-prev").disabled = empty || this._eThisYear - this._eYear >= 10;  // nothing kept before this year
-      return;
+    const t = this.t, e = t.e, parts = this._eParts(), lang = this._hass.language || undefined, P = this._ePeriod(), now = new Date();
+    this.$("v-energy").querySelectorAll("#e-per button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === P.per));
+    this.$("e-next").disabled = P.current;
+    const stats = this._eFetch(`${P.per}${P.start.getTime()}`, P.start, P.end, P.gran);
+    const sameBucket = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && (P.gran === "month" || a.getDate() === b.getDate());
+    const liveSuffix = P.gran === "month" ? "Monat" : "Heute";
+    // the columns: each part's rise per day / month; the running day / month comes live from the sensors
+    const cols = P.cols.map(d => {
+      const live = P.current && sameBucket(d, now), future = d > now && !live;
+      const values = parts.map(p => (future ? 0 : live ? this._eSum(p.keys, liveSuffix) || 0
+        : stats ? p.keys.reduce((a, k) => a + (stats.rows[k] || []).filter(r => sameBucket(r.start, d)).reduce((x, r) => x + r.change, 0), 0) : 0));
+      return { d, values, total: values.reduce((a, b) => a + b, 0), future, live };
+    });
+    const hasRows = !!stats && parts.some(p => p.keys.some(k => (stats.rows[k] || []).length));
+    const empty = !!stats && !P.current && !hasRows;
+    this.$("e-prev").disabled = empty || this._eOff <= -60;
+    this.$("e-empty").hidden = !empty;
+    // the period's totals: live sensors for the running period, the statistics for earlier ones
+    const suffix = { week: "Woche", month: "Monat", year: "Jahr" }[P.per];
+    const totals = P.current ? parts.map(p => this._eSum(p.keys, suffix) || 0) : parts.map((p, i) => cols.reduce((a, c) => a + c.values[i], 0));
+    const sum = totals.reduce((a, b) => a + b, 0), wi = parts.findIndex(p => p.k === "water"), water = wi >= 0 ? totals[wi] : 0;
+    let cost = null;
+    if (P.current) cost = this._eCost(suffix, water);
+    else if (stats && (stats.rows.Stromkosten || []).length) {
+      const c = stats.rows.Stromkosten.reduce((a, r) => a + r.change, 0), u = (stats.rows.EnergieGesamt || []).reduce((a, r) => a + r.change, 0);
+      cost = c + (water && u > 0.01 ? water * c / u : 0);
     }
-    this.$("e-prev").disabled = false;
-    // today
-    const today = parts.map(p => this._eSum(p.keys, "Heute")), sumToday = today.reduce((a, b) => a + (b || 0), 0);
-    const wi = parts.findIndex(p => p.k === "water");
-    this.$("e-ring").innerHTML = this._eRing(parts, today);
-    this.$("e-ring").setAttribute("aria-label", `${e.today} ${this._kwh(sumToday)} kWh`);
-    this.$("e-today").innerHTML = `${this._kwh(sumToday)}<small>kWh</small>`;
-    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    const yest = this._eFetch(`d${midnight.toDateString()}`, new Date(midnight - 86400000), midnight, "day");
-    const yv = yest ? parts.reduce((a, p) => a + p.keys.reduce((b, k) => b + (yest[k] || 0), 0), 0) : null;
-    this.$("e-today-sub").textContent = [this._money(this._eCost("Heute", wi >= 0 ? today[wi] : 0)), yv ? fill(e.yesterday, { v: `${this._kwh(yv)} kWh` }) : ""].filter(Boolean).join(" · ");
-    this.$("e-today-key").innerHTML = this._eKey(parts, today);
+    this.$("e-title").textContent = P.title;
+    this.$("e-total").innerHTML = empty ? "" : `${this._kwh(sum)}<small>kWh</small>`;
+    // the forecast of the running month / year: the unit's own, plus the hot water at the same rate
+    let fcText = "";
+    if (P.current && P.per !== "week") {
+      const fs = P.per === "month" ? "Monat" : "Jahr", fc = this.num(`EnergieGesamt${fs}Prognose`);
+      if (fc !== null) {
+        let wfc = 0;
+        const since = ((this.st(`EnergieWarmwasserWP${fs}`) || {}).attributes || {}).counting_since;
+        if (water && since) { const done = now - new Date(since); if (done > (fs === "Monat" ? 12 : 72) * 3600000) wfc = water * (P.end - new Date(since)) / done; }
+        const fcCost = this.num(`Stromkosten${fs}Prognose`), unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
+        const price = c !== null && unitE > 0.01 ? c / unitE : null;
+        fcText = fill(e.forecast, { v: `${this._kwh(fc + wfc)} kWh` }) + (fcCost !== null ? ` · ${this._money(fcCost + (price ? wfc * price : 0))}` : "");
+      }
+    }
+    this.$("e-sub").textContent = empty ? "" : [this._money(cost), fcText].filter(Boolean).join(" · ");
+    // the chart: a scale that ends on a round number, three lines
+    const top = Math.max(...cols.map(c => c.total), 0);
+    const step = top > 0 ? (() => { const raw = top / 2, mag = 10 ** Math.floor(Math.log10(raw)); return [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw); })() : 1;
+    const max = step * 2;
+    this.$("e-gridl").innerHTML = empty ? "" : [0, 1, 2].map(i => `<div class="e-grid-l" style="bottom:${(i / 2 * 100).toFixed(1)}%"><span>${this.fmt(step * i, Number.isInteger(step) ? 0 : 1)}</span></div>`).join("");
+    const sel = this._eSel ?? cols.findIndex(c => c.live);
+    this.$("e-chart").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
+    this.$("e-xl").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
+    this.$("e-cols").innerHTML = empty ? "" : cols.map((c, i) => `<button class="e-col${i === sel ? " sel" : ""}${c.future ? " future" : ""}" data-i="${i}" aria-label="${c.d.toLocaleDateString(lang)}: ${this._kwh(c.total)} kWh">${
+      parts.map((p, j) => (c.values[j] > 0 ? `<span style="height:${(c.values[j] / max * 100).toFixed(2)}%;background:var(${p.color})"></span>` : "")).join("")}</button>`).join("");
+    this.$("e-xl").innerHTML = empty ? "" : cols.map(c => `<span>${P.label(c.d)}</span>`).join("");
+    this.$("e-chart").setAttribute("aria-label", `${P.title}: ${this._kwh(sum)} kWh`);
+    const s = cols[sel];
+    this.$("e-detail").innerHTML = !empty && s ? `${s.live ? (P.gran === "month" ? s.d.toLocaleDateString(lang, { month: "long" }) : e.today)
+      : s.d.toLocaleDateString(lang, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
+      s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}` : "";
+    this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
     // now
     const power = parts.map(p => this._eSum(p.power));
     this.$("e-now").innerHTML = `${this.fmt(power.reduce((a, b) => a + (b || 0), 0), 0)}<small>W</small>`;
@@ -1159,31 +1202,6 @@ class ProxonPanel extends HTMLElement {
       const starts = this.num(n);
       return `<div class="e-run"><span>${e[k]}</span><b class="num">${this.fmt(this.num(h) || 0, 1)} h${starts === null ? "" : ` · ${starts === 1 ? e.start : fill(e.starts, { n: this.fmt(starts, 0) })}`}</b></div>`;
     }).join("");
-    // week, month, year
-    const now = new Date();
-    for (const p of ["Woche", "Monat", "Jahr"]) {
-      const v = parts.map(x => this._eSum(x.keys, p)), sum = v.reduce((a, b) => a + (b || 0), 0), w = wi >= 0 ? v[wi] || 0 : 0;
-      this.$(`e-l-${p}`).textContent = p === "Woche" ? e.week : p === "Monat" ? now.toLocaleDateString(lang, { month: "long" }) : String(now.getFullYear());
-      this.$(`e-v-${p}`).innerHTML = `${this._kwh(sum)}<small>kWh</small>`;
-      this.$(`e-c-${p}`).textContent = this._money(this._eCost(p, w));
-      this.$(`e-b-${p}`).innerHTML = this._eBar(parts, v);
-      // the forecast: the unit's own, plus the hot water extended at the same rate to the end of the period
-      const fc = this.num(`EnergieGesamt${p}Prognose`);
-      let fcText = "";
-      if (fc !== null) {
-        let wfc = 0;
-        const since = ((this.st(`EnergieWarmwasserWP${p}`) || {}).attributes || {}).counting_since;
-        if (w && since) {
-          const start = new Date(since), end = p === "Monat" ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : new Date(now.getFullYear() + 1, 0, 1);
-          const done = now - start, rest = end - now;
-          if (done > (p === "Monat" ? 12 : 72) * 3600000) wfc = w * (done + rest) / done;
-        }
-        const fcCost = this.num(`Stromkosten${p}Prognose`), unitE = this.num(`EnergieGesamt${p}`), cost = this.num(`Stromkosten${p}`);
-        const price = cost !== null && unitE > 0.01 ? cost / unitE : null;
-        fcText = fill(e.forecast, { v: `${this._kwh(fc + wfc)} kWh` }) + (fcCost !== null ? ` · ${this._money(fcCost + (price ? wfc * price : 0))}` : "");
-      }
-      this.$(`e-f-${p}`).textContent = fcText;
-    }
   }
 
   // ---------- settings: grouped like iOS settings, every row an entity of this unit ----------

@@ -128,23 +128,30 @@ def check(page, data: dict) -> dict:
         page.wait_for_timeout(600)
         r["chip_opens"] = js("() => [window.panel._current, window.panel._section]")
 
-    # energy: today, the periods; an earlier year from Home Assistant's statistics (empty without rows, summed with rows)
+    # energy: stacked columns per day (week, month) or month (year); earlier periods from Home Assistant's statistics
     js(f"() => {root}.getElementById('tab-energy').click()")
     page.wait_for_timeout(500)
-    r["energy"] = js(f"""() => ({{
-      shown: !{root}.getElementById('v-energy').hidden, today: {root}.getElementById('e-today').textContent,
-      tiles: [...{root}.querySelectorAll('.e-tile')].length, parts: window.panel._eParts().map(p => p.k),
-      overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }})""")
+    cols = f"() => [{root}.querySelectorAll('.e-col').length, {root}.getElementById('e-total').textContent, {root}.getElementById('e-empty').hidden]"
+    r["energy"] = {"shown": js(f"() => !{root}.getElementById('v-energy').hidden"), "parts": js("() => window.panel._eParts().map(p => p.k)"),
+                   "week": js(cols), "overflow": js("() => Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth")}
+    for per in ("month", "year"):
+        js(f"(p) => {root}.querySelector(`#e-per button[data-p='${{p}}']`).click()", per)
+        page.wait_for_timeout(300)
+        r["energy"][per] = js(cols)
+    # the year before: without statistics empty (and no further back), with rows their sum
     js(f"() => {root}.getElementById('e-prev').click()")
     page.wait_for_timeout(300)
-    r["energy_empty_year"] = js(f"() => [{root}.getElementById('e-yr').textContent, {root}.getElementById('ep-empty').hidden, {root}.getElementById('e-prev').disabled]")
+    r["energy_empty_year"] = js(f"() => [{root}.getElementById('e-title').textContent, {root}.getElementById('e-empty').hidden, {root}.getElementById('e-prev').disabled]")
     js("""() => {
-      window.wsAnswer = msg => Object.fromEntries(msg.statistic_ids.map(id => [id, [{ change: 100 }, { change: 20.5 }]]));
+      const y = new Date().getFullYear() - 1;
+      window.wsAnswer = msg => Object.fromEntries(msg.statistic_ids.map(id => [id, [{ start: new Date(y, 0, 1).getTime(), change: 100 },
+        { start: new Date(y, 5, 1).getTime(), change: 20.5 }]]));
       window.panel._eStats = {}; window.panel._updateEnergy();
     }""")
     page.wait_for_timeout(300)
-    r["energy_year"] = js(f"() => [{root}.getElementById('ep-total').textContent, {root}.getElementById('ep-key').textContent]")
-    js(f"() => {{ window.wsAnswer = null; {root}.getElementById('e-next').click(); }}")
+    r["energy_year"] = js(f"""() => [{root}.getElementById('e-total').textContent, {root}.getElementById('e-key').textContent,
+      [...{root}.querySelectorAll('.e-col')].filter(c => c.children.length).length]""")
+    js(f"() => {{ window.wsAnswer = null; {root}.querySelector('#e-per button[data-p=week]').click(); }}")
     page.wait_for_timeout(300)
 
     # settings: every section; the list stays in its column, nothing runs out sideways

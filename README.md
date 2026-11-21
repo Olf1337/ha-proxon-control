@@ -69,9 +69,9 @@ In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look u
 * **Zuhause:** die Anlage im Schnitt (Frisch-, Zu-, Ab- und Fortluft mit Temperaturen, Lüfter mit Drehzahl, Wärmepumpe), der Warmwasserspeicher
   (warmes Wasser in Litern, Duschminuten, Temperaturen) und jeder Raum als Kachel. Eingeschaltete Funktionen (Urlaub, Legionellenschutz,
   PV-Überschuss, Sommer/Winter …) stehen als kleine Kapseln in der Statuszeile; ein Tipp öffnet ihre Einstellung.
-* **Energie:** der Verbrauch von heute als Ring aus Kompressor, Lüftung und Warmwasser, mit Kosten und dem Wert von gestern;
-  die Leistung jetzt und die Laufzeiten von heute; darunter Woche, Monat und Jahr mit Hochrechnung. Mit „‹ 2026 ›“ lassen
-  sich frühere Jahre aus der Statistik von Home Assistant ansehen. Warmwasser ist **geschätzt** (die Anlage misst es nicht):
+* **Energie:** der Verbrauch als Säulendiagramm, gestapelt aus Kompressor, Lüftung und Warmwasser – je Tag (Woche, Monat)
+  oder je Monat (Jahr), mit Kosten und Hochrechnung; mit „‹ ›“ geht es zu früheren Wochen, Monaten und Jahren (aus der
+  Statistik von Home Assistant). Darunter die Leistung jetzt und die Laufzeiten von heute. Warmwasser ist **geschätzt** (die Anlage misst es nicht):
   Laufzeit von Wärmepumpe und Heizstab × ihre Leistung laut Datenblatt T300 (430 W und 1500 W, unter *Konfigurieren*
   änderbar, z. B. für einen BOOST-Heizstab).
 * **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der
