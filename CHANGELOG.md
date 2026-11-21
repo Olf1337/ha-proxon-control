@@ -125,6 +125,8 @@ nobody home).
 * **Neuer Tab „Energie“ auf der Seite „Proxon“:** Säulendiagramm des Verbrauchs, gestapelt aus Kompressor, Lüftung und
   Warmwasser, je Tag (Woche, Monat) oder je Monat (Jahr), mit Kosten und Hochrechnung; „‹ ›“ blättert zu früheren Zeiträumen
   (aus der Statistik von Home Assistant); ein Tipp auf eine Säule zeigt ihre Werte. Dazu Leistung jetzt und Laufzeiten von heute. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Warmwasser-Speicher in Wasserfarbe:** Das Wasser im Speicher auf „Zuhause“ ist blau (unten tiefer, oben heller) statt
+  orange, in beiden Designs, hell und dunkel; die Temperaturen stehen wie bisher als Zahlen daneben.
 * **Zweites Design „Soft“ für die Seite „Proxon“:** unter *Konfigurieren* wählbar neben Liquid Glass – erhabene Karten
   und gedrückte Knöpfe, Schalter und Tasten auf einer ruhigen Fläche (angelehnt an Neumorphismus), mit vollem Textkontrast,
   feiner Kante und farbigen Zuständen; hell und dunkel. Nur Farben und Schatten ändern sich, keine Funktionen.

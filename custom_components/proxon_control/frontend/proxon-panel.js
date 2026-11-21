@@ -248,6 +248,7 @@ const STYLE = `
   --bg: #eef1f4; --surface: rgba(255,255,255,.78); --surface-solid: #fff; --line: rgba(20,32,45,.08); --fg: #14202d; --fg-2: #586675;
   --fg-3: #8a96a3; --accent: #1d8a7a; --fresh: #3b8fd9; --supply: #e08a3c; --extract: #c26d7e; --exhaust: #8b97a4; --cold: #3b82d6;
   --fine: #1f9d6c; --warm: #d8602f; --flame: #ff6a2b; --water-hot: #f07a3a; --water-cool: #f6c79a; --danger: #d64545;
+  --tank-deep: #1c64ad; --tank-mid: #3a8fd6; --tank-top: #6cb8ea;
   --scrim: rgba(10,18,28,.32); --shadow: 0 1px 2px rgba(20,32,45,.06), 0 8px 24px rgba(20,32,45,.06); --sheet-shadow: 0 -10px 40px rgba(10,18,28,.18);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
@@ -259,6 +260,7 @@ const STYLE = `
   --bg: #0e1318; --surface: rgba(28,35,43,.78); --surface-solid: #1c232b; --line: rgba(255,255,255,.07); --fg: #eef2f5; --fg-2: #a3afbb;
   --fg-3: #6f7c89; --accent: #3cc3ab; --fresh: #5aa8ec; --supply: #f0a056; --extract: #d98a9a; --exhaust: #7d8a97; --cold: #5c9ceb;
   --fine: #3cc08a; --warm: #f07b4a; --flame: #ff7a3d; --water-hot: #f58a4c; --water-cool: #7a5236; --danger: #f06a6a;
+  --tank-deep: #123f6e; --tank-mid: #2466a3; --tank-top: #4a95d2;
   --scrim: rgba(0,0,0,.5); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); --sheet-shadow: 0 -10px 40px rgba(0,0,0,.5);
   --glass: rgba(34,42,52,.55); --glass-strong: rgba(40,49,60,.82); --edge: rgba(255,255,255,.16); --edge-low: rgba(255,255,255,.05);
   --blob-a: #7a3a14; --blob-b: #14365c; --blob-c: #134437;
@@ -716,7 +718,7 @@ class ProxonPanel extends HTMLElement {
               <div class="tankA">
                 <svg viewBox="0 0 150 330" aria-hidden="true">
                   <defs><clipPath id="tank-clip"><rect x="6" y="6" width="138" height="318" rx="56"/></clipPath>
-                    <linearGradient id="wg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--water-cool)"/><stop offset=".55" stop-color="var(--supply)"/><stop offset="1" stop-color="var(--water-hot)"/></linearGradient>
+                    <linearGradient id="wg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--tank-deep)"/><stop offset=".55" stop-color="var(--tank-mid)"/><stop offset="1" stop-color="var(--tank-top)"/></linearGradient>
                     <linearGradient id="wglass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".18" stop-color="#fff" stop-opacity=".05"/>
                       <stop offset=".82" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/></linearGradient></defs>
                   <rect x="6" y="6" width="138" height="318" rx="56" fill="var(--line)"/>
