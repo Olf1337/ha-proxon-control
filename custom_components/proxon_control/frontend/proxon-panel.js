@@ -35,7 +35,7 @@ const TEXT = {
       LegionellenGeplant: "Heizt jede Woche am gewählten Tag zur gewählten Uhrzeit auf 60 °C, mit oder ohne Sonne.",
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
     },
-    copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
+    copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", span: "{a} bis {b}", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
@@ -95,7 +95,7 @@ const TEXT = {
       LegionellenGeplant: "Heats to 60 °C every week on the chosen day at the chosen time, sun or not.",
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
     },
-    copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", sure: "Sure? Tap again", empty: "no phase",
+    copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", span: "{a} to {b}", sure: "Sure? Tap again", empty: "no phase",
     failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
@@ -148,9 +148,6 @@ const FUNCS = [
   { k: "season", on: ["SaisonAutomatik"], status: "SaisonStatus", sec: "season", run: () => false, tint: "--exhaust",
     icon: "M12 3v18M4 7l16 10M20 7L4 17" },
 ];
-
-// numbers set with − and + instead of a slider (the hot-water target: a slider or a swipe changed it by accident)
-const STEPPED = new Set(["SollWassertemperatur"]);
 
 // limits shown with the value measured now (CO2 only with a CO2 sensor that delivers values)
 const NOW_OF = { GrenzwertFeuchte: "LuftfeuchteRel", GrenzwertCO2: "CurrentCO2" };
@@ -220,60 +217,6 @@ const project = (v, d = 0.998) => (v / 1000) * d / (1 - d);  // Apple's momentum
 const SETTING = 0.99;  // deceleration for targets and levels: a flick moves a step or two, not to the end
 const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-
-// A value set with a slider (in sheets and settings): the knob jumps to the finger and follows it 1:1, a rubber band past
-// the ends, a short momentum, a spring into the nearest step, sent when it rests. (Tiles are no longer dragged: a swipe
-// while scrolling changed them by accident; they have − and +.)
-// o: range() -> {min, max, step} or null, value() -> the value to show at rest, show(v, snapped, range) on every frame,
-// commit(v).
-function dragValue(handle, track, o) {
-  let start = null, dragging = false, hist = [], held = false;
-  const snap = (v, r) => clamp(Math.round(v / r.step) * r.step, r.min, r.max);
-  const pos = new Spring(0, v => { const r = o.range(); if (r) o.show(v, snap(v, r), r); });
-  const per = r => track.clientWidth / Math.max(1e-9, r.max - r.min);
-  const at = (x, r) => r.min + (x - track.getBoundingClientRect().left) / per(r);
-  const settle = (target, velocity) => pos.to(target, { damping: velocity ? 0.8 : 1, response: 0.35, velocity,
-    onRest: () => { held = false; o.commit(target); } });
-  const band = (v, r) => (v > r.max ? r.max + rubber(v - r.max, (r.max - r.min) * 0.15) : v < r.min ? r.min - rubber(r.min - v, (r.max - r.min) * 0.15) : v);
-  handle.addEventListener("pointerdown", e => {
-    const r = o.range(); if (!r || (e.button !== undefined && e.button > 0)) return;
-    start = { x: e.clientX, id: e.pointerId, moved: false }; hist = [{ x: e.clientX, t: e.timeStamp }];
-    dragging = true; held = true; handle.classList.add("dragging"); try { handle.setPointerCapture(e.pointerId); } catch (_) { /* not a real pointer */ }
-    pos.set(band(at(e.clientX, r), r));
-  });
-  handle.addEventListener("pointermove", e => {
-    if (!start || e.pointerId !== start.id) return;
-    const r = o.range(); if (!r) return;
-    start.moved = true;
-    hist.push({ x: e.clientX, t: e.timeStamp }); if (hist.length > 6) hist.shift();
-    pos.set(band(at(e.clientX, r), r));
-  });
-  const end = () => {
-    if (!start) return;
-    const r = o.range();
-    if (dragging && r) {
-      const a = hist[0], b = hist[hist.length - 1], vel = start.moved ? (b.x - a.x) / Math.max(1, b.t - a.t) * 1000 / per(r) : 0;
-      // momentum carries at most two steps past where the finger let go: a flick nudges a setting, it never throws it
-      const carry = clamp(project(vel * per(r), SETTING) / per(r), -2 * r.step, 2 * r.step);
-      settle(snap(pos.x + carry, r), vel ? clamp(vel, -8 * r.step / 0.35, 8 * r.step / 0.35) : undefined);
-      handle.classList.remove("dragging");
-    }
-    start = null; dragging = false;
-  };
-  handle.addEventListener("pointerup", end); handle.addEventListener("pointercancel", end);
-  // drawn again when the track gets its width (first layout, rotation, a sheet opening)
-  if (window.ResizeObserver) new ResizeObserver(() => { if (o.range() && !activeSprings.has(pos)) pos.set(pos.x); }).observe(track);
-  handle.addEventListener("keydown", e => {
-    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key], r = o.range();
-    if (!d || !r) return; e.preventDefault(); held = true;
-    settle(snap((activeSprings.has(pos) ? pos.target : o.value()) + d * r.step, r));
-  });
-  return {
-    pos,
-    sync() { if (!held && !activeSprings.has(pos) && o.range()) pos.set(o.value()); },  // follow the entity while untouched
-    back(v) { held = false; pos.to(v, { damping: 1, response: 0.35 }); },  // a write that failed: back to what the unit has
-  };
-}
 
 const STYLE = `
 :host {
@@ -469,20 +412,10 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .card.tap { cursor: pointer; transition: transform 120ms ease-out; -webkit-user-select: none; user-select: none; }
 .card.tap:active:not(:has(button:active)) { transform: scale(.985); }
 .stepper button:disabled { opacity: .35; cursor: default; }
-.row:has(> .stepper) .row-label { flex-basis: 80px; }  /* − value + stays on the label's line, also on a phone */
-.srow { padding: 14px 0 6px; border-top: 1px solid var(--line); }
-.srow-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.sval { font: 700 1.25rem var(--font-display); letter-spacing: -.02em; white-space: nowrap; }
-.slider { position: relative; height: 44px; margin: 2px 14px 0; touch-action: none; cursor: pointer; }
-.s-rail, .s-fill { position: absolute; left: 0; top: 19px; height: 6px; border-radius: 6px; }
-.s-rail { right: 0; background: var(--line); }
-.s-fill { background: var(--accent); width: 0; }
-.s-now { position: absolute; top: 2px; width: 3px; height: 40px; margin-left: -1.5px; border-radius: 2px; background: var(--fg); opacity: .5; }
+.row:has(> .stepper) .row-label { flex-basis: 80px; }
+.row.stepped { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }  /* label and − value + on one line, the explanation below across the row */
+.row-sub { grid-column: 1 / -1; font-size: .8125rem; color: var(--fg-3); }  /* − value + stays on the label's line, also on a phone */
 .row-label small.now-val { color: var(--fg); font-weight: 600; }
-.s-knob { position: absolute; top: 8px; left: 0; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface-solid);
-  box-shadow: 0 2px 10px rgba(0,0,0,.22), 0 0 0 1px var(--line); transition: scale 120ms ease-out; }
-.slider.dragging .s-knob { scale: 1.12; }
-.s-ends { display: flex; justify-content: space-between; font-size: .75rem; color: var(--fg-3); margin: -4px 0 4px; }
 /* a switched-on function in the status row: icon, short name, what it does; tinted with a pulsing dot while it works */
 .fchip { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; min-width: 0; padding: 4px 12px 4px 4px; border-radius: 999px; font-size: .875rem;
   cursor: pointer; transition: transform 120ms ease-out; touch-action: manipulation; }
@@ -541,7 +474,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .close { position: absolute; top: 14px; right: max(16px, env(safe-area-inset-right, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 0;
   background: var(--line); cursor: pointer; font-size: 1rem; color: var(--fg-2); }
 .stepper { display: inline-flex; align-items: center; gap: 4px; }
-.stepper button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--line); font-size: 1.3rem; cursor: pointer; transition: transform 100ms ease-out; }
+.stepper button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--line); font-size: 1.3rem; cursor: pointer; transition: transform 100ms ease-out; }
 .stepper button:active { transform: scale(.92); }
 .stepper output { min-width: 72px; text-align: center; font: 700 1.4rem var(--font-display); letter-spacing: -.02em; }
 .seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: var(--line); }
@@ -1054,54 +987,6 @@ class ProxonPanel extends HTMLElement {
     }, 600));
   }
 
-  // ---------- a number entity set with a slider; what was sent shows until the unit reports it ----------
-  _numberDrag(handle, track, key, { show, done } = {}) {
-    const pend = this._pendingNum || (this._pendingNum = new Map());
-    const range = () => {
-      const st = this.st(key); if (!st || st.state === "unavailable") return null;
-      const a = st.attributes, min = Number(a.min), max = Number(a.max), step = Number(a.step) || 1;
-      let eff = step;  // a slider with more than ~120 positions gets coarser steps (e.g. a duration in minutes)
-      for (const f of [1, 2, 5, 10, 15, 30, 60]) { eff = step * f; if ((max - min) / eff <= 120) break; }
-      return { min, max, step: eff };
-    };
-    const value = () => {
-      const p = pend.get(key), cur = this.num(key);
-      if (p && (cur === p.v || Date.now() - p.at > 8000)) pend.delete(key);
-      return pend.has(key) ? pend.get(key).v : cur ?? range().min;
-    };
-    const ctl = dragValue(handle, track, {
-      range, value, show,
-      commit: v => {
-        if (v === this.num(key)) return;
-        pend.set(key, { v, at: Date.now() });
-        this.call("number", "set_value", { entity_id: this.id(key), value: v }).then(() => done && done(),
-          () => { pend.delete(key); ctl.back(this.num(key) ?? v); });
-      },
-    });
-    return ctl;
-  }
-  _sliderRow(id, label, sub, nowKey) {
-    const now = nowKey ? `<small class="now-val num" id="nowv-${id}" hidden></small>` : "";
-    const tick = nowKey ? `<div class="s-now" id="nowt-${id}" hidden></div>` : "";
-    return `<div class="srow" id="${id}"><div class="srow-head"><span class="row-label">${label}${now}${sub ? `<small>${sub}</small>` : ""}</span><b class="num sval"></b></div>
-      <div class="slider" tabindex="0" role="slider" aria-label="${label}"><div class="s-rail"></div><div class="s-fill"></div>${tick}<div class="s-knob"></div></div>
-      <div class="s-ends num"><span class="s-min"></span><span class="s-max"></span></div></div>`;
-  }
-  _sliderShow(row, format) {  // how a slider row shows a value
-    const sl = row.querySelector(".slider"), knob = row.querySelector(".s-knob"), fillEl = row.querySelector(".s-fill");
-    return (v, snapped, r) => {
-      const x = clamp((v - r.min) / (r.max - r.min), -0.04, 1.04) * sl.clientWidth;
-      knob.style.transform = `translateX(${x.toFixed(1)}px)`; fillEl.style.width = `${clamp(x, 0, sl.clientWidth).toFixed(1)}px`;
-      row.querySelector(".sval").textContent = format(snapped);
-      row.querySelector(".s-min").textContent = format(r.min); row.querySelector(".s-max").textContent = format(r.max);
-      sl.setAttribute("aria-valuenow", snapped); sl.setAttribute("aria-valuetext", format(snapped));
-    };
-  }
-  _numberSlider(row, key, format) {  // a slider row for a number entity
-    const ctl = this._numberDrag(row.querySelector(".slider"), row.querySelector(".slider"), key, { show: this._sliderShow(row, format) });
-    requestAnimationFrame(() => ctl.sync());
-    return ctl;
-  }
   _unit(key, d = 0) {  // "46 °C", "1.500 W", "30 min": the number entity's own unit
     const u = ((this.st(key) || {}).attributes || {}).unit_of_measurement || "";
     return v => `${this.fmt(v, d)}${u ? (u === "°C" || u === "%" ? (u === "%" ? " %" : "°") : ` ${u}`) : ""}`;
@@ -1120,9 +1005,8 @@ class ProxonPanel extends HTMLElement {
         const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
         return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
       }
-      if (kind === "num" && (this._isLong(key) || STEPPED.has(key))) return `<div class="row"><span class="row-label">${this._label(key)}</span>
-        <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div></div>`;
-      if (kind === "num") return this._sliderRow(`num-${key}`, this._label(key), hint, NOW_OF[key]);
+      if (kind === "num") return `<div class="row stepped"><span class="row-label">${this._label(key)}${NOW_OF[key] ? `<small class="now-val num" id="nowv-${key}" hidden></small>` : ""}</span>
+        <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div><small class="row-sub">${hint ? `${hint}<br>` : ""}<span class="num" id="rng-${key}"></span></small></div>`;
       if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
@@ -1161,12 +1045,9 @@ class ProxonPanel extends HTMLElement {
     for (const sec of SETTINGS) for (const [kind, key] of sec.rows) {
       if (kind === "switch" && v.querySelector(`#set-${CSS.escape(key)}`)) v.querySelector(`#set-${CSS.escape(key)}`).addEventListener("click", () => this._toggle(key));
       if (kind === "num" && v.querySelector(`#out-${CSS.escape(key)}`)) {
-        const q = id => v.querySelector(`#${id}-${CSS.escape(key)}`);
-        this._settingCtl.push(this._stepper(q("dn"), q("up"), q("out"), key, { factor: this._isLong(key) ? 5 : 1, fmt: this._unit(key, 0) }));
-      }
-      if (kind === "num" && v.querySelector(`#num-${CSS.escape(key)}`)) {
-        const st = this.st(key), d = st && Number(st.attributes.step) < 1 ? 1 : 0;
-        this._settingCtl.push(this._numberSlider(v.querySelector(`#num-${CSS.escape(key)}`), key, this._unit(key, d)));
+        const q = id => v.querySelector(`#${id}-${CSS.escape(key)}`), a = this.st(key).attributes, fmt = this._unit(key, Number(a.step) < 1 ? 1 : 0);
+        q("rng").textContent = fill(t.span, { a: fmt(Number(a.min)), b: fmt(Number(a.max)) });
+        this._settingCtl.push(this._stepper(q("dn"), q("up"), q("out"), key, { factor: this._isLong(key) ? 5 : 1, fmt }));
       }
       const time = v.querySelector(`#time-${CSS.escape(key)}`);
       if (kind === "time" && time) time.addEventListener("change", () => { if (time.value) this.call("time", "set_value", { entity_id: this.id(key), time: `${time.value}:00` }).catch(() => this._updateSettings()); });
@@ -1275,8 +1156,19 @@ class ProxonPanel extends HTMLElement {
         this.call("number", "set_value", { entity_id: this.id(key), value: v }).then(() => done && done(), () => { sent = null; show(); });
       }, 600);
     };
-    dn.addEventListener("click", e => { e.stopPropagation(); go(-1); });
-    up.addEventListener("click", e => { e.stopPropagation(); go(1); });
+    let hold = 0, held = false;
+    const stop = () => { clearTimeout(hold); hold = 0; };
+    [[dn, -1], [up, 1]].forEach(([btn, d]) => {
+      btn.addEventListener("click", e => { e.stopPropagation(); if (held) { held = false; return; } go(d); });
+      btn.addEventListener("pointerdown", e => {
+        if (e.button > 0) return;
+        held = false; stop();
+        let n = 0;
+        const tick = () => { held = true; n += 1; go(n > 12 ? d * 5 : d); if (!btn.disabled) hold = setTimeout(tick, n > 12 ? 90 : 140); };
+        hold = setTimeout(tick, 450);  // held, not tapped: repeat
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+    });
     show();
     return { sync: () => { if (want === null) show(); } };
   }
@@ -1314,16 +1206,14 @@ class ProxonPanel extends HTMLElement {
     }
     // the value measured now, at the limits it is compared with
     for (const [limit, sensor] of Object.entries(NOW_OF)) {
-      const id = `num-${limit}`, val = v.querySelector(`#nowv-${id}`), tick = v.querySelector(`#nowt-${id}`);
-      if (!val || !tick) continue;
+      const val = v.querySelector(`#nowv-${limit}`);
+      if (!val) continue;
       const cur = this.num(sensor), st = this.st(limit), a = st ? st.attributes : {};
       const has = cur !== null && !(sensor === "CurrentCO2" && cur <= 0);  // a CO2 reading of 0: no sensor delivering values
-      val.hidden = tick.hidden = !has;
+      val.hidden = !has;
       if (!has) continue;
       const unit = sensor === "CurrentCO2" ? " ppm" : " %";
       val.textContent = `${this.t.nowLabel} ${this.fmt(cur, 0)}${unit}`;
-      tick.style.left = `${(clamp((cur - a.min) / (a.max - a.min), 0, 1) * 100).toFixed(1)}%`;
-      tick.title = val.textContent;
     }
     for (let d = 0; d < 7; d++) {
       const el = v.querySelector(`#day-sum-${d}`);
@@ -1386,7 +1276,7 @@ class ProxonPanel extends HTMLElement {
     this.shadowRoot.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) this._closeSheet(); });
     let sd = null;
     sheet.addEventListener("pointerdown", e => {
-      if (e.target.closest("button, input, .level, .slider") || sheet.scrollTop > 0) return;
+      if (e.target.closest("button, input, .level") || sheet.scrollTop > 0) return;
       sd = { y: e.clientY, v: this._sheetY.x, h: sheet.offsetHeight, hist: [{ y: e.clientY, t: e.timeStamp }] }; sheet.setPointerCapture(e.pointerId);
     });
     sheet.addEventListener("pointermove", e => {
