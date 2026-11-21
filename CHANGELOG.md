@@ -8,7 +8,8 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 **Not yet released:** no sliders in the settings of the page "Proxon" any more (every number with − and +, hold to
 repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); one unit per Home
 Assistant (a second one can't be added for now); a new tab "Energy" on the page (stacked columns per day or month for
-week/month/year, earlier periods from the statistics, power now, running times); hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
+week/month/year, earlier periods from the statistics, a cost overview so far and expected, power now, running
+times); hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
 new installs); saved settings
 get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
 
@@ -124,6 +125,10 @@ nobody home).
 * **Neuer Tab „Energie“ auf der Seite „Proxon“:** Säulendiagramm des Verbrauchs, gestapelt aus Kompressor, Lüftung und
   Warmwasser, je Tag (Woche, Monat) oder je Monat (Jahr), mit Kosten und Hochrechnung; „‹ ›“ blättert zu früheren Zeiträumen
   (aus der Statistik von Home Assistant); ein Tipp auf eine Säule zeigt ihre Werte. Dazu Leistung jetzt und Laufzeiten von heute. Auf dem Handy ist „Energie“ der mittlere Tab in der Leiste unten.
+* **Kostenübersicht im Tab „Energie“:** bisherige Kosten für heute, diese Woche, diesen Monat und dieses Jahr und die
+  voraussichtlichen für Monat und Jahr (Hochrechnung), dazu der Schnitt pro Monat und der Anteil des Warmwassers. Mit einem
+  festen Strompreis werden die Kosten aller Zeiträume aus dem Verbrauch gerechnet (auch rückwirkend); mit einem
+  Preis-Sensor aus den Kosten-Sensoren. Ohne Strompreis ein Hinweis, wo er eingetragen wird.
 * **Warmwasser-Verbrauch geschätzt:** Die Anlage misst das Warmwasser-Modul nicht. Neue Sensoren schätzen Leistung und
   Energie von Warmwasser-Wärmepumpe und Heizstab aus ihrer Laufzeit und der Leistung laut Datenblatt T300 (430 W, 1500 W;
   unter *Konfigurieren* änderbar, z. B. 4500 oder 9000 W für BOOST). Für das Energie-Dashboard geeignet, mit „geschätzt“ im Namen.

@@ -18,7 +18,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
-from .const import DOMAIN
+from .const import CONF_FIXED_PRICE, DOMAIN
 from .dashboard import entity_ids
 from .entity import house_rooms, room_floors
 
@@ -41,6 +41,9 @@ def panel_config(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         "entities": entity_ids(hass, entry),
         "rooms": [{"n": i, "floor": f} for i, f in zip(rooms, floors)],
         "device_id": getattr(coordinator, "device_id", None),  # for "open the device in Home Assistant"
+        # a fixed tariff (ct/kWh): the costs of every period are worked out from the consumption (the cost sensors only count
+        # from when a price was set)
+        "price": entry.options.get(CONF_FIXED_PRICE),
     }
 
 

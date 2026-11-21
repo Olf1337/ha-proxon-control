@@ -28,7 +28,9 @@ const TEXT = {
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
     e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
-      earlier: "Früher", later: "Später", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
+      earlier: "Früher", later: "Später", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
+      avgMonth: "Im Schnitt pro Monat", ofWater: "davon Warmwasser {v}",
+      noPrice: "Für die Kosten unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren einen Strompreis eintragen (fest oder als Sensor).", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
       start: "1 Start", starts: "{n} Starts", prev: "Jahr davor", next: "Jahr danach", sofar: "bisher",
       empty: "Für {y} gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.",
@@ -94,7 +96,9 @@ const TEXT = {
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
     e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
-      earlier: "Earlier", later: "Later", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
+      earlier: "Earlier", later: "Later", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
+      avgMonth: "On average per month", ofWater: "of which hot water {v}",
+      noPrice: "For the cost, enter an electricity price under Settings → Devices & services → Proxon Control → Configure (fixed or as a sensor).", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
       start: "1 start", starts: "{n} starts", prev: "Year before", next: "Year after", sofar: "so far",
       empty: "There are no values for {y} yet. Home Assistant keeps them only since the energy counters exist.",
@@ -300,6 +304,9 @@ button { font: inherit; color: inherit; }
 .e-run:first-child { border-top: 0; padding-top: 0; }
 .e-run b { font-weight: 600; white-space: nowrap; }
 .e-note { font-size: .8125rem; color: var(--fg-3); margin: 0 4px; }
+.e-cost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px 28px; }
+.e-cost-grid > div > .sub { display: block; margin-bottom: 2px; }
+.e-run small { display: block; font-size: .75rem; color: var(--fg-3); }
 /* stacked columns: one per day (week, month) or month (year), drawn with boxes so the text stays sharp at any width */
 .e-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .e-nav { display: inline-flex; align-items: center; gap: 2px; }
@@ -1063,6 +1070,10 @@ class ProxonPanel extends HTMLElement {
         <div class="e-xl" id="e-xl"></div>
         <div class="e-detail num" id="e-detail"></div>
         <div class="e-key" id="e-key"></div><p class="hint" id="e-empty" hidden>${e.none}</p></section>
+      <section class="card e-card" id="e-cost"><span class="label">${e.cost}</span>
+        <div class="e-cost-grid"><div><span class="sub">${e.running}</span><div id="e-cost-run"></div></div>
+          <div id="e-cost-fc-wrap"><span class="sub">${e.expected}</span><div id="e-cost-fc"></div></div></div>
+        <p class="hint" id="e-cost-none" hidden>${e.noPrice}</p></section>
       <div class="e-grid"><section class="card e-card"><span class="label">${t.now}</span><div class="e-mid num" id="e-now"></div><div class="e-key" id="e-now-key"></div></section>
         <section class="card e-card" id="e-run-card"><span class="label">${e.runtime}</span><div id="e-run"></div></section></div>
       <p class="e-note">${e.note}</p>`;
@@ -1081,10 +1092,28 @@ class ProxonPanel extends HTMLElement {
     try { return v.toLocaleString(this._hass.language || undefined, { style: "currency", currency: (this._hass.config || {}).currency || "EUR" }); } catch (_) { return this.fmt(v, 2); }
   }
   // what a period cost: the unit's cost sensor, the estimated hot water at the same average price
+  // a fixed tariff (€/kWh), or null with a dynamic one
+  _ePrice() { const ct = Number((this._config || {}).price); return ct > 0 ? ct / 100 : null; }
   _eCost(suffix, water) {
-    const cost = this.num(`Stromkosten${suffix}`), unit = this.num(`EnergieGesamt${suffix}`);
+    const cost = this.num(`Stromkosten${suffix}`), unit = this.num(`EnergieGesamt${suffix}`), fixed = this._ePrice();
+    if (fixed !== null) return unit === null ? null : (unit + (water || 0)) * fixed;  // exact for a fixed tariff, every period
     if (cost === null) return null;
     return cost + (water && unit > 0.01 ? water * cost / unit : 0);
+  }
+  // the forecast of the running month / year: the unit's own, plus the hot water extended at the same rate (and its cost at
+  // the same average price)
+  _eForecast(fs) {
+    const fc = this.num(`EnergieGesamt${fs}Prognose`); if (fc === null) return null;
+    const water = this._eSum(["EnergieWarmwasserWP", "EnergieHeizstab"].filter(k => this.id(k)), fs) || 0, now = new Date();
+    const end = fs === "Monat" ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : new Date(now.getFullYear() + 1, 0, 1);
+    const since = ((this.st(`EnergieWarmwasserWP${fs}`) || {}).attributes || {}).counting_since;
+    let wfc = 0;
+    if (water && since) { const done = now - new Date(since); if (done > (fs === "Monat" ? 12 : 72) * 3600000) wfc = water * (end - new Date(since)) / done; }
+    const fixed = this._ePrice();
+    if (fixed !== null) return { kwh: fc + wfc, cost: (fc + wfc) * fixed, waterCost: wfc * fixed };
+    const fcCost = this.num(`Stromkosten${fs}Prognose`), unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
+    const price = c !== null && unitE > 0.01 ? c / unitE : null;
+    return { kwh: fc + wfc, cost: fcCost === null ? null : fcCost + (price ? wfc * price : 0), waterCost: price ? wfc * price : null };
   }
   _eKey(parts, values, unit = "kWh", fmt = v => this._kwh(v)) {
     return parts.map((p, i) => `<span><i style="background:var(${p.color})"></i>${this.t.e[p.k]} <b class="num">${fmt(values[i])} ${unit}</b></span>`).join("");
@@ -1129,6 +1158,26 @@ class ProxonPanel extends HTMLElement {
       statistic_ids: keys.map(k => this.id(k)), period: gran, types: ["change"] }).then(finish, () => finish({}));
     return entry.done ? entry : null;
   }
+  // costs: what today, this week, month and year cost so far, and what the month and the year will probably cost
+  _updateCosts(parts) {
+    const e = this.t.e, lang = this._hass.language || undefined, now = new Date(), has = !!this.id("Stromkosten") || this._ePrice() !== null;
+    this.$("e-cost-none").hidden = has;
+    this.$("v-energy").querySelector(".e-cost-grid").hidden = !has;
+    if (!has) return;
+    const waterKeys = ["EnergieWarmwasserWP", "EnergieHeizstab"].filter(k => this.id(k)), all = parts.flatMap(p => p.keys);
+    const row = (label, cost, kwh) => `<div class="e-run"><span>${label}${kwh === null ? "" : `<small class="num">${this._kwh(kwh)} kWh</small>`}</span><b class="num">${this._money(cost) || "–"}</b></div>`;
+    const month = now.toLocaleDateString(lang, { month: "long" }), year = String(now.getFullYear());
+    this.$("e-cost-run").innerHTML = [["Heute", e.today], ["Woche", e.week], ["Monat", month], ["Jahr", year]].map(([sfx, label]) =>
+      row(label, this._eCost(sfx, this._eSum(waterKeys, sfx) || 0), this._eSum(all, sfx))).join("");
+    const fm = this._eForecast("Monat"), fy = this._eForecast("Jahr");
+    this.$("e-cost-fc-wrap").hidden = !fm && !fy;
+    this.$("e-cost-fc").innerHTML = [
+      fm ? row(fill(e.fc, { p: month }), fm.cost, fm.kwh) : "",
+      fy ? row(fill(e.fc, { p: year }), fy.cost, fy.kwh) : "",
+      fy && fy.cost !== null ? row(e.avgMonth, fy.cost / 12, null) : "",
+      fy && fy.waterCost ? `<p class="hint">${fill(e.ofWater, { v: this._money(fy.waterCost) })}</p>` : "",
+    ].join("");
+  }
   _updateEnergy() {
     if (!this._energyBuilt) return;
     const t = this.t, e = t.e, parts = this._eParts(), lang = this._hass.language || undefined, P = this._ePeriod(), now = new Date();
@@ -1154,24 +1203,17 @@ class ProxonPanel extends HTMLElement {
     const sum = totals.reduce((a, b) => a + b, 0), wi = parts.findIndex(p => p.k === "water"), water = wi >= 0 ? totals[wi] : 0;
     let cost = null;
     if (P.current) cost = this._eCost(suffix, water);
+    else if (this._ePrice() !== null) cost = hasRows ? sum * this._ePrice() : null;
     else if (stats && (stats.rows.Stromkosten || []).length) {
       const c = stats.rows.Stromkosten.reduce((a, r) => a + r.change, 0), u = (stats.rows.EnergieGesamt || []).reduce((a, r) => a + r.change, 0);
       cost = c + (water && u > 0.01 ? water * c / u : 0);
     }
     this.$("e-title").textContent = P.title;
     this.$("e-total").innerHTML = empty ? "" : `${this._kwh(sum)}<small>kWh</small>`;
-    // the forecast of the running month / year: the unit's own, plus the hot water at the same rate
     let fcText = "";
     if (P.current && P.per !== "week") {
-      const fs = P.per === "month" ? "Monat" : "Jahr", fc = this.num(`EnergieGesamt${fs}Prognose`);
-      if (fc !== null) {
-        let wfc = 0;
-        const since = ((this.st(`EnergieWarmwasserWP${fs}`) || {}).attributes || {}).counting_since;
-        if (water && since) { const done = now - new Date(since); if (done > (fs === "Monat" ? 12 : 72) * 3600000) wfc = water * (P.end - new Date(since)) / done; }
-        const fcCost = this.num(`Stromkosten${fs}Prognose`), unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
-        const price = c !== null && unitE > 0.01 ? c / unitE : null;
-        fcText = fill(e.forecast, { v: `${this._kwh(fc + wfc)} kWh` }) + (fcCost !== null ? ` · ${this._money(fcCost + (price ? wfc * price : 0))}` : "");
-      }
+      const f = this._eForecast(P.per === "month" ? "Monat" : "Jahr");
+      if (f) fcText = fill(e.forecast, { v: `${this._kwh(f.kwh)} kWh` }) + (f.cost !== null ? ` · ${this._money(f.cost)}` : "");
     }
     this.$("e-sub").textContent = empty ? "" : [this._money(cost), fcText].filter(Boolean).join(" · ");
     // the chart: a scale that ends on a round number, three lines
@@ -1191,6 +1233,7 @@ class ProxonPanel extends HTMLElement {
       : s.d.toLocaleDateString(lang, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
       s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}` : "";
     this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
+    this._updateCosts(parts);
     // now
     const power = parts.map(p => this._eSum(p.power));
     this.$("e-now").innerHTML = `${this.fmt(power.reduce((a, b) => a + (b || 0), 0), 0)}<small>W</small>`;

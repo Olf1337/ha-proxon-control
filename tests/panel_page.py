@@ -153,6 +153,17 @@ def check(page, data: dict) -> dict:
       [...{root}.querySelectorAll('.e-col')].filter(c => c.children.length).length]""")
     js(f"() => {{ window.wsAnswer = null; {root}.querySelector('#e-per button[data-p=week]').click(); }}")
     page.wait_for_timeout(300)
+    # costs: without a price a hint; with a fixed price (25 ct/kWh) so far and expected, worked out from the consumption
+    cost = f"""() => ({{ hint: !{root}.getElementById('e-cost-none').hidden, rows: [...{root}.querySelectorAll('#e-cost-run .e-run')].map(r => r.innerText),
+      today: window.panel._eSum(['EnergieGesamt'], 'Heute') }})"""
+    r["cost_none"] = js(cost)
+    today = data["config"]["entities"]["EnergieGesamtHeute"]
+    js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: '4.0' } }; window.panel.hass = { ...h };
+                   window.panel._config.price = 25; window.panel._updateEnergy(); }""", today)
+    page.wait_for_timeout(200)
+    r["cost"] = js(cost)
+    js("() => { window.panel._config.price = null; window.panel._updateEnergy(); }")
+    page.wait_for_timeout(300)
 
     # settings: every section; the list stays in its column, nothing runs out sideways
     js(f"() => {root}.getElementById('tab-settings').click()")

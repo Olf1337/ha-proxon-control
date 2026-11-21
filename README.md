@@ -71,7 +71,9 @@ In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look u
   PV-Überschuss, Sommer/Winter …) stehen als kleine Kapseln in der Statuszeile; ein Tipp öffnet ihre Einstellung.
 * **Energie:** der Verbrauch als Säulendiagramm, gestapelt aus Kompressor, Lüftung und Warmwasser – je Tag (Woche, Monat)
   oder je Monat (Jahr), mit Kosten und Hochrechnung; mit „‹ ›“ geht es zu früheren Wochen, Monaten und Jahren (aus der
-  Statistik von Home Assistant). Darunter die Leistung jetzt und die Laufzeiten von heute. Warmwasser ist **geschätzt** (die Anlage misst es nicht):
+  Statistik von Home Assistant). Darunter die **Kosten** – bisher (heute, Woche, Monat, Jahr) und voraussichtlich (Monat,
+  Jahr, Schnitt pro Monat) –, die Leistung jetzt und die Laufzeiten von heute. Für die Kosten unter *Konfigurieren* einen
+  Strompreis eintragen. Warmwasser ist **geschätzt** (die Anlage misst es nicht):
   Laufzeit von Wärmepumpe und Heizstab × ihre Leistung laut Datenblatt T300 (430 W und 1500 W, unter *Konfigurieren*
   änderbar, z. B. für einen BOOST-Heizstab).
 * **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der

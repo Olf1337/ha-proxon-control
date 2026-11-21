@@ -70,6 +70,10 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         total, key, filled = r["energy_year"]
         # each counter rose 120.5 kWh (January and June): compressor, ventilation, hot water (heat pump + heater) = 4 x 120.5
         assert total.startswith("482") and "Warmwasser (geschätzt) 241 kWh" in key and filled == 2, f"{width}: {r['energy_year']}"
+        assert r["cost_none"]["hint"], f"{width}: no price, no costs: a hint"
+        c = r["cost"]
+        assert not c["hint"] and len(c["rows"]) == 4, f"{width}: costs so far {c}"
+        assert c["today"] == 4 and "1,00" in c["rows"][0], f"{width}: today 4 kWh x 25 ct = 1,00 € {c}"
         for sec, s in r["settings"].items():
             assert s["shown"] and s["rows"], f"{width}/{sec}: the section is empty"
             assert s["overflow"] <= 0 and s["rows_out"] == 0, f"{width}/{sec}: runs out sideways: {s}"
