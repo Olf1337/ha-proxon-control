@@ -39,6 +39,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # the weekly schedule changes rarely: read it every 5 minutes, not with every query
 SCHEDULE_SECONDS = 300
+# a standing fault is reported by the unit only now and then (seen on a real unit: for 30-90 seconds about every 10 minutes,
+# all fault words 0 in between): a fault counts until the unit has reported none for this long
+FAULT_HOLD = timedelta(minutes=15)
 
 
 class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -66,6 +69,8 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.runtime = RuntimeTracker()
         # which rooms' heating elements heat, by the unit's thresholds (needs the previous state: switch-on/off gap)
         self.heating = HeatingTracker()
+        # the last fault words the unit reported, and when (see faults())
+        self.last_fault: tuple[Any, dict[str, int]] | None = None
         self._runtime_store: Store[dict] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.runtime")
 
     async def async_load_runtime(self) -> None:
@@ -113,6 +118,22 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         heater = float(options.get(CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER))
         return {"LeistungWarmwasserWP": pump if data.get("T300RelaisKompressor") else 0.0,
                 "LeistungHeizstab": heater if data.get("T300RelaisHeizstab") else 0.0}
+
+    def faults(self) -> dict[str, int]:
+        """Fault words that count as a fault (key -> 16-bit word): the ones the unit reports now, else the last ones it
+        reported, for FAULT_HOLD after that. The fault sensor, the repair notice and the panel all use this."""
+        now, current = dt_util.utcnow(), active_faults(self.data or {})
+        if current:
+            if self.last_fault is None or self.last_fault[1] != current:
+                _LOGGER.warning("The unit reports a fault: %s", ", ".join(f"{k} = 0x{v:04X}" for k, v in current.items()))
+            self.last_fault = (now, current)
+            return current
+        if self.last_fault is not None and now - self.last_fault[0] < FAULT_HOLD:
+            return self.last_fault[1]
+        if self.last_fault is not None:
+            _LOGGER.info("The unit has reported no fault for %s minutes", int(FAULT_HOLD.total_seconds() // 60))
+            self.last_fault = None
+        return {}
 
     @property
     def read_only(self) -> bool:

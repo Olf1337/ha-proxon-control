@@ -527,6 +527,9 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .sheet { position: fixed; left: 50%; bottom: 0; z-index: 21; width: min(560px, 100%); max-height: 86%; overflow: auto; transform: translate(-50%, 110%);
   background: var(--glass-strong); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 26px 26px 0 0; box-shadow: var(--sheet-shadow); touch-action: none; overscroll-behavior: contain;
   padding: 8px max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); }
+/* a sheet longer than the screen scrolls; then only the handle and the title drag it closed */
+.sheet.scrolls { touch-action: pan-y; }
+.sheet.scrolls .grabber, .sheet.scrolls h3, .sheet.scrolls .sub { touch-action: none; }
 .grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--fg-3); opacity: .5; margin: 4px auto 14px; }
 .sheet h3 { font: 700 1.4rem/1.15 var(--font-display); letter-spacing: -.02em; margin: 0 0 4px; }
 .sub { color: var(--fg-2); font-size: .9375rem; margin: 0 0 18px; }
@@ -1608,6 +1611,7 @@ class ProxonPanel extends HTMLElement {
     let sd = null;
     sheet.addEventListener("pointerdown", e => {
       if (e.target.closest("button, input") || sheet.scrollTop > 0) return;
+      if (sheet.classList.contains("scrolls") && !e.target.closest(".grabber, h3, .sub")) return;
       sd = { y: e.clientY, v: this._sheetY.x, h: sheet.offsetHeight, hist: [{ y: e.clientY, t: e.timeStamp }] }; sheet.setPointerCapture(e.pointerId);
     });
     sheet.addEventListener("pointermove", e => {
@@ -1628,7 +1632,8 @@ class ProxonPanel extends HTMLElement {
     this._opener = from; this._sheetCtl = []; this.$("sheet-body").innerHTML = html; this.$("sheet").hidden = false; this.$("scrim").style.pointerEvents = "auto";
     wire(); this._sheetRefresh = refresh || null; if (refresh) refresh();
     this._sheetY.to(0, { damping: 0.8, response: 0.3 });
-    requestAnimationFrame(() => this.$("sheet-close").focus());
+    const sheet = this.$("sheet");
+    requestAnimationFrame(() => { sheet.classList.toggle("scrolls", sheet.scrollHeight > sheet.clientHeight + 1); this.$("sheet-close").focus(); });
   }
   _closeSheet(velocity) {
     this.$("scrim").style.pointerEvents = "none"; this._sheetRefresh = null;

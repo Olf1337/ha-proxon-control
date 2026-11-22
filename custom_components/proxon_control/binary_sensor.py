@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .entity import ProxonEntity
-from .registers import FAULT_POINTS, active_faults, fault_key, heating_channels, t300_fault_texts
+from .registers import FAULT_POINTS, fault_key, heating_channels, t300_fault_texts
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
 FILTER_WARN_HOURS = 30 * 24
@@ -122,7 +122,7 @@ class ProxonFault(ProxonEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        return bool(active_faults(self.coordinator.data or {}))
+        return bool(self.coordinator.faults())
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -130,4 +130,7 @@ class ProxonFault(ProxonEntity, BinarySensorEntity):
         attrs: dict = {fault_key(p): f"0x{int(data[fault_key(p)]) & 0xFFFF:04X}" for p in FAULT_POINTS if isinstance(data.get(fault_key(p)), (int, float))}
         # the hot-water module names its faults (Proxon's Modbus list); the main unit's fault words have no names
         attrs["hot_water_module"] = t300_fault_texts(data, self.hass.config.language if self.hass else None)
+        # a standing fault shows only now and then in the words above: the last one reported, and when
+        last = self.coordinator.last_fault
+        attrs["last_fault"] = {"time": last[0].isoformat(), **{k: f"0x{v:04X}" for k, v in last[1].items()}} if last else None
         return attrs

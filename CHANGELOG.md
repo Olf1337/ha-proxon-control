@@ -118,6 +118,12 @@ nobody home).
   zweite Anlage bleibt bestehen.
 * **Lüftungsstufe mit vier Tasten:** Im Sheet der Lüftungsanlage wählt man die Stufe mit „1 2 3 4“ statt mit einem
   Schieberegler; im ECO-Komfortbetrieb und während der Intensivlüftung sind die Tasten gesperrt.
+* **Störung springt nicht mehr auf „OK“:** Die Anlage meldet eine bestehende Störung nur ab und zu (am echten Gerät etwa
+  alle 10 Minuten für 30–90 Sekunden). Die Störung gilt jetzt, bis die Anlage 15 Minuten lang keine mehr gemeldet hat – für Sensor, Hinweis
+  unter *Reparaturen* und die Seite „Proxon“. Das Attribut `last_fault` zeigt die zuletzt gemeldeten Fehlerwörter mit Zeit,
+  und jede neue Störung steht mit ihren Fehlerwörtern im Log.
+* **„Alle Werte“ auf dem Handy scrollbar:** Lange Sheets ließen sich per Touch nicht scrollen. Jetzt scrollt die Liste; zum
+  Schließen zieht man am Griff oder am Titel nach unten.
 * **Alter Raum löschbar:** Ein Raum, den die Anlage nicht mehr meldet, lässt sich auf seiner Geräteseite löschen.
 * **Qualitätsstufen Bronze und Silber erfüllt:** Selbsteinschätzung in `docs/quality-scale.md`; Testabdeckung 96 % (die Tests
   auf GitHub schlagen unter 95 % fehl), neue Tests für den Weg über den Proxon-Server und die Verbindungsfehler; Änderungen

@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 
 from .const import DOMAIN
-from .registers import active_faults, t300_fault_texts
+from .registers import t300_fault_texts
 
 # same limit as the binary sensor "Filter change soon" (30 days)
 FILTER_WARN_HOURS = 30 * 24
@@ -44,7 +44,7 @@ def update_issues(hass: HomeAssistant, entry: ConfigEntry, data: dict | None) ->
         )
     else:
         ir.async_delete_issue(hass, DOMAIN, filter_id)
-    faults = active_faults(data)
+    faults = entry.runtime_data.faults()
     if faults:
         ir.async_create_issue(
             hass, DOMAIN, fault_id, is_fixable=False, is_persistent=False, severity=ir.IssueSeverity.ERROR,

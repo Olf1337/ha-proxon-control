@@ -41,7 +41,7 @@ async def test_filter_notice_comes_and_goes(hass: HomeAssistant, device) -> None
     assert ir.async_get(hass).async_get_issue(DOMAIN, f"filter_change_{entry.entry_id}") is None
 
 
-async def test_fault_sensor_and_notice(hass: HomeAssistant, device) -> None:
+async def test_fault_sensor_and_notice(hass: HomeAssistant, device, freezer) -> None:
     entry = await setup(hass)
     fault = eid(hass, "binary_sensor", "Stoerung")
     assert hass.states.get(fault).state == "off"
@@ -57,8 +57,25 @@ async def test_fault_sensor_and_notice(hass: HomeAssistant, device) -> None:
     assert state.state == "on" and state.attributes["Fehlerwort1_7"] == "0x0002"
     issue = ir.async_get(hass).async_get_issue(DOMAIN, f"unit_fault_{entry.entry_id}")
     assert issue.severity is ir.IssueSeverity.ERROR and "Fehlerwort1_7 = 0x0002" in issue.translation_placeholders["words"]
+    assert state.attributes["last_fault"]["Fehlerwort1_7"] == "0x0002"
+    # a standing fault shows only now and then in the words (30-90 s about every 10 min on a real unit): held in between
+    for minutes in (1, 13):
+        freezer.tick(timedelta(minutes=minutes))
+        coordinator.async_set_updated_data({**coordinator.data, "Fehlerwort1_7": 0.0})
+        await hass.async_block_till_done()
+        assert hass.states.get(fault).state == "on"
+        assert ir.async_get(hass).async_get_issue(DOMAIN, f"unit_fault_{entry.entry_id}") is not None
+    coordinator.async_set_updated_data({**coordinator.data, "Fehlerwort1_7": 2.0})  # reported again: held anew
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=14))
     coordinator.async_set_updated_data({**coordinator.data, "Fehlerwort1_7": 0.0})
     await hass.async_block_till_done()
+    assert hass.states.get(fault).state == "on"
+    # fifteen minutes without a fault: OK again
+    freezer.tick(timedelta(minutes=2))
+    coordinator.async_set_updated_data({**coordinator.data})
+    await hass.async_block_till_done()
+    assert hass.states.get(fault).state == "off" and hass.states.get(fault).attributes["last_fault"] is None
     assert ir.async_get(hass).async_get_issue(DOMAIN, f"unit_fault_{entry.entry_id}") is None
 
 
