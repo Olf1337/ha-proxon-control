@@ -115,10 +115,11 @@ class ProxonRoomThermostat(ProxonEntity, ClimateEntity):
         if (target := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
         try:
-            key, raw = room_write(self._data, self._room, float(target))
+            writes = room_write(self._data, self._room, float(target))
         except KeyError as err:  # the room's own base value is missing from the last reading: don't guess it
             raise HomeAssistantError(translation_domain=DOMAIN, translation_key="room_base_missing") from err
-        await self.coordinator.async_write(key, raw)
+        for key, raw in writes:
+            await self.coordinator.async_write(key, raw)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         await self.coordinator.async_write(f"NBE{self._room}PTC", 1 if hvac_mode is HVACMode.HEAT else 0)

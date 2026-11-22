@@ -346,6 +346,9 @@ ENERGY = [("EnergieGesamt", "LeistungGesamt", "energy_total"), ("EnergieKompress
           ("EnergieLueftung", "LeistungLueftung", "energy_ventilation"),
           # the hot-water module, estimated (not part of the unit's total, which the unit measures)
           ("EnergieWarmwasserWP", "LeistungWarmwasserWP", "energy_hot_water_pump"), ("EnergieHeizstab", "LeistungHeizstab", "energy_immersion_heater")]
+# the estimated hot-water counters start with what already ran today (its running time today x rated power): the power key
+# and the running time (hours today) it is taken from
+TODAY_FROM_RUNTIME = {"LeistungWarmwasserWP": "WarmwasserKompressorLaufzeitHeute", "LeistungHeizstab": "HeizstabLaufzeitHeute"}
 # a gap between two readings longer than this (or three query intervals; Home Assistant stopped, unit not reachable) isn't counted
 MAX_GAP_SECONDS = 15 * 60
 
@@ -365,6 +368,7 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
         self._kwh = 0.0
         self._last: tuple[float, float] | None = None  # (watt, monotonic time)
         self.restored = False  # the total from before a restart is back (the period sensors count from it)
+        self.taken_over: tuple[str, float] | None = None  # (day, kWh) taken over from today's running time at the start
 
     @property
     def available(self) -> bool:
@@ -374,8 +378,20 @@ class ProxonEnergy(ProxonEntity, RestoreSensor):
         await super().async_added_to_hass()
         if (last := await self.async_get_last_sensor_data()) is not None and isinstance(last.native_value, (int, float)):
             self._kwh = float(last.native_value)
+        self._take_over_today()
         self.restored = True
         self._add(time.monotonic())
+
+    def _take_over_today(self) -> None:
+        """An estimated hot-water counter that has counted nothing yet (new, or installed after the module ran today) starts
+        with what ran today before: the running time today x the rated power. Earlier days aren't known."""
+        runtime_key = TODAY_FROM_RUNTIME.get(self._power_key)
+        if runtime_key is None or self._kwh > 0:
+            return
+        hours = (self.coordinator.data or {}).get(runtime_key)
+        if isinstance(hours, (int, float)) and hours > 0:
+            self._kwh = round(hours * self.coordinator.water_rated_power()[self._power_key] / 1000, 4)
+            self.taken_over = (dt_util.now().date().isoformat(), self._kwh)
 
     def _add(self, now: float) -> None:
         watt = (self.coordinator.data or {}).get(self._power_key)
@@ -490,7 +506,12 @@ class ProxonEnergyPeriod(ProxonEntity, RestoreSensor):
             # Home Assistant off at the change, total started again) only from now
             through = self._current is not None and self._current == period_of(start_of_period - timedelta(seconds=1), self._period)
             self.counting_since = start_of_period if through and self._start is not None and self._start <= total else now
+            first, taken = self._current is None, self._total.taken_over
             self._current, self._start = current, total
+            if first and taken is not None and taken[0] == now.date().isoformat():
+                # the total started with what ran today: that belongs to this period too, counted since today's start
+                self._start = total - taken[1]
+                self.counting_since = max(start_of_period, dt_util.start_of_local_day(now))
         if self.counting_since is None:
             self.counting_since = now
         return round(total - self._start, 4)

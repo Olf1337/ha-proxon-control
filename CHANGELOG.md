@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.0.0b2 (beta):** a side room can be set to 14 °C again: the unit takes a room offset only from −3 to +3 °C, so
+for a target further away the room's base value (14–24 °C) moves, as in the Proxon app; the estimated hot-water counters
+start with what already ran on the day they were installed (running time today × rated power).
+
 **New in 1.0.0b1 (beta):** the first beta of 1.0, a two-week test before 1.0.0 (only fixes until then). In HACS: the
 integration's ⋮ → *Redownload* → choose 1.0.0b1; back the same way to 0.24.0. New: a tab "Energy" on the page "Proxon"
 (stacked columns per day or month, earlier periods from the statistics, costs so far and expected, power now, running
@@ -109,6 +113,18 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.0.0b2 (Beta)
+
+Korrekturen aus dem ersten Test der Beta an einer echten Anlage.
+
+* **Nebenräume auf 14 °C:** In 1.0.0b1 ließ sich ein Nebenraum nicht mehr als 3 °C von seinem Grundwert entfernt stellen
+  (bei Grundwert 21 °C also nicht auf 14 °C): Die Anlage nimmt die Verschiebung nur von −3 bis +3 °C an und behielt die
+  alte. Jetzt wird wie in der Proxon-App der Grundwert des Raums (14–24 °C) verschoben, die Verschiebung bleibt, wo es geht.
+* **Geschätzter Warmwasser-Verbrauch ab dem ersten Tag:** Der neue Zähler begann bei 0 und kannte nicht, was die
+  Warmwasser-Wärmepumpe und der Heizstab am Tag der Installation schon gelaufen waren (Tab „Energie“: 0,00 kWh). Ein Zähler,
+  der noch nichts gezählt hat, übernimmt jetzt beim Start die Laufzeit von heute × Nennleistung – auch bei der schon
+  installierten 1.0.0b1. Frühere Tage bleiben leer, die Laufzeit kennt die Integration nur für heute und gestern.
 
 ### Neu in Version 1.0.0b1 (Beta)
 

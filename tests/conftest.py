@@ -81,7 +81,10 @@ class FakeDevice:
             if not self.ignore_writes:
                 g = next(g for g in R.REGISTERS if g.write == (item["obj"], item["address"]))
                 v = item["value"]
-                self._pending.append([self.apply_delay, (True, *g.read), v - 65536 if v >= 32768 else v])
+                v = v - 65536 if v >= 32768 else v
+                # like a real unit: a room offset outside -3..+3 isn't taken over (the old one stays)
+                if not (g.key.endswith("OffsetTemperatur") and not -3 <= v <= 3):
+                    self._pending.append([self.apply_delay, (True, *g.read), v])
             return {"response": {"status": 0}}
         for p in list(self._pending):  # written values show up after `apply_delay` reads
             if p[0] <= 0:

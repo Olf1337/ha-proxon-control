@@ -731,12 +731,30 @@ def heating_channels(values: dict) -> list[str]:
     return [f"K{b + 1}" for b in range(10) if int(word) >> b & 1]
 
 
-def room_write(values: dict, i: int, target: float) -> tuple[str, float]:
-    """Which value to write for a new room target. Other rooms store a whole-degree offset to their own base value; without
-    that value (not in the last reading) there is nothing to write against: KeyError."""
+# other rooms: the unit takes an offset only from -3 to +3 (the room panel's LED shows offset + 4 = 1..7; a real unit kept its
+# old offset when -7 was written), and the base values the Proxon app sets lie in 14-24 °C
+ROOM_OFFSET_RANGE = (-3, 3)
+ROOM_BASE_RANGE = (14, 24)
+
+
+def room_write(values: dict, i: int, target: float) -> list[tuple[str, float]]:
+    """What to write for a new room target, in this order. Living room: its own target. Other rooms: target = own base value +
+    whole-degree offset. Within the offset range only the offset is written; further away the base value moves (as in the
+    Proxon app), keeping the offset where the base range allows. Without the base value (not in the last reading) there is
+    nothing to write against: KeyError."""
     if i == 0:
-        return "NBE0MittelTemperatur", target
-    base = values.get(f"NBE{i}MittelTemperatur")
+        return [("NBE0MittelTemperatur", target)]
+    base_key, offset_key = f"NBE{i}MittelTemperatur", f"NBE{i}OffsetTemperatur"
+    base = values.get(base_key)
     if not isinstance(base, (int, float)):
-        raise KeyError(f"NBE{i}MittelTemperatur")
-    return f"NBE{i}OffsetTemperatur", float(round(target - base))
+        raise KeyError(base_key)
+    wanted = round(target)
+    low, high = ROOM_OFFSET_RANGE
+    if low <= wanted - base <= high:
+        return [(offset_key, float(wanted - base))]
+    offset = min(max(int(values.get(offset_key) or 0), low), high)
+    new_base = min(max(wanted - offset, ROOM_BASE_RANGE[0]), ROOM_BASE_RANGE[1])
+    writes = [(base_key, float(new_base))]
+    if wanted - new_base != values.get(offset_key):
+        writes.append((offset_key, float(wanted - new_base)))
+    return writes

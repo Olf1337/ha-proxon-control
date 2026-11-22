@@ -56,3 +56,49 @@ async def test_energy_is_added_up(hass: HomeAssistant, device) -> None:
             await refresh(hass, entry)
     assert round(float(hass.states.get(eid(hass, "sensor", "EnergieWarmwasserWP")).state), 3) == 0.43
     assert round(float(hass.states.get(eid(hass, "sensor", "EnergieHeizstab")).state), 3) == 0.0
+
+
+def _ran_today(hass_storage, entry, seconds: float) -> None:
+    """The hot-water heat pump ran `seconds` today before the integration started (its running time, kept by the integration)."""
+    from homeassistant.util import dt as dt_util
+
+    hass_storage[f"{DOMAIN}.{entry.entry_id}.runtime"] = {"version": 1, "key": f"{DOMAIN}.{entry.entry_id}.runtime", "data": {
+        "WarmwasserKompressor": {"day": dt_util.now().date().isoformat(), "seconds": seconds, "on": False}}}
+
+
+async def test_new_counter_starts_with_todays_running_time(hass: HomeAssistant, device, hass_storage) -> None:
+    """Installed after the heat pump ran today: the estimate starts with that (2.2 h x 430 W), and today shows it too."""
+    from .test_integration import make_entry
+
+    entry = make_entry()
+    _ran_today(hass_storage, entry, 2.2 * 3600)
+    entry.add_to_hass(hass)
+    await setup(hass, entry)
+    total = float(hass.states.get(eid(hass, "sensor", "EnergieWarmwasserWP")).state)
+    assert round(total, 3) == 0.946
+    assert round(float(hass.states.get(eid(hass, "sensor", "EnergieWarmwasserWPHeute")).state), 3) == 0.946
+    assert round(float(hass.states.get(eid(hass, "sensor", "EnergieWarmwasserWPWoche")).state), 3) == 0.946
+    assert float(hass.states.get(eid(hass, "sensor", "EnergieHeizstab")).state) == 0  # the heater didn't run
+
+
+async def test_counter_still_at_zero_takes_over_today(hass: HomeAssistant, device, hass_storage) -> None:
+    """A counter that has counted nothing since it was created (the beta installed after the heat pump ran) takes over
+    today's running time at the next start; a counter that has counted keeps its own value."""
+    from homeassistant.core import State
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import mock_restore_cache, mock_restore_cache_with_extra_data
+
+    from .test_integration import make_entry
+
+    entry = make_entry()
+    _ran_today(hass_storage, entry, 3600)
+    today = dt_util.now().date().isoformat()
+    total_id = "sensor.proxon_energy_hot_water_heat_pump_estimated"
+    today_id = "sensor.proxon_energy_hot_water_heat_pump_today_estimated"
+    mock_restore_cache_with_extra_data(hass, [(State(total_id, "0.0"), {"native_value": 0.0, "native_unit_of_measurement": "kWh"})])
+    mock_restore_cache(hass, [State(today_id, "0.0", {"period": today, "period_start_value": 0.0})])
+    entry.add_to_hass(hass)
+    await setup(hass, entry)
+    assert eid(hass, "sensor", "EnergieWarmwasserWP") == total_id and eid(hass, "sensor", "EnergieWarmwasserWPHeute") == today_id
+    assert float(hass.states.get(total_id).state) == 0.43
+    assert float(hass.states.get(today_id).state) == 0.43

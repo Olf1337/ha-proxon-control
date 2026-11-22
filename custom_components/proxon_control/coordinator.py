@@ -113,11 +113,15 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         measure it). Only with the hot-water module."""
         if "T300Betriebsart" not in data or "T300RelaisKompressor" not in data:
             return {}
+        rated = self.water_rated_power()
+        return {"LeistungWarmwasserWP": rated["LeistungWarmwasserWP"] if data.get("T300RelaisKompressor") else 0.0,
+                "LeistungHeizstab": rated["LeistungHeizstab"] if data.get("T300RelaisHeizstab") else 0.0}
+
+    def water_rated_power(self) -> dict[str, float]:
+        """Rated power (W) of the hot-water heat pump and the immersion heater: the datasheet's, or as set in the options."""
         options = self.config_entry.options if self.config_entry else {}
-        pump = float(options.get(CONF_WATER_PUMP_POWER, DEFAULT_WATER_PUMP_POWER))
-        heater = float(options.get(CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER))
-        return {"LeistungWarmwasserWP": pump if data.get("T300RelaisKompressor") else 0.0,
-                "LeistungHeizstab": heater if data.get("T300RelaisHeizstab") else 0.0}
+        return {"LeistungWarmwasserWP": float(options.get(CONF_WATER_PUMP_POWER, DEFAULT_WATER_PUMP_POWER)),
+                "LeistungHeizstab": float(options.get(CONF_WATER_HEATER_POWER, DEFAULT_WATER_HEATER_POWER))}
 
     def faults(self) -> dict[str, int]:
         """Fault words that count as a fault (key -> 16-bit word): the ones the unit reports now, else the last ones it
