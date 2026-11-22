@@ -5,13 +5,16 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** no sliders in the settings of the page "Proxon" any more (every number with − and +, hold to
-repeat); the ready-made dashboard is deprecated (a notice under *Repairs* while it exists; it goes in 2.0); one unit per Home
-Assistant (a second one can't be added for now); a new tab "Energy" on the page (stacked columns per day or month for
-week/month/year, earlier periods from the statistics, a cost overview so far and expected, power now, running
-times); a second look "Soft" for the page (raised cards, pressed buttons), chosen under Configure; hot-water consumption estimated from running time and the datasheet; entities tidied (clearer names, four unchecked sensors removed, the pictures off for
-new installs); saved settings
-get a migration step; tests pin entities, actions, options and blueprints and open the page in a real browser.
+**New in 1.0.0b1 (beta):** the first beta of 1.0, a two-week test before 1.0.0 (only fixes until then). In HACS: the
+integration's ⋮ → *Redownload* → choose 1.0.0b1; back the same way to 0.24.0. New: a tab "Energy" on the page "Proxon"
+(stacked columns per day or month, earlier periods from the statistics, costs so far and expected, power now, running
+times); hot-water consumption estimated from running time and the T300 datasheet; a second look "Soft" for the page,
+chosen under *Configure*; every number on the page set with − and + (no sliders), the ventilation level with four
+buttons. Changed: side rooms can be set to 14–24 °C like in the Proxon app; a fault stays on until the unit has reported
+none for 15 minutes (it reports a standing fault only every few minutes); "All values" scrolls on a phone; one unit per
+Home Assistant. Removed: the four dashboard pictures and their light/dark option (the old dashboard keeps working without
+them – run *Create dashboard* once more), four unchecked sensors; the ready-made dashboard is deprecated (it goes in 2.0).
+Entities tidied with clearer names; saved settings get a migration step; quality scale Bronze and Silver.
 
 **New in 0.24.0:** on the page "Proxon", the hot-water target and the room targets are set with − and + (a swipe while
 scrolling no longer changes them); switched-on functions show as small chips in the status row of "Home" (a tap opens
@@ -107,7 +110,15 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.0.0b1 (Beta)
+
+Die erste Beta von 1.0: zwei Wochen Test, bis dahin nur noch Fehlerkorrekturen, dann 1.0.0.
+
+* **Installieren und zurück:** In HACS bei Proxon Control ⋮ → *Erneut herunterladen* → Version 1.0.0b1 wählen. Zurück
+  zu 0.24.0 genauso; Einstellungen und Räume bleiben erhalten, die entfernten Entitäten legt 0.24.0 wieder an.
+* **Wer das alte Dashboard nutzt:** nach dem Update die Aktion „Dashboard erstellen“ einmal ausführen, damit die leeren
+  Bildkarten verschwinden (siehe „Dashboard-Bilder entfernt“).
+
 
 * **Keine Schieberegler mehr in den Einstellungen:** Jeder Zahlenwert auf der Seite „Proxon“ hat − und +; gedrückt halten
   wiederholt, nach kurzer Zeit schneller. Erklärung und erlaubter Bereich stehen unter der Zeile.
@@ -162,8 +173,6 @@ nobody home).
     freigegeben“, „Legionellenschaltung der Anlage“.
   * Entfernt (alle standardmäßig aus): „T14 Sauggas (ungeprüft)“, „Betriebsstunden Warmwasser-Kompressor (ungeprüft)“,
     „Status Kompressor“, „Status Ventilatoren“. Vorhandene verschwinden beim Start; die Werte stehen weiter in der Diagnose.
-  * Die vier Bilder sind bei neuen Installationen aus (nur das abgekündigte Dashboard zeigt sie); „Dashboard erstellen“
-    schaltet sie bei Bedarf ein.
 * **Vorbereitung auf 1.0:** Gespeicherte Einstellungen bekommen einen Migrationsschritt; Tests halten Entitäten, Aktionen,
   Optionen und Vorlagen fest und öffnen die Seite „Proxon“ in einem echten Browser (dabei gefunden und behoben: eine Ansicht
   konnte nach dem Tab-Wechsel ein paar Pixel verschoben stehen bleiben).
