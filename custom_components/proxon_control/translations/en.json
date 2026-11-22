@@ -762,20 +762,6 @@
         "name": "Hot water"
       }
     },
-    "image": {
-      "picture_unit": {
-        "name": "Picture unit"
-      },
-      "picture_hot_water": {
-        "name": "Picture hot water"
-      },
-      "picture_house": {
-        "name": "Picture house"
-      },
-      "picture_floor_plan": {
-        "name": "Picture floor plan"
-      }
-    },
     "time": {
       "phase_start": {
         "name": "Phase {phase} start"
@@ -904,7 +890,6 @@
           "price_sensor": "Electricity price sensor",
           "fixed_price": "Fixed electricity price (optional)",
           "read_only": "Read only",
-          "picture_theme": "Dashboard pictures",
           "upper_floor_rooms": "Rooms on the upper floor",
           "basement_rooms": "Rooms in the basement",
           "house_photo": "House photo (optional)",
@@ -921,10 +906,9 @@
           "price_sensor": "Current price of a dynamic tariff (ct/kWh, €/kWh or €/MWh), e.g. EPEX Spot, Tibber or Nord Pool.",
           "fixed_price": "For a fixed tariff, in ct/kWh (e.g. 32.5). When it is set, it counts for all costs and a price sensor is ignored (also for \"cheap power\"). Leave empty with a dynamic tariff.",
           "read_only": "Show all values, but never change anything on the unit from Home Assistant. Operate it with the control panel or the app.",
-          "picture_theme": "Light or dark like the device showing them (automatic), or always light / always dark.",
-          "upper_floor_rooms": "These rooms are shown under \"Upper floor\" on the dashboard and in the pictures, the others (except the basement) on the ground floor. Preselected by the room names (bedrooms, children's rooms …). Choose none for a bungalow.",
-          "basement_rooms": "These rooms are shown under \"Basement\" on the dashboard and in the floor plan. Preselected by the room names (Keller, UG, hobby room, workshop …). Choose none if there is no basement.",
-          "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: the drawn house is shown.",
+          "upper_floor_rooms": "These rooms are shown under \"Upper floor\" on the dashboard, the others (except the basement) on the ground floor. Preselected by the room names (bedrooms, children's rooms …). Choose none for a bungalow.",
+          "basement_rooms": "These rooms are shown under \"Basement\" on the dashboard. Preselected by the room names (Keller, UG, hobby room, workshop …). Choose none if there is no basement.",
+          "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: no header picture.",
           "hot_water_pump_power": "For the estimated hot-water consumption (the unit doesn't measure it): the rated power while the heat pump runs. PROXON T300 datasheet: 430 W.",
           "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W.",
           "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour."
@@ -1021,13 +1005,6 @@
         "sunday": "Sunday"
       }
     },
-    "picture_theme": {
-      "options": {
-        "auto": "Automatic",
-        "light": "Light",
-        "dark": "Dark"
-      }
-    },
     "mode": {
       "options": {
         "auto": "Home network first, Proxon server as fallback",
@@ -1065,7 +1042,7 @@
     },
     "dashboard_deprecated": {
       "title": "Proxon: the ready-made dashboard is deprecated",
-      "description": "The dashboard at {url} is deprecated: the page \"Proxon\" in the sidebar shows the unit, the hot water and every room and has all settings. The dashboard keeps working until version 2.0, then the integration no longer creates or updates it. Delete it under Settings → Dashboards when you no longer need it; this notice goes away at the next start of Home Assistant."
+      "description": "The dashboard at {url} is deprecated: the page \"Proxon\" in the sidebar shows the unit, the hot water and every room and has all settings. The dashboard keeps working until version 2.0, since 1.0 without the pictures of the unit, the hot water and the house (run the action \"Create dashboard\" again to write it without them); then the integration no longer creates or updates it. Delete it under Settings → Dashboards when you no longer need it; this notice goes away at the next start of Home Assistant."
     }
   }
 }

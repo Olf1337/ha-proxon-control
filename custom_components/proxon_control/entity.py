@@ -3,6 +3,7 @@ schedule a device of its own linked to it (so rooms can be put into their areas)
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+import re
 from typing import Any
 
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -10,8 +11,22 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_BASEMENT, CONF_DEVICE_ID, CONF_UPPER_FLOOR, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL, ROOM_MODEL
 from .coordinator import ProxonCoordinator
-from .pictures import guess_floor
 from .registers import ROOM_COUNT, room_connected, room_name_from_unit, room_target
+
+# room names that usually lie upstairs (the default until the floors are chosen in the options)
+_UPPER = re.compile(r"schlaf|kind|eltern|ankleide|ober|dach|oben|\bog\b|\bdg\b|bed|kid|child|nursery|upstairs|upper|attic|loft", re.I)
+
+
+# room names that usually lie in the basement
+_BASEMENT = re.compile(r"keller|\bug\b|untergeschoss|souterrain|hobby|werkstatt|vorrat|basement|cellar|workshop", re.I)
+
+
+def guess_floor(name: str) -> int:
+    """-1 for rooms that usually lie in the basement ("Keller", "UG", hobby room, workshop), 1 for rooms that usually lie
+    upstairs (bedrooms, children's rooms, "… oben"), else 0."""
+    if _BASEMENT.search(name or ""):
+        return -1
+    return 1 if _UPPER.search(name or "") else 0
 
 
 def room_name(i: int, data: dict | None = None) -> str:

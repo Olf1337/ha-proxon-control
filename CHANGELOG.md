@@ -113,6 +113,10 @@ nobody home).
   wiederholt, nach kurzer Zeit schneller. Erklärung und erlaubter Bereich stehen unter der Zeile.
 * **Fertiges Dashboard abgekündigt:** Die Seite „Proxon“ ersetzt das Dashboard „Proxon Control“. Es funktioniert bis
   Version 2.0 weiter; solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*.
+* **Dashboard-Bilder entfernt:** Die vier Bilder (Anlage, Warmwasser, Haus, Grundriss) und die Option
+  „Dashboard-Bilder“ hell/dunkel entfallen; die Seite „Proxon“ zeigt all das selbst. Die Bild-Entitäten werden beim Start
+  gelöscht. Das alte Dashboard funktioniert weiter, aber ohne die Bilder und ohne den Tab „Haus“: die Aktion
+  „Dashboard erstellen“ noch einmal ausführen, dann ist es ohne die leeren Bildkarten neu geschrieben.
 * **Eine Anlage pro Home Assistant:** Eine zweite Anlage lässt sich nicht mehr hinzufügen (bei einer so zentralen Einheit wie
   der Heizung kommt die Unterstützung mehrerer Anlagen frühestens in einem späteren Release). Eine schon eingerichtete
   zweite Anlage bleibt bestehen.

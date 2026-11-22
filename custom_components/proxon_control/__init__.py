@@ -57,7 +57,6 @@ PLATFORMS = [
     Platform.CLIMATE,
     Platform.FAN,
     Platform.WATER_HEATER,
-    Platform.IMAGE,
     Platform.TIME,
     Platform.DATETIME,
     Platform.BUTTON,
@@ -106,6 +105,11 @@ def _remove_legacy_room_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
         # removed before 1.0: two readings whose meaning was never confirmed and two raw status words (all hidden by default)
         elif ent.domain == "sensor" and ent.unique_id.endswith(REMOVED_BEFORE_1_0):
             reg.async_remove(ent.entity_id)
+        # the dashboard pictures (unit, hot water, house, floor plan), removed in 1.0: the page "Proxon" shows all of it
+        elif ent.domain == "image":
+            reg.async_remove(ent.entity_id)
+    if "picture_theme" in entry.options:  # their light/dark option
+        hass.config_entries.async_update_entry(entry, options={k: v for k, v in entry.options.items() if k != "picture_theme"})
 
 
 @callback

@@ -1763,7 +1763,7 @@ class ProxonPanel extends HTMLElement {
   // ---------- all values of the unit or the hot water: every entity of that part, grouped, live; tap for its history ----------
   _sheetAll(kind, from) {
     const t = this.t, ents = (this._config || {}).entities || {};
-    const skip = /^(NBE\d|ZP\d|Zeitprogramm|Urlaub|Waermeelemente|Bild|Saison|Nachtkuehl|Kuehl|Nachtabsenkung|Stromkosten|Energie|Leistung)/;
+    const skip = /^(NBE\d|ZP\d|Zeitprogramm|Urlaub|Waermeelemente|Saison|Nachtkuehl|Kuehl|Nachtabsenkung|Stromkosten|Energie|Leistung)/;
     const water = /^(Warmwasser|T300|E-Heizstab|Soll-E-Heizstab|SollWasser|Legionell|PVSignal|PVFreigabe|Speicher|Solar|Preis|Boost|Energiemanager|FirmwareT300|Heizstab)/;
     const keys = Object.keys(ents).filter(k => !skip.test(k) && (kind === "water" ? water.test(k) : !water.test(k)) && this._hass.states[ents[k]]);
     const domain = k => ents[k].split(".")[0];

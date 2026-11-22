@@ -3,8 +3,7 @@ dashboard) and "Proxon Glas" (frosted glass on a deep blue-violet gradient, to c
 
 Home Assistant loads themes only from YAML files: configuration.yaml → `frontend: themes: !include_dir_merge_named themes`
 (the default configuration has that line). The action "Install glass theme" writes the theme into that folder, reloads the
-themes and switches the dashboard pictures to dark, so their texts read well on the dark glass. The dashboard's tabs name the
-theme; as long as it isn't installed they simply keep the normal look.
+themes. The dashboard's tabs name the theme; as long as it isn't installed they simply keep the normal look.
 """
 from __future__ import annotations
 

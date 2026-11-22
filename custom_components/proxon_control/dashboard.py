@@ -25,24 +25,11 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_HOUSE_PHOTO
 from .entity import house_rooms, room_floors, room_name
-from .pictures import (
-    PLAN_H,
-    PLAN_W,
-    TANK_H,
-    TANK_W,
-    UNIT_H,
-    UNIT_W,
-    house_layout,
-    house_targets,
-    plan_targets,
-    tank_targets,
-    unit_targets,
-)
 from .theme import THEME_NAME
 
 TEXT: dict[str, dict[str, Any]] = {
     "de": {
-        "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser", "house": "Haus", "plan": "Grundriss",
+        "home": "Zuhause", "settings": "Einstellungen", "unit": "Anlage", "tank": "Warmwasser",
         "rooms": "Räume", "floors": ["Erdgeschoss", "Obergeschoss", "Keller"], "now": "Jetzt", "whole": "Gesamt", "elements": "Wärmeelemente",
         "last_day": "Letzte 24 Stunden", "switches": "Schalter", "pills": {"T3Frischluft": "Außen ", "RaumMittel": "Innen ",
                                                                           "WarmwasserIstTemperatur": "Warmwasser "},
@@ -97,7 +84,7 @@ TEXT: dict[str, dict[str, Any]] = {
                  "UhrAbweichung": "Uhrabweichung", "LetzterSchreibfehler": "Letzter Schreibfehler", "FirmwareT300": "Firmware Warmwasser"},
     },
     "en": {
-        "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water", "house": "House", "plan": "Floor plan",
+        "home": "Home", "settings": "Settings", "unit": "Unit", "tank": "Hot water",
         "rooms": "Rooms", "floors": ["Ground floor", "Upper floor", "Basement"], "now": "Right now", "whole": "Total", "elements": "Heating elements",
         "last_day": "Last 24 hours", "switches": "Switches", "pills": {"T3Frischluft": "Outdoor ", "RaumMittel": "Indoor ",
                                                                        "WarmwasserIstTemperatur": "Hot water "},
@@ -179,18 +166,6 @@ def entity_ids(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, str]:
     return out
 
 
-def _area(entity_id: str, target: tuple[float, float, float, float], picture: tuple[int, int]) -> dict:
-    """An invisible tap area on a picture that opens the entity's dialog: a transparent image with the area's shape
-    (an image element reacts on its whole surface; its height follows from the shape)."""
-    x, y, w, h = target
-    shape_w, shape_h = w / 100 * picture[0], h / 100 * picture[1]
-    return {
-        "type": "image", "entity": entity_id, "tap_action": {"action": "more-info"},
-        "image": f"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {shape_w:.0f} {shape_h:.0f}'/%3E",
-        "style": {"left": f"{x:.1f}%", "top": f"{y:.1f}%", "width": f"{w:.1f}%", "cursor": "pointer"},
-    }
-
-
 def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     t = TEXT["de" if (hass.config.language or "").startswith("de") else "en"]
     ids = entity_ids(hass, entry)
@@ -209,30 +184,11 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     def number(key: str) -> list[dict]:
         return tile(key, FULL, features=[{"type": "numeric-input", "style": "buttons"}], features_position="inline")
 
-    def picture(key: str, areas: list[dict]) -> list[dict]:
-        if key not in ids:
-            return []
-        return [{"type": "picture-elements", "image_entity": ids[key], "elements": areas, "grid_options": FULL}]
-
     def heading(text: str, style: str = "title") -> dict:
         return {"type": "heading", "heading": text, "heading_style": style}
 
-    # ---- the pictures, with their tap areas ----
-    unit_areas = [_area(ids["Lueftung"], unit_targets()["unit"], (UNIT_W, UNIT_H))] if "Lueftung" in ids else []
-    tank_areas = [_area(ids["Warmwasser"], tank_targets()["tank"], (TANK_W, TANK_H))] if "Warmwasser" in ids else []
     rooms = house_rooms(data)
     floors = room_floors(entry.options, data, rooms)
-    unit_picture, tank_picture = picture("BildAnlage", unit_areas), picture("BildWarmwasser", tank_areas)
-    # the house tab: the floor plan (every floor, basement too) and the drawn house (ground and upper floor); tapping a room
-    # opens its thermostat
-    plan_areas = [_area(ids[f"NBE{i}Thermostat"], target, (PLAN_W, PLAN_H))
-                  for i, target in zip(rooms, plan_targets([room_name(i, data) for i in rooms], floors))
-                  if f"NBE{i}Thermostat" in ids]
-    drawn = [(i, f) for i, f in zip(rooms, floors) if f >= 0]  # a basement isn't part of the drawn house
-    layout = house_layout([f for _i, f in drawn])
-    house_areas = [_area(ids[f"NBE{i}Thermostat"], target, (layout.width, layout.height))
-                   for (i, _f), target in zip(drawn, house_targets([f for _i, f in drawn])) if f"NBE{i}Thermostat" in ids]
-    plan_picture, house_picture = picture("BildGrundriss", plan_areas), picture("BildHaus", house_areas)
 
     # ---- what several tabs use ----
     def go(path: str) -> dict:
@@ -329,10 +285,10 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
         {"type": "grid", "column_span": 4, "cards": figures(4), "visibility": WIDE},
         {"type": "grid", "cards": [*ventilation, *functions], "visibility": WIDE},
         {"type": "grid", "column_span": 2, "cards": room_cards({"columns": 12}), "visibility": WIDE},
-        {"type": "grid", "cards": [*unit_picture, *tank_short, *air_block], "visibility": WIDE},
+        {"type": "grid", "cards": [*tank_short, *air_block], "visibility": WIDE},
         {"type": "grid", "cards": [*figures(2), *hero, *ventilation], "visibility": NARROW},
         {"type": "grid", "cards": room_cards(FULL), "visibility": NARROW},
-        {"type": "grid", "cards": [*tank_short, *functions, *unit_picture, *air_block],
+        {"type": "grid", "cards": [*tank_short, *functions, *air_block],
          "visibility": NARROW},
     ]
     # at the top: operating mode, ventilation level, connection, fault
@@ -361,7 +317,6 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     water_auto = [c for key in ("Energiemanager", "BoostStatus", "LegionellenStatus")
                   for c in tile(key, FULL, name=t["auto_names"][key], tap_action=go("proxon-optimize"))]
     hot_water: list[dict[str, Any]] = [
-        {"type": "grid", "cards": tank_picture},
         {"type": "grid", "cards": water},
         {"type": "grid", "cards": [*water_settings, *([heading(t["automatic"]), *water_auto] if water_auto else [])]
          if len(water_settings) > 1 or water_auto else []},
@@ -470,10 +425,6 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     settings = [{"type": "grid", "cards": cards}
                 for cards in (limits, schedule, holiday_plan, heating, unit, runtime, diagnostics) if len(cards) > 1]
 
-    # (the drawn house has its title in the picture)
-    house_view = [{"type": "grid", "cards": [heading(t["plan"]), *plan_picture] if plan_picture else []},
-                  {"type": "grid", "cards": house_picture}]
-
     def view(title: str, path: str, icon: str, sections: list[dict], columns: int = 3, **extra) -> list[dict]:
         sections = [s for s in sections if s["cards"]]
         if not sections:
@@ -484,7 +435,6 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     return {"views": [
         *view(t["home"], "proxon", "mdi:home-thermometer-outline", home, 4, dense_section_placement=True,
               **({"badges": badges} if badges else {})),
-        *view(t["house"], "proxon-house", "mdi:floor-plan", house_view, 2),
         *view(t["tank"], "proxon-hot-water", "mdi:water-boiler", hot_water),
         *view(t["optimize"], "proxon-optimize", "mdi:leaf", optimize_view),
         *view(t["energy"], "proxon-energy", "mdi:lightning-bolt-outline", energy_view),

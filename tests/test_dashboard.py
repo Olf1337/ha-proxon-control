@@ -1,145 +1,17 @@
-"""Dashboard pictures (unit, hot water, house) and the ready-made dashboard."""
+"""The ready-made dashboard (deprecated since 1.0), the floors of the rooms, and the removal of the dashboard pictures."""
 from __future__ import annotations
 
-import time
 from unittest.mock import patch
-import xml.dom.minidom
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.yaml import dump, parse_yaml
 import pytest
 
-from custom_components.proxon_control import image as image_module
 from custom_components.proxon_control.const import DOMAIN
-from custom_components.proxon_control.pictures import (
-    LABELS,
-    PLAN_H,
-    PLAN_W,
-    Room,
-    guess_floor,
-    house_layout,
-    house_svg,
-    house_targets,
-    plan_layout,
-    plan_svg,
-    plan_targets,
-    room_kind,
-    tank_svg,
-    tank_targets,
-    unit_svg,
-    unit_targets,
-)
+from custom_components.proxon_control.entity import guess_floor
 
 from .test_integration import call, eid, make_entry, setup
-
-DATA = {
-    "Betriebsart": 3.0, "Luefterstufe": 1.0, "IstLuefterstufe": 2.0, "T3Frischluft": 7.6, "T1Zuluft": 19.7, "T7Abluft": 23.1,
-    "T4Fortluft": 9.0, "DrehzahlKompressor": 0.0, "Kuehlbetrieb4Wegeventil": 0.0, "FilterRestStunden": 3244.0,
-    "WarmwasserIstTemperatur": 41.1, "SollWassertemperatur": 46.0, "E-Heizstab": 0.0, "T300Betriebsart": 1.0, "Soll-E-Heizstab-Temperatur": 44.0,
-}
-
-
-
-@pytest.fixture(autouse=True)
-def pictures_on(monkeypatch):
-    """The pictures are off for new installs since 1.0; these tests are about them, so they are on (as for an install from
-    before, or after the action "create dashboard")."""
-    monkeypatch.setattr(image_module.ProxonPicture, "_attr_entity_registry_enabled_default", True)
-
-def valid(svg: str) -> str:
-    xml.dom.minidom.parseString(svg)  # well-formed
-    return svg
-
-
-# ---------------- pictures ----------------
-def test_unit_picture_shows_the_values_and_turns_the_fans() -> None:
-    svg = valid(unit_svg(DATA, "de"))
-    for text in ("Außenluft", "7,6°", "Zuluft", "19,7°", "Abluft", "23,1°", "Fortluft", "9,0°", "ECO Komfort", "Stufe 2", "135 Tage"):
-        assert text in svg, text
-    assert 'class="spin" style="animation-duration:1.20s"' in svg  # level 2: one turn in 1.2 s
-    assert 'class="flow"' in svg  # air moving
-    off = valid(unit_svg({**DATA, "Betriebsart": 0.0}, "de"))
-    assert 'class="spin"' not in off and 'class="flow"' not in off  # unit off: nothing moves
-
-
-def test_unit_picture_heat_pump_and_chips() -> None:
-    svg = valid(unit_svg({**DATA, "DrehzahlKompressor": 4010.0}, "en"))
-    assert "Heating" in svg and "4010 rpm" in svg and "animation-duration:0.60s" in svg
-    assert "Cooling" in valid(unit_svg({**DATA, "DrehzahlKompressor": 4010.0, "Kuehlbetrieb4Wegeventil": 1.0}, "en"))
-    chips = valid(unit_svg({**DATA, "Intensivlueftung": 1.0}, "de", cooling_status="cooling", fault=True))
-    assert "Nachtkühlung: kühlt" in chips and "Intensivlüftung" in chips and "Störung" in chips
-    assert "Nachtkühlung" not in valid(unit_svg(DATA, "de"))  # only when switched on
-
-
-def test_tank_picture() -> None:
-    svg = valid(tank_svg(DATA, "de", 40, energy_status="waiting", boost_status="off"))
-    assert ">46°<" in svg and "41,1°" in svg and "Heizstab aus" in svg and "Heizstab-Soll" in svg and "44°" in svg
-    assert "Solar: wartet" in svg and "Boost: aus (&lt; 40°)" in svg
-    assert 'class="glow"' not in svg
-    on = valid(tank_svg({**DATA, "E-Heizstab": 1.0}, "de", energy_status="heating_price"))
-    assert 'class="glow"' in on and "Heizstab an" in on and "Günstiger Strom: heizt" in on
-    assert "Solar" not in valid(tank_svg(DATA, "de"))  # no chips while the functions are off
-
-
-def test_pictures_follow_light_and_dark() -> None:
-    auto = unit_svg(DATA, "de")
-    assert "prefers-color-scheme:dark" in auto and "--fg:#1f2933" in auto and "--fg:#e6eaee" in auto
-    dark = unit_svg(DATA, "de", "dark")
-    assert "prefers-color-scheme" not in dark and "--fg:#e6eaee" in dark and "--fg:#1f2933" not in dark
-    light = house_svg([Room("A", 21.0, 21.0, False)], 5.0, "de", "light")
-    assert "prefers-color-scheme" not in light and "--fg:#1f2933" in light
-    assert '<rect width="800"' not in auto and 'fill="#eef1f4"' not in auto  # transparent: no background, the card's colour shows
-
-
-def test_tank_in_section() -> None:
-    """The T300 cut open: the two sensors, the charge, the rod glows while its relay is on, the fan turns while the compressor runs."""
-    data = {**DATA, "WarmwasserUntenTemperatur": 30.0, "WarmwasserLadezustand": 64.0, "T300RelaisKompressor": 1.0,
-            "T300RelaisHeizstab": 0.0, "E-Heizstab": 1.0}
-    svg = valid(tank_svg(data, "de"))
-    assert "Mitte" in svg and "Unten" in svg and "30,0°" in svg and "Ladezustand 64 %" in svg
-    assert "Wärmepumpe an" in svg and 'class="spin"' in svg
-    assert "Heizstab an" in svg and 'class="glow"' not in svg  # released, but its relay is off: it doesn't heat
-    heating = valid(tank_svg({**data, "T300RelaisHeizstab": 1.0}, "de"))
-    assert 'class="glow"' in heating and "heizt" in heating
-    plain = valid(tank_svg(DATA, "de"))  # no bottom sensor, no relays reported
-    assert "Unten" not in plain and "Wärmepumpe" not in plain and 'class="spin"' not in plain
-
-
-def test_house_picture_lays_out_any_number_of_rooms() -> None:
-    rooms = [Room(f"Raum {i}", t, 22.0, i == 2) for i, t in enumerate((20.0, 21.5, 22.0, 22.5, 23.5, 24.0))]
-    svg = valid(house_svg(rooms, 7.6, "de"))
-    assert svg.count('class="flame"') == 1 and "Raum 5" in svg
-    assert 'class="r-cold sep"' in svg and 'class="r-fine sep"' in svg and 'class="r-warm sep"' in svg  # too cold, fine, too warm
-    assert "zu kalt" in svg and "antippen zum Einstellen" in svg and "Lüftungsanlage" in svg and "Innen 22,3°" in svg
-    assert "Obergeschoss" not in svg  # one floor: no floor names
-    big = valid(house_svg([Room(f"R{i}", 21.0, 21.0, False) for i in range(14)], None, "en"))
-    assert "R13" in big
-    assert valid(house_svg([Room("Küche & <Bad>", None, None, False)], None, "de"))  # names are escaped, missing values shown as –
-
-
-def test_house_with_two_floors() -> None:
-    rooms = [Room("Wohnen", 22.0, 22.0, False, 0), Room("Küche", 21.0, 21.0, False, 0), Room("Kind", 20.0, 22.0, True, 1)]
-    svg = valid(house_svg(rooms, 5.0, "de"))
-    assert "Erdgeschoss" in svg and "Obergeschoss" in svg and "Kind" in svg
-    assert svg.count('class="flow"') >= 4  # supply air into every room, up to the upper floor, extract air back
-    still = valid(house_svg(rooms, 5.0, "de", running=False))
-    assert 'class="flow"' not in still  # ventilation off: the air stands still
-
-
-def test_room_labels_never_overlap() -> None:
-    """However many rooms on however many floors: the labels (also the tap areas) don't cover each other."""
-    for n in range(1, 22):
-        for upper in {0, n // 3, n // 2, n}:
-            floors = [1 if i < upper else 0 for i in range(n)]
-            lay = house_layout(floors)
-            boxes = lay.labels
-            assert len(boxes) == n
-            for k, (x, y, w, h) in enumerate(boxes):
-                assert 0 <= x and x + w <= lay.width and 0 <= y and y + h <= lay.height  # inside the picture
-                for x2, y2, w2, h2 in boxes[k + 1:]:
-                    assert x + w <= x2 or x2 + w2 <= x or y + h <= y2 or y2 + h2 <= y, (n, upper)
-    assert house_layout([0, 0, 0]).style == LABELS[0][0]  # few rooms: the full labels with the target
 
 
 def test_floor_guess() -> None:
@@ -147,115 +19,11 @@ def test_floor_guess() -> None:
     assert [guess_floor(n) for n in names] == [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
 
 
-def test_tap_areas_match_the_drawing() -> None:
-    floors = [0, 1, 0, 1, 1, 0]
-    lay = house_layout(floors)
-    svg = house_svg([Room(f"R{i}", 21.0, 21.0, False, f) for i, f in enumerate(floors)], None, "de")
-    assert f'viewBox="0 0 {lay.width} {lay.height}"' in svg
-    for (x, y, w, h), (cx, cy, pw, ph) in zip(lay.labels, house_targets(floors)):
-        assert abs(cx / 100 * lay.width - (x + w / 2)) < 0.5 and abs(cy / 100 * lay.height - (y + h / 2)) < 0.5
-        assert abs(pw / 100 * lay.width - w) < 0.5 and abs(ph / 100 * lay.height - h) < 0.5
-        assert f'<rect x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}"' in svg  # the label is drawn right there
-    assert len(house_targets([0] * 14)) == 14
-    assert unit_targets()["unit"][:2] == (50.0, 50.0)
-    assert 0 < tank_targets()["tank"][0] < 100
-
-
-def test_floor_plan() -> None:
-    """The rooms from above: floors and furniture by kind, labels with target and flame, too cold / too warm marked."""
-    rooms = [Room("Wohnen", 22.7, 23.0, False, 0), Room("Küche & Essen", 22.0, 22.0, False, 0), Room("Bad", 20.0, 22.5, True, 0),
-             Room("Schlafen", 24.0, 22.0, False, 1), Room("Kind 1", None, None, False, 1)]
-    svg = valid(plan_svg(rooms, "de"))
-    assert f'viewBox="0 0 {PLAN_W} {PLAN_H}"' in svg
-    assert "Küche &amp; Essen" in svg and "22,7°" in svg and "Soll 23°" in svg and "Soll 22,5°" in svg and "–" in svg
-    assert svg.count('class="flame"') == 1  # the bath heats
-    assert 'stroke="#4f97e8"' in svg and 'stroke="#f07a3a"' in svg  # the bath too cold, the bedroom too warm
-    assert "url(#wood)" in svg and "url(#tile)" in svg and "Erdgeschoss" in svg and "Obergeschoss" in svg
-    one_floor = valid(plan_svg([Room("Wohnen", 21.0, 21.0, False)], "en"))
-    assert "Ground floor" not in one_floor  # one floor: no floor names
-    assert valid(plan_svg([], "de"))
-
-
-def test_room_kinds() -> None:
-    kinds = [room_kind(n)[0] for n in ("Wohnzimmer", "Wohn-/Esszimmer", "Gäste-WC", "Gästebad", "Gästezimmer", "Bad oben", "Kind 2",
-                                       "Schlafen", "Diele", "Arbeitszimmer", "Hauswirtschaft", "Küche", "Hobbyraum")]
-    assert kinds == ["living", "living", "wc", "bath", "guest", "bath", "child", "bedroom", "hall", "office", "utility", "kitchen", "room"]
-
-
-def test_floor_plan_rooms_and_labels() -> None:
-    """Rooms fill the plan without overlapping, labels sit inside their room; tap areas are the rooms."""
-    for n in range(1, 22):
-        for upper in {0, n // 2}:
-            names = [f"Raum {i}" for i in range(n)]
-            floors = [1 if i < upper else 0 for i in range(n)]
-            lay = plan_layout(names, floors)
-            area = sum(w * h for _x, _y, w, h in lay.rooms)
-            assert abs(area - (PLAN_W - 28) * (PLAN_H - 28)) < 2  # the rooms cover the plan
-            for (x, y, w, h), (lx, ly, lw, lh), style in zip(lay.rooms, lay.labels, lay.styles):
-                if style != "mini":
-                    assert x < lx and lx + lw < x + w and y < ly and ly + lh < y + h, (n, upper)
-            for k, (x, y, w, h) in enumerate(lay.rooms):
-                for x2, y2, w2, h2 in lay.rooms[k + 1:]:
-                    assert x + w <= x2 + 0.01 or x2 + w2 <= x + 0.01 or y + h <= y2 + 0.01 or y2 + h2 <= y + 0.01
-    names, floors = ["Wohnen", "Bad", "Kind"], [0, 0, 1]
-    lay = plan_layout(names, floors)
-    for (x, y, w, h), (cx, cy, pw, ph) in zip(lay.rooms, plan_targets(names, floors)):
-        assert abs(cx / 100 * PLAN_W - (x + w / 2)) < 0.5 and abs(cy / 100 * PLAN_H - (y + h / 2)) < 0.5
-        assert abs(pw / 100 * PLAN_W - (w - 8)) < 0.5 and abs(ph / 100 * PLAN_H - (h - 8)) < 0.5
-
-
-# ---------------- in Home Assistant ----------------
-async def test_picture_entities(hass: HomeAssistant, device, hass_client) -> None:
-    await setup(hass)
-    client = await hass_client()
-    # values of the simulated unit (the test system runs in English)
-    for key, expected in (("BildAnlage", "Outdoor air"), ("BildWarmwasser", "36,0°"), ("BildHaus", "Schlafzimmer"),
-                          ("BildGrundriss", "Wohnzimmer")):
-        entity_id = eid(hass, "image", key)
-        resp = await client.get(f"/api/image_proxy/{entity_id}")
-        assert resp.status == 200 and resp.content_type == "image/svg+xml"
-        body = await resp.text()
-        valid(body)
-        assert expected in body, key
-
-
-async def test_pictures_reload_calmly(hass: HomeAssistant, device) -> None:
-    """Changed temperatures are shown at most once a minute (a new picture restarts the animations); a switch right away."""
-    entry = await setup(hass)
-    entity_id = eid(hass, "image", "BildAnlage")
-    coordinator = entry.runtime_data
-    before = hass.states.get(entity_id).state
-    coordinator.async_set_updated_data(dict(coordinator.data))  # same values
-    await hass.async_block_till_done()
-    assert hass.states.get(entity_id).state == before
-    coordinator.async_set_updated_data({**coordinator.data, "T3Frischluft": 3.5})  # only a temperature
-    await hass.async_block_till_done()
-    assert hass.states.get(entity_id).state == before
-    coordinator.async_set_updated_data({**coordinator.data, "Betriebsart": 2.0})  # something switched
-    await hass.async_block_till_done()
-    switched = hass.states.get(entity_id).state
-    assert switched != before
-    with patch.object(image_module.time, "monotonic", return_value=time.monotonic() + 61):
-        coordinator.async_set_updated_data({**coordinator.data, "T3Frischluft": 2.0})  # a minute later
-        await hass.async_block_till_done()
-    assert hass.states.get(entity_id).state != switched
-
-
-async def test_picture_theme_option(hass: HomeAssistant, device, hass_client) -> None:
-    entry = make_entry()
-    entry.add_to_hass(hass)
-    hass.config_entries.async_update_entry(entry, options={"picture_theme": "dark"})
-    await setup(hass, entry)
-    client = await hass_client()
-    body = await (await client.get(f"/api/image_proxy/{eid(hass, 'image', 'BildHaus')}")).text()
-    assert "--fg:#e6eaee" in body and "prefers-color-scheme" not in body
-
 
 async def test_switching_on_without_a_sensor_is_refused(hass: HomeAssistant, device) -> None:
     """Without the sensor it needs, a function isn't switched on (it would be on and never heat): a message says where to
     choose the sensor. With a fixed electricity price there are no cheap hours."""
     from homeassistant.exceptions import ServiceValidationError
-    import pytest
 
     entry = await setup(hass)
     solar, cheap = eid(hass, "switch", "SolarWarmwasser"), eid(hass, "switch", "PreisWarmwasser")
@@ -291,10 +59,9 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert parse_yaml(dump(dashboard)) == dashboard
     views = dashboard["views"]
     # one tab for each thing to do: home, hot water, optimisation, power, settings
-    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-optimize", "proxon-energy",
-                                         "proxon-settings"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-hot-water", "proxon-optimize", "proxon-energy", "proxon-settings"]
     assert all(v["type"] == "sections" for v in views)
-    home, house_tab, water, optimize, energy, settings = views
+    home, water, optimize, energy, settings = views
 
     def cards(view: dict) -> list[dict]:
         out = []
@@ -303,21 +70,8 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
         return out
 
     assert all(v["theme"] == "Proxon Bento" for v in views)  # the bento look (normal look until the theme is installed)
-    pictures = {c["image_entity"]: c for v in views for c in cards(v) if c["type"] == "picture-elements" and "image_entity" in c}
-    assert set(pictures) == {eid(hass, "image", k) for k in ("BildAnlage", "BildWarmwasser", "BildGrundriss", "BildHaus")}
-    # tapping: the unit opens the ventilation, the tank the hot water, every room its thermostat (house and floor plan)
-    targets = {k: [e["entity"] for e in c["elements"]] for k, c in pictures.items()}
-    assert targets[eid(hass, "image", "BildAnlage")] == [eid(hass, "fan", "Lueftung")]
-    assert targets[eid(hass, "image", "BildWarmwasser")] == [eid(hass, "water_heater", "Warmwasser")]
-    thermostats = [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1, 4)]
-    assert sorted(targets[eid(hass, "image", "BildGrundriss")]) == sorted(thermostats)
-    assert sorted(targets[eid(hass, "image", "BildHaus")]) == sorted(thermostats)
-    # the house tab: the floor plan with its heading, then the drawn house (its title is in the picture)
-    assert house_tab["max_columns"] == 2
-    assert [[c.get("image_entity") or c["heading"] for c in s["cards"]] for s in house_tab["sections"]] == [
-        ["Floor plan", eid(hass, "image", "BildGrundriss")], [eid(hass, "image", "BildHaus")]]
-    assert all(e["type"] == "image" and e["tap_action"]["action"] == "more-info" for c in pictures.values() for e in c["elements"])
-
+    # no pictures any more (removed in 1.0): no picture cards, no tab for the drawn house
+    assert not [c for v in views for c in cards(v) if "image_entity" in c]
     # ---- home ----
     wide = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(min-width: 1024px)"}]]
     narrow = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(max-width: 1023px)"}]]
@@ -355,9 +109,8 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert element["tap_action"] == {"action": "more-info", "entity": eid(hass, "climate", "NBE4Thermostat")}
     assert all(st["grid_options"] == {"columns": 12} for st in stacks)  # two rooms side by side
     assert {"Ground floor", "Upper floor"} <= {c["heading"] for c in cards(home) if c["type"] == "heading"}
-    # floor plan and drawn house are gone from home; the unit, hot water in short and the air on the right
-    assert not {eid(hass, "image", "BildHaus"), eid(hass, "image", "BildGrundriss")} & {c.get("image_entity") for c in cards(home)}
-    assert side["cards"][0]["image_entity"] == eid(hass, "image", "BildAnlage")
+    # hot water in short and the air on the right
+    assert side["cards"][0]["heading"] == "Hot water"
     short = next(c for c in side["cards"] if c.get("entity") == eid(hass, "water_heater", "Warmwasser"))
     assert short["tap_action"] == {"action": "navigate", "navigation_path": "proxon-hot-water"}
     assert home["dense_section_placement"] is True and home["max_columns"] == 4
@@ -429,7 +182,6 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     every = {c.get("entity") for v in views for c in cards(v)} | {r["entity"] for v in views for c in cards(v) for r in c.get("entities", [])
                                                                   if isinstance(r, dict)}
     every |= {e for v in views for c in cards(v) if c["type"] == "history-graph" for e in c["entities"] if isinstance(e, str)}
-    every |= set(sum(targets.values(), []))
     assert all(e is None or hass.states.get(e) is not None for e in every)
 
 
@@ -461,12 +213,14 @@ async def test_indoor_average(hass: HomeAssistant, device) -> None:
     assert state.attributes["unit_of_measurement"] == "°C"
 
 
-async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device, hass_client) -> None:
+async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device) -> None:
     entry = await setup(hass)
-    client = await hass_client()
 
-    async def house() -> str:
-        return await (await client.get(f"/api/image_proxy/{eid(hass, 'image', 'BildHaus')}")).text()
+    async def house() -> list[str]:
+        """The floor headings over the rooms of the dashboard."""
+        dashboard = await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
+        rooms = next(s for s in dashboard["views"][0]["sections"] if s.get("column_span") == 2)
+        return [c["heading"] for c in rooms["cards"] if c["type"] == "heading"]
 
     assert "Upper floor" in await house()  # guessed from the names: the bedroom lies upstairs
     result = await hass.config_entries.options.async_init(entry.entry_id)
@@ -490,14 +244,11 @@ async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device
 
 
 async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> None:
-    """The action writes the themes into the themes folder (Bento with light and dark, and Glas); the pictures follow the
-    device like the theme; it tells whether the themes load."""
+    """The action writes the themes into the themes folder (Bento with light and dark, and Glas); it tells whether the themes
+    load."""
     from .test_integration import make_entry
 
-    entry = make_entry()
-    entry.add_to_hass(hass)
-    hass.config_entries.async_update_entry(entry, options={"picture_theme": "dark"})  # set by the glass theme of earlier versions
-    await setup(hass, entry)
+    await setup(hass, make_entry())
     hass.config.config_dir = str(tmp_path)
     answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
     themes = parse_yaml((tmp_path / "themes" / "proxon_control.yaml").read_text(encoding="utf-8"))
@@ -507,7 +258,6 @@ async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> Non
     assert bento["modes"]["light"]["ha-card-background"] == "#ffffff" and bento["modes"]["dark"]["ha-card-background"] == "#1b1e1b"
     assert themes["Proxon Glas"]["primary-text-color"] == "#f3f5ff"
     assert answer["installed"] is False and "configuration.yaml" in answer["message"]  # this test system loads no themes folder
-    assert "picture_theme" not in entry.options  # light or dark like the device
     with patch("custom_components.proxon_control.services.async_install_theme", return_value=True):
         answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
     assert answer["installed"] is True and answer["theme"] == "Proxon Bento"
@@ -528,8 +278,7 @@ async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant,
     assert proxon["title"] == "Proxon Control" and proxon["show_in_sidebar"] is True and proxon["mode"] == "storage"
     await client.send_json_auto_id({"type": "lovelace/config", "url_path": "proxon-dashboard"})
     views = (await client.receive_json())["result"]["views"]
-    assert [v["path"] for v in views] == ["proxon", "proxon-house", "proxon-hot-water", "proxon-optimize", "proxon-energy",
-                                         "proxon-settings"]
+    assert [v["path"] for v in views] == ["proxon", "proxon-hot-water", "proxon-optimize", "proxon-energy", "proxon-settings"]
     # the next run writes it anew instead of creating a second one
     answer = await hass.services.async_call(DOMAIN, "create_dashboard", {}, blocking=True, return_response=True)
     assert answer["created"] is False and "replaced" in answer["message"]
@@ -564,7 +313,6 @@ async def test_old_dashboard_title_is_renamed(hass: HomeAssistant, device, hass_
 async def test_create_dashboard_without_dashboards(hass: HomeAssistant, device) -> None:
     """Without Home Assistant's dashboards the action says how to paste it instead."""
     from homeassistant.exceptions import ServiceValidationError
-    import pytest
 
     await setup(hass)
     with pytest.raises(ServiceValidationError, match="paste only"):
@@ -572,22 +320,8 @@ async def test_create_dashboard_without_dashboards(hass: HomeAssistant, device) 
 
 
 # ---------------- basement ----------------
-def test_basement_by_name_and_in_the_plan() -> None:
-    from custom_components.proxon_control.pictures import Room, guess_floor, house_svg, plan_layout, plan_svg
-
+def test_basement_by_name() -> None:
     assert [guess_floor(n) for n in ("Keller", "Hobbyraum", "UG Werkstatt", "Schlafen", "Wohnen", "Basement")] == [-1, -1, -1, 1, 0, -1]
-    names = ["Wohnen", "Küche", "Schlafen", "Kind", "Hobbyraum", "Keller"]
-    floors = [0, 0, 1, 1, -1, -1]
-    lay = plan_layout(names, floors)
-    # three bands from the top: ground floor, upper floor, basement, filling the plan without gaps
-    assert [b[0] for b in lay.bands] == [0, 1, -1]
-    assert all(abs(a[2] - b[1]) < 0.01 for a, b in zip(lay.bands, lay.bands[1:]))
-    hobby = lay.rooms[4]
-    assert lay.bands[2][1] - 0.01 <= hobby[1] < lay.bands[2][2]
-    rooms = [Room(n, 21.0, 21.0, False, f) for n, f in zip(names, floors)]
-    assert ">Keller<" in plan_svg(rooms, "de")  # the band's name tag
-    # the drawn house shows ground and upper floor only
-    assert "Hobbyraum" not in house_svg(rooms, 5.0, "de") and "Schlafen" in house_svg(rooms, 5.0, "de")
 
 
 async def test_basement_in_the_options_and_on_the_dashboard(hass: HomeAssistant, device) -> None:
@@ -604,14 +338,10 @@ async def test_basement_in_the_options_and_on_the_dashboard(hass: HomeAssistant,
     assert headings == ["Ground floor", "Upper floor", "Basement"]
     last = [c for c in rooms["cards"] if c["type"] == "vertical-stack"][-1]
     assert last["cards"][0]["entity"] == eid(hass, "sensor", "NBE4Temperatur")  # the bathroom, now in the basement
-    # the house tab: the basement on the floor plan, not in the drawn house (it isn't drawn there)
-    plan, house = (s["cards"][-1] for s in dashboard["views"][1]["sections"])
-    assert eid(hass, "climate", "NBE4Thermostat") in [e["entity"] for e in plan["elements"]]
-    assert [e["entity"] for e in house["elements"]] == [eid(hass, "climate", f"NBE{n}Thermostat") for n in (0, 1)]
 
 
 def test_room_chosen_for_both_floors_counts_as_upstairs() -> None:
-    """A room in both lists of the options (upper floor and basement) is drawn and listed upstairs."""
+    """A room in both lists of the options (upper floor and basement) is listed upstairs."""
     from custom_components.proxon_control.entity import room_floors
 
     data = {f"NBE{n}name": name for n, name in ((1, "Arbeitszimmer"), (2, "Hobbyraum"), (3, "Schlafen"))}
@@ -661,15 +391,16 @@ async def test_ready_made_dashboard_is_deprecated(hass: HomeAssistant, device, h
 
 
 
-async def test_pictures_off_for_new_installs_until_the_dashboard_is_made(hass: HomeAssistant, device, monkeypatch) -> None:
-    """Since 1.0 the pictures are off for a new install (the page "Proxon" doesn't need them); the dashboard action switches
-    them on, because the dashboard shows them."""
+async def test_pictures_of_earlier_versions_are_removed(hass: HomeAssistant, device) -> None:
+    """The dashboard pictures were removed in 1.0: their entities and their light/dark option go at the next start."""
     from homeassistant.helpers import entity_registry as er
 
-    monkeypatch.setattr(image_module.ProxonPicture, "_attr_entity_registry_enabled_default", False)
-    entry = await setup(hass)
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"picture_theme": "dark", "scan_interval": 10})
     reg = er.async_get(hass)
-    pictures = [e for e in er.async_entries_for_config_entry(reg, entry.entry_id) if e.domain == "image"]
-    assert pictures and all(e.disabled_by is er.RegistryEntryDisabler.INTEGRATION for e in pictures)
-    await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True)
-    assert all(reg.async_get(e.entity_id).disabled_by is None for e in pictures)
+    old = reg.async_get_or_create("image", DOMAIN, f"{entry.unique_id}_BildAnlage", config_entry=entry)
+    await setup(hass, entry)
+    assert reg.async_get(old.entity_id) is None
+    assert not [e for e in er.async_entries_for_config_entry(reg, entry.entry_id) if e.domain == "image"]
+    assert entry.options == {"scan_interval": 10}

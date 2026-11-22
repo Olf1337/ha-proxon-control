@@ -35,7 +35,6 @@ from .const import (
     CONF_MODE,
     CONF_PANEL_LOOK,
     CONF_PASSWORD,
-    CONF_PICTURE_THEME,
     CONF_PORT,
     CONF_PRICE_SENSOR,
     CONF_READ_ONLY,
@@ -49,7 +48,6 @@ from .const import (
     CONNECTION_DIRECT,
     DEFAULT_MODE,
     DEFAULT_PANEL_LOOK,
-    DEFAULT_PICTURE_THEME,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_WATER_HEATER_POWER,
@@ -61,11 +59,9 @@ from .const import (
     MIN_SCAN_INTERVAL,
     MODES,
     PANEL_LOOKS,
-    PICTURE_THEMES,
 )
-from .entity import house_rooms, room_name
+from .entity import guess_floor, house_rooms, room_name
 from .nabto import library_supported
-from .pictures import guess_floor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,8 +92,6 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                     data[key] = int(user_input[key])
             if user_input.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK) != DEFAULT_PANEL_LOOK:
                 data[CONF_PANEL_LOOK] = user_input[CONF_PANEL_LOOK]
-            if user_input.get(CONF_PICTURE_THEME, DEFAULT_PICTURE_THEME) != DEFAULT_PICTURE_THEME:
-                data[CONF_PICTURE_THEME] = user_input[CONF_PICTURE_THEME]
             rooms = self._rooms()
             for key, floor in ((CONF_UPPER_FLOOR, 1), (CONF_BASEMENT, -1)):  # kept only when it differs from the guess
                 if rooms and key in user_input:
@@ -130,7 +124,7 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         )
         rooms = self._rooms()
         house: dict[Any, Any] = {}
-        if rooms:  # which rooms lie upstairs and in the basement (rooms on the dashboard, the pictures)
+        if rooms:  # which rooms lie upstairs and in the basement (rooms on the dashboard)
             for key in (CONF_UPPER_FLOOR, CONF_BASEMENT):
                 house[vol.Optional(key)] = SelectSelector(SelectSelectorConfig(
                     options=[SelectOptionDict(value=i, label=name) for i, name in rooms.items()], multiple=True,
@@ -164,10 +158,6 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 vol.Optional(CONF_PANEL_LOOK, default=DEFAULT_PANEL_LOOK): SelectSelector(
                     SelectSelectorConfig(options=PANEL_LOOKS, mode=SelectSelectorMode.LIST, translation_key=CONF_PANEL_LOOK)
                 ),
-                # dashboard pictures: light / dark
-                vol.Optional(CONF_PICTURE_THEME, default=DEFAULT_PICTURE_THEME): SelectSelector(
-                    SelectSelectorConfig(options=PICTURE_THEMES, mode=SelectSelectorMode.DROPDOWN, translation_key=CONF_PICTURE_THEME)
-                ),
                 **house,
             }
         )
@@ -181,7 +171,7 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
         return self.async_show_form(step_id="init", data_schema=self.add_suggested_values_to_schema(schema, current), errors=errors)
 
     def _rooms(self) -> dict[str, str]:
-        """Room number -> name of the rooms in the house picture (empty while the integration isn't loaded)."""
+        """Room number -> name of the rooms with a thermostat (empty while the integration isn't loaded)."""
         coordinator = getattr(self.config_entry, "runtime_data", None)
         data = getattr(coordinator, "data", None) or {}
         return {str(i): room_name(i, data) for i in house_rooms(data)} if data else {}

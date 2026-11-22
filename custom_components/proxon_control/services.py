@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from datetime import time
 
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import entity_registry as er
 import voluptuous as vol
 
-from .const import CONF_PICTURE_THEME, DOMAIN
+from .const import DOMAIN
 from .coordinator import ProxonCoordinator
 from .dashboard import build
 from .dashboard_store import OLD_TITLE, TITLE, DashboardStoreError, async_retitle, async_store_dashboard
@@ -99,15 +98,6 @@ async def _write(coordinator: ProxonCoordinator, writes: list[tuple[str, int]]) 
         await coordinator.async_write(key, value)
 
 
-def _enable_pictures(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """The dashboard shows the pictures, which are off for new installs: switched on here (Home Assistant loads them a moment
-    later). Pictures switched off by hand stay off."""
-    reg = er.async_get(hass)
-    for ent in er.async_entries_for_config_entry(reg, entry.entry_id):
-        if ent.domain == "image" and ent.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
-            reg.async_update_entity(ent.entity_id, disabled_by=None)
-
-
 async def async_set_phase(
     hass: HomeAssistant, coordinator: ProxonCoordinator, day: int, phase: int, start: int | None, end: int | None, level: int | None,
 ) -> None:
@@ -156,7 +146,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
         (created on the first run, written anew on every further one). With "paste only" it is just returned (starting
         with `views:`), to paste into the raw configuration editor of a dashboard of one's own."""
         entry = _entry(hass, call.data.get(ATTR_CONFIG_ENTRY))
-        _enable_pictures(hass, entry)
         config = build(hass, entry)
         if call.data.get(ATTR_PASTE_ONLY):
             return config
@@ -197,17 +186,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return {"url": f"/{url}", "created": created, "message": message}
 
     async def install_glass_theme(call: ServiceCall) -> ServiceResponse:
-        """Write the dashboard's themes into the themes folder and reload them; the dashboard pictures follow light and dark
-        of the device like the theme. Tells whether Home Assistant loads the themes, and what to add to configuration.yaml if
-        not. (The action keeps its old name "install_glass_theme", so automations calling it go on working.)"""
-        entry_id = call.data.get(ATTR_CONFIG_ENTRY)
-        entries = [_entry(hass, entry_id)] if entry_id else [
-            e for e in hass.config_entries.async_entries(DOMAIN) if e.state is ConfigEntryState.LOADED
-        ]
+        """Write the dashboard's themes into the themes folder and reload them. Tells whether Home Assistant loads the themes,
+        and what to add to configuration.yaml if not. (The action keeps its old name "install_glass_theme", so automations calling it go on working.)"""
+        if entry_id := call.data.get(ATTR_CONFIG_ENTRY):
+            _entry(hass, entry_id)  # a wrong entry is still reported
         installed = await async_install_theme(hass)
-        for entry in entries:  # pictures: light or dark like the device (an earlier version set them to dark for the glass)
-            if CONF_PICTURE_THEME in entry.options:
-                hass.config_entries.async_update_entry(entry, options={k: v for k, v in entry.options.items() if k != CONF_PICTURE_THEME})
         german = (hass.config.language or "").startswith("de")
         if installed:
             message = (f"Das Theme „{THEME_NAME}“ ist installiert (hell und dunkel, folgt dem Gerät; im Profil fest wählbar), "
