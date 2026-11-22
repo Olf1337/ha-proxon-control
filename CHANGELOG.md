@@ -5,6 +5,8 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** side rooms can be set to 14–26 °C like in the Proxon app (was 14–24 °C).
+
 **New in 1.0.0b2 (beta):** a side room can be set to 14 °C again: the unit takes a room offset only from −3 to +3 °C, so
 for a target further away the room's base value (14–24 °C) moves, as in the Proxon app; the estimated hot-water counters
 start with what already ran on the day they were installed (running time today × rated power).
@@ -113,6 +115,11 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **Nebenräume bis 26 °C:** wie in der Proxon-App 14–26 °C (bisher 14–24 °C). Über 24 °C bleibt der Grundwert bei 24 °C,
+  die Verschiebung macht den Rest (+1 oder +2).
 
 ### Neu in Version 1.0.0b2 (Beta)
 

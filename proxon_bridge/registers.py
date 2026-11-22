@@ -732,7 +732,8 @@ def heating_channels(values: dict) -> list[str]:
 
 
 # other rooms: the unit takes an offset only from -3 to +3 (the room panel's LED shows offset + 4 = 1..7; a real unit kept its
-# old offset when -7 was written), and the base values the Proxon app sets lie in 14-24 °C
+# old offset when -7 was written). Base values are kept in 14-24 °C (what the app sets; a target of 25 or 26 °C is base 24 +
+# offset 1 or 2)
 ROOM_OFFSET_RANGE = (-3, 3)
 ROOM_BASE_RANGE = (14, 24)
 

@@ -20,10 +20,11 @@ from .const import DOMAIN
 from .entity import ProxonEntity, room_device
 from .registers import MODE_OFF, ROOM_COUNT, room_connected, room_demand, room_heating, room_target, room_write
 
-# ranges of the original app (checked on a real unit): living room 10-30 °C; the other rooms 14-24 °C, whatever their own base
-# value (their target is stored as a whole-degree offset to it; every write is read back, so an offset the unit refuses shows)
+# ranges of the original app (checked on a real unit): living room 10-30 °C; the other rooms 14-26 °C, whatever their own base
+# value (their target is the base value + a whole-degree offset of -3..+3; see room_write. Every write is read back, so a
+# value the unit refuses shows)
 LIVING_ROOM_RANGE = (10.0, 30.0)
-OTHER_ROOM_RANGE = (14.0, 24.0)
+OTHER_ROOM_RANGE = (14.0, 26.0)
 
 
 # one change at a time per platform: the unit allows only a few sessions, and every write is read back
