@@ -422,14 +422,14 @@ async def test_year_forecast_by_the_season(hass: HomeAssistant, device, freezer)
 
 
 async def test_unchecked_sensors_are_removed(hass: HomeAssistant, device) -> None:
-    """Hot-water compressor hours (implausible on two real units), T14 (52.2 °C on both) and the two raw status words: no
+    """Hot-water compressor and heater hours (the compressor's implausible on two real units, both read alike), T14 (52.2 °C on both) and the two raw status words: no
     sensor since 1.0; one left over from an older version is removed at the start."""
     from homeassistant.helpers import entity_registry as er
 
     reg = er.async_get(hass)
     entry = await setup(hass)
-    old = reg.async_get_or_create("sensor", "proxon_control", "abc123_T14Sauggas", config_entry=entry)
+    old = [reg.async_get_or_create("sensor", "proxon_control", f"abc123_{k}", config_entry=entry) for k in ("T14Sauggas", "T300StundenHeizstab")]
     assert await hass.config_entries.async_reload(entry.entry_id)
-    assert reg.async_get(old.entity_id) is None
-    for key in ("T300StundenKompressor", "T14Sauggas", "StatusKompressor", "StatusVentilatoren"):
+    assert all(reg.async_get(o.entity_id) is None for o in old)
+    for key in ("T300StundenKompressor", "T300StundenHeizstab", "T14Sauggas", "StatusKompressor", "StatusVentilatoren"):
         assert reg.async_get_entity_id("sensor", "proxon_control", f"abc123_{key}") is None

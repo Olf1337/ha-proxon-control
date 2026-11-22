@@ -347,9 +347,6 @@
       "hours_stufe4": {
         "name": "Operating hours ventilation level 4"
       },
-      "hours_t300stundenheizstab": {
-        "name": "Operating hours immersion heater"
-      },
       "starts_today_compressor": {
         "name": "Compressor starts today"
       },

@@ -110,7 +110,7 @@ async def test_counters_and_runtime_sensors(hass: HomeAssistant, device) -> None
     assert state(hass, "sensor", "StundenKompressorHeizen").state == "18000"  # 2-hour steps
     assert state(hass, "sensor", "StundenStufe2").state == "40000"
     assert entry.runtime_data.data["T300StundenKompressor"] == 10000.0  # still read (the sensor is hidden: unchecked)
-    assert state(hass, "sensor", "T300StundenHeizstab").state == "1000.0"
+    assert entry.runtime_data.data["T300StundenHeizstab"] == 1000.0  # still read for the diagnostics (no sensor: unchecked)
     assert state(hass, "sensor", "KompressorStartsHeute").state == "0"
     assert state(hass, "sensor", "HeizstabLaufzeitHeute").state == "0.0"
     issues = ir.async_get(hass)

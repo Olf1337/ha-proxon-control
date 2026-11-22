@@ -5,7 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** side rooms can be set to 14–26 °C like in the Proxon app (was 14–24 °C).
+**New in 1.0.0b3 (beta):** side rooms can be set to 14–26 °C like in the Proxon app (was 14–24 °C); the sensor
+"Operating hours immersion heater" is removed (read like the hot-water compressor's hours, which were implausible on real
+units; the value stays in the diagnostics).
 
 **New in 1.0.0b2 (beta):** a side room can be set to 14 °C again: the unit takes a room offset only from −3 to +3 °C, so
 for a target further away the room's base value (14–24 °C) moves, as in the Proxon app; the estimated hot-water counters
@@ -116,10 +118,14 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.0.0b3 (Beta)
 
 * **Nebenräume bis 26 °C:** wie in der Proxon-App 14–26 °C (bisher 14–24 °C). Über 24 °C bleibt der Grundwert bei 24 °C,
   die Verschiebung macht den Rest (+1 oder +2).
+* **„Betriebsstunden Heizstab“ entfernt:** Der Zähler wird aus dem Warmwasser-Modul genauso gelesen wie die
+  Betriebsstunden des Warmwasser-Kompressors, die an echten Anlagen unmöglich hohe Werte zeigten (mehr Stunden, als die
+  Anlage alt ist). Solange das nicht geklärt ist, gibt es keinen Sensor; der Wert steht weiter in der Diagnose. Der Sensor
+  verschwindet beim Start. „Heizstab Laufzeit heute“ zählt die Integration selbst und bleibt.
 
 ### Neu in Version 1.0.0b2 (Beta)
 

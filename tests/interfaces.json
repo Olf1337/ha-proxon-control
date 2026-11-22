@@ -145,7 +145,6 @@
   "sensor.T300Kompressor",
   "sensor.T300LuefterDrehzahl",
   "sensor.T300Saugleitung",
-  "sensor.T300StundenHeizstab",
   "sensor.T300Verdampfer",
   "sensor.T300VorVerdampfer",
   "sensor.T3Frischluft",

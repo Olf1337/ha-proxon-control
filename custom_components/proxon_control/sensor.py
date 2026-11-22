@@ -160,7 +160,7 @@ SENSORS: list[ProxonSensorDescription] = [
             device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        for key in (*HOUR_COUNTERS, "T300StundenHeizstab")
+        for key in HOUR_COUNTERS
     ],
     # today (counted in Home Assistant, yesterday as attribute)
     *[

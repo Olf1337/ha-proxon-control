@@ -347,9 +347,6 @@
       "hours_stufe4": {
         "name": "Betriebsstunden Lüftungsstufe 4"
       },
-      "hours_t300stundenheizstab": {
-        "name": "Betriebsstunden Heizstab"
-      },
       "starts_today_compressor": {
         "name": "Kompressor-Starts heute"
       },
