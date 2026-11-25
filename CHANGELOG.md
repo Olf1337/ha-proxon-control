@@ -5,7 +5,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released (HACS review):** the helper program is built from `helper/` by GitHub Actions with a build attestation;
+**New in 1.0.0b5 (beta, HACS review):** the helper program is built from `helper/` by GitHub Actions with a build attestation;
 only the pinned Debian packages are downloaded (from deb.debian.org or snapshot.debian.org) and a wrong SHA-256 stops with
 an error; "Create dashboard" is for admins only; the action "Install glass theme" is removed – the old dashboard's theme is
 `themes/proxon_control.yaml` in the repository, to add by hand.
@@ -126,7 +126,7 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.0.0b5 (Beta)
 
 Änderungen aus dem Review für die Aufnahme in HACS:
 
