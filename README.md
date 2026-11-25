@@ -83,8 +83,14 @@ In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look u
   farbigen Flächen – oder **Soft** – erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche (angelehnt an
   Neumorphismus, aber mit vollem Textkontrast und farbigen Zuständen). Beide hell und dunkel wie das Gerät.
 
-Das frühere fertige Dashboard „Proxon Control“ (Aktion *Dashboard erstellen*) ist **abgekündigt**: Es funktioniert bis Version 2.0
-weiter, danach entfällt es. Solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*.
+Das frühere fertige Dashboard „Proxon Control“ (Aktion *Dashboard erstellen*, nur für Administratoren) ist **abgekündigt**: Es
+funktioniert bis Version 2.0 weiter, danach entfällt es. Solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*.
+
+**Theme des alten Dashboards:** Die Integration schreibt nichts in den Konfigurationsordner. Wer das Dashboard im Look „Proxon
+Bento“ (oder „Proxon Glas“) möchte, lädt [`themes/proxon_control.yaml`](themes/proxon_control.yaml) aus diesem Repository nach
+`/config/themes/`, achtet darauf, dass `configuration.yaml` unter `frontend:` die Zeile `themes: !include_dir_merge_named themes`
+enthält, und führt danach unter *Werkzeuge → Aktionen* (vor Home Assistant 2026.8: *Entwicklerwerkzeuge*) „Frontend: Themes neu laden“ aus. Für die Seite „Proxon“ ist
+kein Theme nötig.
 
 ## Bekannte Grenzen
 
@@ -115,7 +121,12 @@ nachgebildete Anlage; im Alltag läuft die Integration mit Home Assistant 2026.1
   **Mac mit Apple-Chip**:
   * **Home Assistant OS / Supervised / Container auf Intel- oder AMD-PC:** Home Assistant läuft dort auf Alpine Linux, in das Nabtos Bibliothek eigentlich
     nicht passt. Die Integration bringt deshalb ein kleines Hilfsprogramm (`bin/proxon-nabto-helper-linux-x86_64`) mit und lädt bei der ersten Verbindung
-    über den Proxon-Server die passenden Debian-12-Systemdateien (glibc, ca. 5 MB, mit Prüfsumme) und Nabtos Bibliothek herunter (`/config/proxon_control/`).
+    über den Proxon-Server die passenden Debian-12-Systemdateien (glibc, ca. 5 MB) und Nabtos Bibliothek herunter (`/config/proxon_control/`). Es werden
+    nur genau festgelegte Dateien geladen und mit ihrer SHA-256-Prüfsumme geprüft (die Debian-Pakete von deb.debian.org, sonst unverändert aus
+    snapshot.debian.org); passt eine Prüfsumme nicht, bricht die Integration mit einer Meldung ab.
+  * **Das Hilfsprogramm** wird ausschließlich von GitHub Actions aus dem Quelltext in `helper/` gebaut (Workflow „Build helper“) und mit einem
+    Herkunftsnachweis versehen. Prüfen lässt sich eine Kopie mit
+    `gh attestation verify custom_components/proxon_control/bin/proxon-nabto-helper-linux-x86_64 --repo Olf1337/ha-proxon-control`.
   * **Home Assistant Core auf Debian/Ubuntu (x86-64):** die Bibliothek wird direkt geladen.
   * **Raspberry Pi / ARM:** Hier gibt es keinen Ausweichweg über den Proxon-Server; die Integration nutzt nur das Heimnetz.
 
@@ -172,7 +183,8 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 1. *Einstellungen → Geräte & Dienste → Proxon Control* → ⋮ → **Löschen**. Damit verschwinden Geräte, Entitäten und die Seite „Proxon“.
 2. In HACS (*Einstellungen → Marketplace*) „Proxon Control“ → ⋮ → **Entfernen**, dann Home Assistant neu starten.
 3. Optional: den Ordner `/config/proxon_control/` (heruntergeladene Bibliothek und Zertifikat) löschen, ebenso ein früher
-   angelegtes Dashboard „Proxon Control“ (*Einstellungen → Dashboards*) und die Theme-Datei `/config/themes/proxon_control.yaml`.
+   angelegtes Dashboard „Proxon Control“ (*Einstellungen → Dashboards*) und – von älteren Versionen oder von Hand angelegt – die
+   Theme-Datei `/config/themes/proxon_control.yaml`.
 
 Ein Raum, den die Anlage nicht mehr meldet, lässt sich auf seiner Geräteseite einzeln löschen.
 

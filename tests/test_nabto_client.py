@@ -6,7 +6,6 @@ import ctypes
 import hashlib
 import io
 import json
-import urllib.error
 import zipfile
 
 import pytest
@@ -207,29 +206,6 @@ def test_no_library_for_this_system(monkeypatch, tmp_path) -> None:
     assert nabto.library_supported() is False
     with pytest.raises(NabtoError, match="gibt es nicht für dieses System"):
         nabto.ensure_library(str(tmp_path))
-
-
-def test_debian_package_replaced_by_a_security_update(monkeypatch) -> None:
-    """The pinned package is gone (404): the newest one of the same release is taken from the listing."""
-    def download(url: str) -> bytes:
-        if url.endswith("libc6_2.36-9+deb12u7_amd64.deb"):
-            raise urllib.error.HTTPError(url, 404, "gone", {}, None)
-        if url.endswith("/"):
-            return b'<a href="libc6_2.36-9+deb12u9_amd64.deb"> <a href="libc6_2.36-9+deb12u10_amd64.deb">'
-        return url.encode()
-
-    monkeypatch.setattr(nabto, "_download", download)
-    pattern = r"libc6_2\.36-9\+deb12u\d+_amd64\.deb"
-    assert nabto._fetch_deb("main/g/glibc/", "libc6_2.36-9+deb12u7_amd64.deb", "x", pattern).endswith(b"deb12u10_amd64.deb")
-    monkeypatch.setattr(nabto, "_download", lambda url: download(url) if not url.endswith("/") else b"nothing here")
-    with pytest.raises(NabtoError, match="Kein passendes Debian-Paket"):
-        nabto._fetch_deb("main/g/glibc/", "libc6_2.36-9+deb12u7_amd64.deb", "x", pattern)
-
-
-def test_debian_package_with_a_wrong_checksum(monkeypatch) -> None:
-    monkeypatch.setattr(nabto, "_download", lambda url: b"tampered")
-    with pytest.raises(NabtoError, match="Prüfsumme"):
-        nabto._fetch_deb("main/g/glibc/", "libc6.deb", "0" * 64, "x")
 
 
 def test_broken_debian_packages(tmp_path) -> None:

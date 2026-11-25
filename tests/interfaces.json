@@ -243,9 +243,6 @@
    "config_entry_id",
    "paste_only"
   ],
-  "install_glass_theme": [
-   "config_entry_id"
-  ],
   "set_schedule_phase": [
    "config_entry_id",
    "day",

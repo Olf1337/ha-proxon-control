@@ -978,16 +978,6 @@
           "description": "Kein Dashboard anlegen, sondern es nur als Antwort liefern (beginnt mit views:), zum Einfügen im Raw-Konfigurationseditor eines eigenen Dashboards."
         }
       }
-    },
-    "install_glass_theme": {
-      "name": "Dashboard-Theme installieren",
-      "description": "Schreibt die Themes „Proxon Bento“ (hell und dunkel, folgt dem Gerät; das Aussehen des fertigen Dashboards) und „Proxon Glas“ in den Ordner themes und lädt sie neu. „Dashboard erstellen“ macht das auch selbst.",
-      "fields": {
-        "config_entry_id": {
-          "name": "Anlage",
-          "description": "Nur nötig, wenn mehr als eine Proxon-Anlage eingerichtet ist."
-        }
-      }
     }
   },
   "selector": {

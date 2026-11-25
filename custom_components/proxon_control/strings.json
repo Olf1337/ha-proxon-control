@@ -978,16 +978,6 @@
           "description": "Don't create a dashboard, just return it (starting with views:), to paste into the raw configuration editor of a dashboard of your own."
         }
       }
-    },
-    "install_glass_theme": {
-      "name": "Install dashboard theme",
-      "description": "Writes the themes \"Proxon Bento\" (light and dark, following the device; the look of the ready-made dashboard) and \"Proxon Glas\" into the themes folder and reloads them. \"Create dashboard\" does this by itself as well.",
-      "fields": {
-        "config_entry_id": {
-          "name": "Unit",
-          "description": "Only needed if more than one Proxon unit is set up."
-        }
-      }
     }
   },
   "selector": {

@@ -128,10 +128,10 @@ def test_runtime_download_checks_and_unpacks(tmp_path, monkeypatch) -> None:
 
     debs = {}
     packages = []
-    for pool_dir, name, pinned, _sha, pattern, wanted in nabto.RUNTIME_PACKAGES:
+    for name, urls, _sha, wanted in nabto.RUNTIME_PACKAGES:
         deb = _fake_deb({src: f"{dst}-content".encode() for src, dst in wanted.items()})
-        debs[nabto.DEBIAN_POOL + pool_dir + pinned] = deb
-        packages.append((pool_dir, name, pinned, hashlib.sha256(deb).hexdigest(), pattern, wanted))
+        debs[urls[0]] = deb
+        packages.append((name, urls, hashlib.sha256(deb).hexdigest(), wanted))
     monkeypatch.setattr(nabto, "RUNTIME_PACKAGES", packages)
     monkeypatch.setattr(nabto, "_download", lambda url: debs[url])
     out = nabto.ensure_runtime(str(tmp_path / "rt"))
@@ -139,7 +139,7 @@ def test_runtime_download_checks_and_unpacks(tmp_path, monkeypatch) -> None:
     assert os.path.exists(os.path.join(out, ".complete"))
     # a damaged download is refused
     bad = list(packages)
-    bad[0] = (*bad[0][:3], "0" * 64, *bad[0][4:])
+    bad[0] = (*bad[0][:2], "0" * 64, bad[0][3])
     monkeypatch.setattr(nabto, "RUNTIME_PACKAGES", bad)
     with pytest.raises(NabtoError, match="Prüfsumme"):
         nabto.ensure_runtime(str(tmp_path / "rt2"))
@@ -152,10 +152,10 @@ def test_loader_gets_the_executable_permission(tmp_path, monkeypatch) -> None:
 
     packages = []
     debs = {}
-    for pool_dir, name, pinned, _sha, pattern, wanted in nabto.RUNTIME_PACKAGES:
+    for name, urls, _sha, wanted in nabto.RUNTIME_PACKAGES:
         deb = _fake_deb({src: b"x" for src in wanted})
-        debs[nabto.DEBIAN_POOL + pool_dir + pinned] = deb
-        packages.append((pool_dir, name, pinned, hashlib.sha256(deb).hexdigest(), pattern, wanted))
+        debs[urls[0]] = deb
+        packages.append((name, urls, hashlib.sha256(deb).hexdigest(), wanted))
     monkeypatch.setattr(nabto, "RUNTIME_PACKAGES", packages)
     monkeypatch.setattr(nabto, "_download", lambda url: debs[url])
     rt = nabto.ensure_runtime(str(tmp_path / "rt"))

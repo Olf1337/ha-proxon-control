@@ -16,7 +16,6 @@ import io
 import json
 import os
 import platform
-import re
 import select
 import shutil
 import subprocess
@@ -53,23 +52,30 @@ LIB_SHA256 = {
 
 # Home Assistant OS runs on Alpine Linux (musl) and can't load Nabto's glibc-only library directly.
 # A small helper program (bin/proxon-nabto-helper-linux-x86_64) is started through Debian's glibc loader instead.
+# Exactly these packages (Debian 12, amd64), checked against their SHA-256; nothing else is ever downloaded or run. First from
+# Debian's mirror, and once Debian has replaced them by a newer update, the same files from snapshot.debian.org (which keeps
+# every published file for good). A file whose checksum doesn't match is refused.
 DEBIAN_POOL = "https://deb.debian.org/debian/pool/main/"
+SNAPSHOT = "https://snapshot.debian.org/archive/debian/"
 RUNTIME_PACKAGES = [
-    # (directory in the pool, package, pinned file name, pinned SHA-256, newest-version pattern, {file in package: name here})
-    ("g/glibc/", "libc6", "libc6_2.36-9+deb12u14_amd64.deb",
+    # (file name, [where to get it], its SHA-256, {file in the package: name here})
+    ("libc6_2.36-9+deb12u14_amd64.deb",
+     [DEBIAN_POOL + "g/glibc/libc6_2.36-9+deb12u14_amd64.deb",
+      SNAPSHOT + "20260504T025922Z/pool/main/g/glibc/libc6_2.36-9%2Bdeb12u14_amd64.deb"],
      "ba4f88f73dbc3ae9055f3c20f4523bfdbaf1ad13ff95e258924f77d20b4fbedf",
-     r"libc6_2\.36-9\+deb12u\d+_amd64\.deb",
      {"lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": "ld-linux-x86-64.so.2", "lib/x86_64-linux-gnu/libc.so.6": "libc.so.6",
       "lib/x86_64-linux-gnu/libm.so.6": "libm.so.6", "lib/x86_64-linux-gnu/libdl.so.2": "libdl.so.2",
       "lib/x86_64-linux-gnu/libpthread.so.0": "libpthread.so.0", "lib/x86_64-linux-gnu/librt.so.1": "librt.so.1",
       "lib/x86_64-linux-gnu/libresolv.so.2": "libresolv.so.2"}),
-    ("g/gcc-12/", "libstdc++6", "libstdc++6_12.2.0-14+deb12u1_amd64.deb",
+    ("libstdc++6_12.2.0-14+deb12u1_amd64.deb",
+     [DEBIAN_POOL + "g/gcc-12/libstdc++6_12.2.0-14+deb12u1_amd64.deb",
+      SNAPSHOT + "20250415T084322Z/pool/main/g/gcc-12/libstdc%2B%2B6_12.2.0-14%2Bdeb12u1_amd64.deb"],
      "5cd3171216d4ab0fc911cfe9c35509bf2dd8f47761c43b7f6a4296701551a24d",
-     r"libstdc\+\+6_12\.2\.0-14\+deb12u\d+_amd64\.deb",
      {"usr/lib/x86_64-linux-gnu/libstdc++.so.6": "libstdc++.so.6"}),
-    ("g/gcc-12/", "libgcc-s1", "libgcc-s1_12.2.0-14+deb12u1_amd64.deb",
+    ("libgcc-s1_12.2.0-14+deb12u1_amd64.deb",
+     [DEBIAN_POOL + "g/gcc-12/libgcc-s1_12.2.0-14+deb12u1_amd64.deb",
+      SNAPSHOT + "20250415T084322Z/pool/main/g/gcc-12/libgcc-s1_12.2.0-14%2Bdeb12u1_amd64.deb"],
      "3016e62cb4b7cd8038822870601f5ed131befe942774d0f745622cc77d8a88f7",
-     r"libgcc-s1_12\.2\.0-14\+deb12u\d+_amd64\.deb",
      {"lib/x86_64-linux-gnu/libgcc_s.so.1": "libgcc_s.so.1"}),
 ]
 HELPER_FILE = "bin/proxon-nabto-helper-linux-x86_64"
@@ -346,21 +352,19 @@ def extract_deb(deb: bytes, wanted: dict[str, str], directory: str) -> None:
             os.replace(tmp, os.path.join(directory, dst))
 
 
-def _fetch_deb(directory_in_pool: str, pinned: str, sha256: str, pattern: str) -> bytes:
-    """The pinned package; if Debian has replaced it by a security update, the newest one of the same release."""
-    try:
-        blob = _download(DEBIAN_POOL + directory_in_pool + pinned)
+def _fetch_deb(name: str, urls: list[str], sha256: str) -> bytes:
+    """The pinned package, from the first place that has it. Its SHA-256 must match, otherwise nothing is used."""
+    errors = []
+    for url in urls:
+        try:
+            blob = _download(url)
+        except (urllib.error.URLError, OSError) as err:  # not there (any more) or not reachable: the next place
+            errors.append(f"{url}: {err}")
+            continue
         if hashlib.sha256(blob).hexdigest() != sha256:
-            raise NabtoError("Ein heruntergeladenes Debian-Paket hat eine unerwartete Prüfsumme.")
+            raise NabtoError(f"Das Debian-Paket {name} hat eine unerwartete Prüfsumme und wird nicht verwendet ({url}).")
         return blob
-    except urllib.error.HTTPError as err:
-        if err.code != 404:
-            raise
-    listing = _download(DEBIAN_POOL + directory_in_pool).decode("utf-8", "replace")
-    names = sorted(set(re.findall(pattern, listing)), key=lambda n: [int(x) for x in re.findall(r"\d+", n.split("deb12u")[-1])])
-    if not names:
-        raise NabtoError("Kein passendes Debian-Paket gefunden.")
-    return _download(DEBIAN_POOL + directory_in_pool + names[-1])
+    raise NabtoError(f"Das Debian-Paket {name} ließ sich nicht herunterladen: " + "; ".join(errors))
 
 
 def ensure_runtime(directory: str) -> str:
@@ -368,8 +372,8 @@ def ensure_runtime(directory: str) -> str:
     marker = os.path.join(directory, ".complete")
     if not os.path.exists(marker):
         os.makedirs(directory, exist_ok=True)
-        for pool_dir, _name, pinned, sha, pattern, wanted in RUNTIME_PACKAGES:
-            extract_deb(_fetch_deb(pool_dir, pinned, sha, pattern), wanted, directory)
+        for name, urls, sha, wanted in RUNTIME_PACKAGES:
+            extract_deb(_fetch_deb(name, urls, sha), wanted, directory)
         with open(marker, "w", encoding="utf-8") as f:
             f.write("ok\n")
     # the loader is started like a program, so it needs the "executable" permission (older downloads were saved without it)

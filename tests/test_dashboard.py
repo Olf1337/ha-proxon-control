@@ -1,8 +1,6 @@
 """The ready-made dashboard (deprecated since 1.0), the floors of the rooms, and the removal of the dashboard pictures."""
 from __future__ import annotations
 
-from unittest.mock import patch
-
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.yaml import dump, parse_yaml
@@ -243,24 +241,32 @@ async def test_house_floors_and_photo_in_the_options(hass: HomeAssistant, device
     assert entry.options == {"scan_interval": 10}
 
 
-async def test_install_glass_theme(hass: HomeAssistant, device, tmp_path) -> None:
-    """The action writes the themes into the themes folder (Bento with light and dark, and Glas); it tells whether the themes
-    load."""
-    from .test_integration import make_entry
+def test_theme_file_in_the_repository() -> None:
+    """The dashboard's themes are a file in the repository to add by hand (the integration writes nothing into the
+    configuration folder); the dashboard names the theme in it."""
+    from pathlib import Path
 
-    await setup(hass, make_entry())
-    hass.config.config_dir = str(tmp_path)
-    answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
-    themes = parse_yaml((tmp_path / "themes" / "proxon_control.yaml").read_text(encoding="utf-8"))
-    assert set(themes) == {"Proxon Bento", "Proxon Glas"}
-    bento = themes["Proxon Bento"]
+    from custom_components.proxon_control.theme import GLASS_THEME_NAME, THEME_NAME
+
+    themes = parse_yaml((Path(__file__).parents[1] / "themes" / "proxon_control.yaml").read_text(encoding="utf-8"))
+    assert set(themes) == {THEME_NAME, GLASS_THEME_NAME}
+    bento = themes[THEME_NAME]
     assert set(bento["modes"]) == {"light", "dark"} and bento["ha-card-border-radius"] == "22px"
-    assert bento["modes"]["light"]["ha-card-background"] == "#ffffff" and bento["modes"]["dark"]["ha-card-background"] == "#1b1e1b"
-    assert themes["Proxon Glas"]["primary-text-color"] == "#f3f5ff"
-    assert answer["installed"] is False and "configuration.yaml" in answer["message"]  # this test system loads no themes folder
-    with patch("custom_components.proxon_control.services.async_install_theme", return_value=True):
-        answer = await hass.services.async_call(DOMAIN, "install_glass_theme", {}, blocking=True, return_response=True)
-    assert answer["installed"] is True and answer["theme"] == "Proxon Bento"
+    assert themes[GLASS_THEME_NAME]["primary-text-color"] == "#f3f5ff"
+
+
+async def test_create_dashboard_is_for_admins_only(hass: HomeAssistant, device, hass_read_only_user) -> None:
+    """It writes a dashboard into Home Assistant: a user without admin rights can't run it."""
+    from homeassistant.core import Context
+    from homeassistant.exceptions import Unauthorized
+
+    await setup(hass)
+    user = hass_read_only_user
+    assert not user.is_admin
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(DOMAIN, "create_dashboard", {"paste_only": True}, blocking=True, return_response=True,
+                                       context=Context(user_id=user.id))
+    assert not hass.services.has_service(DOMAIN, "install_glass_theme")  # the theme isn't written by the integration any more
 
 
 async def test_create_dashboard_puts_it_into_home_assistant(hass: HomeAssistant, device, hass_ws_client) -> None:

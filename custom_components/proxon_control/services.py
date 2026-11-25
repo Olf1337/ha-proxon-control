@@ -1,5 +1,5 @@
 """Actions: set one phase of the weekly ventilation schedule, copy one day to other days, create the ready-made dashboard
-(put into Home Assistant, or returned to paste), install its glass theme."""
+(put into Home Assistant, or returned to paste; admins only)."""
 from __future__ import annotations
 
 from datetime import time
@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.service import async_register_admin_service
 import voluptuous as vol
 
 from .const import DOMAIN
@@ -16,13 +17,11 @@ from .dashboard import build
 from .dashboard_store import OLD_TITLE, TITLE, DashboardStoreError, async_retitle, async_store_dashboard
 from .entity import schedule_device
 from .schedule import DAYS, ScheduleError, plan_day, read_day, set_phase, unit_clock
-from .theme import GLASS_THEME_NAME, THEME_FILE, THEME_NAME, async_install_theme
 
 ATTR_CONFIG_ENTRY = "config_entry_id"
 SERVICE_SET_PHASE = "set_schedule_phase"
 SERVICE_COPY_DAY = "copy_schedule_day"
 SERVICE_DASHBOARD = "create_dashboard"
-SERVICE_THEME = "install_glass_theme"
 DASHBOARD_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY): cv.string})
 ATTR_PASTE_ONLY = "paste_only"
 CREATE_DASHBOARD_SCHEMA = DASHBOARD_SCHEMA.extend({vol.Optional(ATTR_PASTE_ONLY, default=False): cv.boolean})
@@ -155,11 +154,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
         first = not others or entry.entry_id == sorted(e.entry_id for e in hass.config_entries.async_entries(DOMAIN))[0]
         url = DASHBOARD_URL if first else f"{DASHBOARD_URL}-{entry.entry_id[-6:].lower()}"
         try:
-            # its look: the theme comes with it (when Home Assistant doesn't load the themes folder, the normal look stays)
-            await async_install_theme(hass)
-        except OSError:
-            pass
-        try:
             title, old = (TITLE, OLD_TITLE) if first else (f"{TITLE} {entry.title}", f"{OLD_TITLE} {entry.title}")
             created = await async_store_dashboard(hass, url, title, config)
             await async_retitle(hass, url, title, only_from=old)  # its title until 0.21
@@ -185,33 +179,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         async_dashboard_notice(hass)  # the dashboard is deprecated: say so under Repairs
         return {"url": f"/{url}", "created": created, "message": message}
 
-    async def install_glass_theme(call: ServiceCall) -> ServiceResponse:
-        """Write the dashboard's themes into the themes folder and reload them. Tells whether Home Assistant loads the themes,
-        and what to add to configuration.yaml if not. (The action keeps its old name "install_glass_theme", so automations calling it go on working.)"""
-        if entry_id := call.data.get(ATTR_CONFIG_ENTRY):
-            _entry(hass, entry_id)  # a wrong entry is still reported
-        installed = await async_install_theme(hass)
-        german = (hass.config.language or "").startswith("de")
-        if installed:
-            message = (f"Das Theme „{THEME_NAME}“ ist installiert (hell und dunkel, folgt dem Gerät; im Profil fest wählbar), "
-                       f"dazu „{GLASS_THEME_NAME}“ zur Auswahl im Profil." if german else
-                       f"The theme \"{THEME_NAME}\" is installed (light and dark, following the device; can be fixed in the profile), "
-                       f"and \"{GLASS_THEME_NAME}\" to choose in the profile.")
-        else:
-            message = (f"Die Datei themes/{THEME_FILE} ist geschrieben, aber Home Assistant lädt den Ordner themes nicht. Ergänze in "
-                       "configuration.yaml unter frontend: die Zeile „themes: !include_dir_merge_named themes“, starte Home "
-                       "Assistant neu und führe die Aktion noch einmal aus."
-                       if german else
-                       f"The file themes/{THEME_FILE} is written, but Home Assistant doesn't load the themes folder. Add the line "
-                       "\"themes: !include_dir_merge_named themes\" under frontend: in configuration.yaml, restart Home Assistant "
-                       "and run the action again.")
-        return {"theme": THEME_NAME, "installed": installed, "file": f"themes/{THEME_FILE}", "message": message}
-
-    hass.services.async_register(
-        DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=CREATE_DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_THEME, install_glass_theme, schema=DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
+    # it writes a dashboard into Home Assistant: admins only
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_DASHBOARD, create_dashboard, schema=CREATE_DASHBOARD_SCHEMA, supports_response=SupportsResponse.OPTIONAL
     )
     hass.services.async_register(DOMAIN, SERVICE_SET_PHASE, set_schedule_phase, schema=SET_PHASE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_COPY_DAY, copy_schedule_day, schema=COPY_DAY_SCHEMA)

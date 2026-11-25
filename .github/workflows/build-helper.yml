@@ -1,0 +1,66 @@
+name: Build helper
+
+# The helper program in custom_components/proxon_control/bin/ is built here from helper/ and nowhere else: on every change
+# to helper/ (or to this workflow) the binary is built, given a build attestation and committed back to the branch.
+# Check a copy with:
+#   gh attestation verify custom_components/proxon_control/bin/proxon-nabto-helper-linux-x86_64 --repo Olf1337/ha-proxon-control
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "helper/**"
+      - ".github/workflows/build-helper.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write  # commit the built helper
+  id-token: write  # sign the attestation
+  attestations: write
+
+concurrency:
+  group: build-helper
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and attest the helper
+    runs-on: ubuntu-latest
+    # Debian 12: the helper runs with Debian 12's glibc on Home Assistant OS (see RUNTIME_PACKAGES in nabto.py), so it is
+    # built against that glibc
+    container: debian:bookworm
+    env:
+      HELPER: custom_components/proxon_control/bin/proxon-nabto-helper-linux-x86_64
+    steps:
+      - name: Build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl gcc libc6-dev git
+      - uses: actions/checkout@v7
+      - name: Rust (pinned version)
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.89.0
+      - name: Build
+        working-directory: helper
+        run: "$HOME/.cargo/bin/cargo build --release --locked"
+      - name: Install into the integration
+        run: install -m 755 helper/target/release/proxon-nabto-helper "$HELPER"
+      - name: Smoke test (answers without the Nabto library, with Debian 12's loader)
+        run: |
+          answer=$(printf '{"cmd":"version"}\n{"cmd":"close"}\n' | /lib64/ld-linux-x86-64.so.2 "$HELPER" | head -n 1)
+          echo "$answer"
+          echo "$answer" | grep -q '"ok":true'
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ env.HELPER }}
+      - name: Commit the built helper
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$HELPER"
+          if git diff --cached --quiet; then
+            echo "The helper is unchanged."
+          else
+            git commit -m "Helper program built from helper/ by GitHub Actions (run ${GITHUB_RUN_ID})"
+            git push
+          fi

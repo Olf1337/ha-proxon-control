@@ -5,6 +5,11 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released (HACS review):** the helper program is built from `helper/` by GitHub Actions with a build attestation;
+only the pinned Debian packages are downloaded (from deb.debian.org or snapshot.debian.org) and a wrong SHA-256 stops with
+an error; "Create dashboard" is for admins only; the action "Install glass theme" is removed – the old dashboard's theme is
+`themes/proxon_control.yaml` in the repository, to add by hand.
+
 **New in 1.0.0b4 (beta):** the unit's picture on "Home" shows the air paths as they are on the unit: house side left (extract
 air at the top, supply air at the bottom), outside right (fresh air at the top, exhaust air at the bottom).
 
@@ -120,6 +125,20 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+Änderungen aus dem Review für die Aufnahme in HACS:
+
+* **Hilfsprogramm aus dem Quelltext gebaut:** Das Programm `bin/proxon-nabto-helper-linux-x86_64` (für den Weg über den
+  Proxon-Server auf Home Assistant OS) baut jetzt GitHub Actions aus `helper/`, mit Herkunftsnachweis (prüfbar mit
+  `gh attestation verify`).
+* **Nur noch fest eingetragene Debian-Dateien:** Fehlte ein fest eingetragenes Debian-Paket, nahm die Integration bisher
+  das neueste passende ohne Prüfsumme. Jetzt kommen genau diese Pakete von deb.debian.org oder unverändert aus
+  snapshot.debian.org; passt die SHA-256-Prüfsumme nicht, bricht sie mit einer Meldung ab.
+* **„Dashboard erstellen“ nur für Administratoren**, und die Integration schreibt keine Theme-Datei mehr in den
+  Konfigurationsordner: Die Aktion „Glas-Theme installieren“ entfällt, das Theme des alten Dashboards liegt als
+  `themes/proxon_control.yaml` im Repository (siehe README, Abschnitt zum alten Dashboard).
 
 ### Neu in Version 1.0.0b4 (Beta)
 
