@@ -672,38 +672,40 @@ class ProxonPanel extends HTMLElement {
               <div class="hint" style="margin-top:4px">${t.level} <b class="num" id="u-level">–</b> · ${t.tapUnit}</div>
               <svg class="diagram" viewBox="0 0 720 360" aria-hidden="true">
                 <defs>
-                  <linearGradient id="g-fresh" x1="0" x2="1"><stop id="gf0" offset="0"/><stop id="gf1" offset="1"/></linearGradient>
-                  <linearGradient id="g-supply" x1="0" x2="1"><stop id="gs0" offset="0"/><stop id="gs1" offset="1"/></linearGradient>
-                  <linearGradient id="g-extract" x1="1" x2="0"><stop id="ge0" offset="0"/><stop id="ge1" offset="1"/></linearGradient>
-                  <linearGradient id="g-exhaust" x1="1" x2="0"><stop id="gx0" offset="0"/><stop id="gx1" offset="1"/></linearGradient>
+                  <linearGradient id="g-fresh" x1="1" x2="0"><stop id="gf0" offset="0"/><stop id="gf1" offset="1"/></linearGradient>
+                  <linearGradient id="g-supply" x1="1" x2="0"><stop id="gs0" offset="0"/><stop id="gs1" offset="1"/></linearGradient>
+                  <linearGradient id="g-extract" x1="0" x2="1"><stop id="ge0" offset="0"/><stop id="ge1" offset="1"/></linearGradient>
+                  <linearGradient id="g-exhaust" x1="0" x2="1"><stop id="gx0" offset="0"/><stop id="gx1" offset="1"/></linearGradient>
                   <radialGradient id="g-glow"><stop offset="0" stop-color="var(--glowc)" stop-opacity=".55"/><stop offset="1" stop-color="var(--glowc)" stop-opacity="0"/></radialGradient>
                   <linearGradient id="g-box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset="1" stop-color="#fff" stop-opacity=".06"/></linearGradient>
                 </defs>
-                <text class="zone" x="8" y="186">${t.out}</text><text class="zone" x="712" y="186" text-anchor="end">${t.house}</text>
+                <!-- as the unit is built: house side left (extract air in at the top, supply air out at the bottom), outside right
+                     (fresh air in at the top, exhaust air out at the bottom); the two paths cross in the heat exchanger -->
+                <text class="zone" x="8" y="186">${t.house}</text><text class="zone" x="712" y="186" text-anchor="end">${t.out}</text>
                 <rect x="190" y="36" width="340" height="288" rx="34" fill="url(#g-box)" stroke="var(--edge)" stroke-width="1.2"/>
-                <path class="tube" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176" stroke="url(#g-fresh)"/>
-                <path class="tube" d="M 380 176 L 440 116 Q 460 96 490 96 L 660 96" stroke="url(#g-supply)"/>
-                <path class="tube" d="M 660 264 L 490 264 Q 460 264 440 244 L 380 184" stroke="url(#g-extract)"/>
-                <path class="tube" d="M 340 184 L 280 244 Q 260 264 230 264 L 60 264" stroke="url(#g-exhaust)"/>
-                <path class="flow" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176"/>
-                <path class="flow" d="M 380 176 L 440 116 Q 460 96 490 96 L 660 96"/>
-                <path class="flow" d="M 660 264 L 490 264 Q 460 264 440 244 L 380 184"/>
+                <path class="tube" d="M 660 96 L 490 96 Q 460 96 440 116 L 380 176" stroke="url(#g-fresh)"/>
+                <path class="tube" d="M 340 184 L 280 244 Q 260 264 230 264 L 60 264" stroke="url(#g-supply)"/>
+                <path class="tube" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176" stroke="url(#g-extract)"/>
+                <path class="tube" d="M 380 184 L 440 244 Q 460 264 490 264 L 660 264" stroke="url(#g-exhaust)"/>
+                <path class="flow" d="M 660 96 L 490 96 Q 460 96 440 116 L 380 176"/>
                 <path class="flow" d="M 340 184 L 280 244 Q 260 264 230 264 L 60 264"/>
+                <path class="flow" d="M 60 96 L 230 96 Q 260 96 280 116 L 340 176"/>
+                <path class="flow" d="M 380 184 L 440 244 Q 460 264 490 264 L 660 264"/>
                 <rect x="326" y="146" width="68" height="68" rx="10" transform="rotate(45 360 180)" fill="var(--glass-strong)" stroke="var(--edge)"/>
                 <path d="M 345 165 L 375 195 M 375 165 L 345 195 M 360 155 L 360 205 M 335 180 L 385 180" stroke="var(--fg-3)" stroke-width="1" opacity=".6"/>
                 <text class="t-small" x="360" y="236" text-anchor="middle">${t.hx}</text>
-                <circle cx="470" cy="96" r="44" fill="url(#g-glow)" id="hp-glow"/>
-                <rect x="458" y="72" width="24" height="48" rx="6" id="hp-supply"/>
-                <rect x="238" y="240" width="24" height="48" rx="6" id="hp-exhaust"/>
-                <text class="t-small" x="470" y="140" text-anchor="middle" id="hp-label">${t.heatPump}</text>
-                <g transform="translate(580 96)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-s">${FAN_BLADES}</g></g>
-                <g transform="translate(140 264)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-e">${FAN_BLADES}</g></g>
-                <text class="t-small num" id="rpm-s-t" x="580" y="132" text-anchor="middle"></text>
-                <text class="t-small num" id="rpm-e-t" x="140" y="300" text-anchor="middle"></text>
-                <text class="t-name" x="60" y="44">${t.fresh}</text><text class="t-val num" id="v-fresh" x="60" y="76">–</text>
-                <text class="t-name" x="660" y="44" text-anchor="end">${t.supply}</text><text class="t-val num" id="v-supply" x="660" y="76" text-anchor="end">–</text>
-                <text class="t-name" x="660" y="312" text-anchor="end">${t.extract}</text><text class="t-val num" id="v-extract" x="660" y="344" text-anchor="end">–</text>
-                <text class="t-name" x="60" y="312">${t.exhaust}</text><text class="t-val num" id="v-exhaust" x="60" y="344">–</text>
+                <circle cx="250" cy="264" r="44" fill="url(#g-glow)" id="hp-glow"/>
+                <rect x="238" y="240" width="24" height="48" rx="6" id="hp-supply"/>
+                <rect x="458" y="240" width="24" height="48" rx="6" id="hp-exhaust"/>
+                <text class="t-small" x="250" y="306" text-anchor="middle" id="hp-label">${t.heatPump}</text>
+                <g transform="translate(140 264)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-s">${FAN_BLADES}</g></g>
+                <g transform="translate(580 264)"><circle r="17" fill="var(--glass-strong)" stroke="var(--edge)"/><g id="fan-e">${FAN_BLADES}</g></g>
+                <text class="t-small num" id="rpm-s-t" x="140" y="234" text-anchor="middle"></text>
+                <text class="t-small num" id="rpm-e-t" x="580" y="234" text-anchor="middle"></text>
+                <text class="t-name" x="60" y="44">${t.extract}</text><text class="t-val num" id="v-extract" x="60" y="76">–</text>
+                <text class="t-name" x="660" y="44" text-anchor="end">${t.fresh}</text><text class="t-val num" id="v-fresh" x="660" y="76" text-anchor="end">–</text>
+                <text class="t-name" x="660" y="312" text-anchor="end">${t.exhaust}</text><text class="t-val num" id="v-exhaust" x="660" y="344" text-anchor="end">–</text>
+                <text class="t-name" x="60" y="312">${t.supply}</text><text class="t-val num" id="v-supply" x="60" y="344">–</text>
               </svg>
               <div class="unit-chips">
                 <span class="chip soft" id="ch-comp">${t.compressor} <b class="num" id="comp">–</b></span>

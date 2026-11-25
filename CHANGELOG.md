@@ -5,6 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.0.0b4 (beta):** the unit's picture on "Home" shows the air paths as they are on the unit: house side left (extract
+air at the top, supply air at the bottom), outside right (fresh air at the top, exhaust air at the bottom).
+
 **New in 1.0.0b3 (beta):** side rooms can be set to 14–26 °C like in the Proxon app (was 14–24 °C); the sensor
 "Operating hours immersion heater" is removed (read like the hot-water compressor's hours, which were implausible on real
 units; the value stays in the diagnostics).
@@ -117,6 +120,12 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.0.0b4 (Beta)
+
+* **Lüftungsanlage wie gebaut:** Das Bild auf „Zuhause“ zeigt die Luftwege jetzt so, wie sie an der Anlage liegen: Hausseite
+  links (Abluft oben, Zuluft unten), Außenseite rechts (Frischluft oben, Fortluft unten). Wärmepumpe und Ventilatoren sitzen
+  auf Zuluft und Fortluft.
 
 ### Neu in Version 1.0.0b3 (Beta)
 
