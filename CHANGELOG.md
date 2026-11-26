@@ -5,7 +5,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** a CSV download in the "Energy" tab; "Reconfigure" to change password, connection and address
+**Not yet released:** a third look "Tile wall" (a status headline, rooms as a row of tiles in their temperature's colour, a tap opens a room with − and +, a narrow display face shipped with the integration); a CSV download in the "Energy" tab; "Reconfigure" to change password, connection and address
 without removing the integration; rooms connected later get their entities without a restart; better contrast, the four air
 temperatures large on phones, calmer room edges and a distinct dark "Soft" look; icons from `icons.json`; bridge add-on 0.9.4.
 
@@ -140,6 +140,12 @@ nobody home).
 
 ### Noch nicht veröffentlicht
 
+* **Drittes Design „Kachelwand“:** unter *Konfigurieren* wählbar neben Liquid Glass und Soft. Oben steht groß, ob alles läuft
+  („Alles läuft.“, „Störung.“, „Filter wechseln.“) mit Betrieb, Stufe und Außentemperatur; die vier Lufttemperaturen als
+  Kacheln; die Räume als Reihe von Kacheln in der Farbe ihrer Temperatur (kühl blaugrau bis warm bernstein) – ein Tipp öffnet
+  den Raum mit − und +, ein zweiter seine Details. Zahlen und Überschriften in einer schmalen Schrift (Antonio, mit der
+  Integration ausgeliefert, nichts wird nachgeladen), ein bernsteinfarbener Akzent, auf breiten Bildschirmen die Navigation
+  links. Hell und dunkel.
 * **CSV-Export im Tab „Energie“:** Der Knopf mit dem Pfeil lädt den gezeigten Zeitraum als CSV-Datei herunter, eine Zeile je
   Tag (Woche, Monat) oder Monat (Jahr) mit kWh von Kompressor, Lüftung, Warmwasser und der Summe. Auf Deutsch mit „;“ und
   Dezimalkomma, damit Excel und Numbers die Werte als Zahlen öffnen.

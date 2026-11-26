@@ -29,3 +29,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Antonio (font)
+
+`frontend/fonts/antonio-latin.woff2` (the Latin subset, as Google Fonts serves it) is the typeface Antonio, used by the look
+"Tile wall" of the page "Proxon". Copyright 2013 The Antonio Project Authors (https://github.com/googlefonts/antonioFont).
+Licensed under the SIL Open Font License, Version 1.1; the full licence is in `frontend/fonts/OFL.txt`.
+

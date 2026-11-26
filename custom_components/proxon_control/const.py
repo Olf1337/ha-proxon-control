@@ -35,9 +35,10 @@ CONF_WATER_HEATER_POWER = "hot_water_heater_power"
 DEFAULT_WATER_PUMP_POWER = 430
 DEFAULT_WATER_HEATER_POWER = 1500
 CONF_FIXED_PRICE = "fixed_price"  # ct/kWh of a fixed tariff: for the electricity cost when no price sensor is chosen
-# the look of the page "Proxon": liquid glass (translucent over colour) or soft (raised and pressed, one surface colour)
+# the look of the page "Proxon": liquid glass (translucent over colour), soft (raised and pressed, one surface colour) or the
+# tile wall (rows of tiles, condensed numbers, one amber accent)
 CONF_PANEL_LOOK = "panel_look"
-PANEL_LOOKS = ["glass", "soft"]
+PANEL_LOOKS = ["glass", "soft", "tiles"]
 DEFAULT_PANEL_LOOK = "glass"
 # dashboard: the rooms on the upper floor (room numbers; guessed from the names until chosen), the user's own house photo
 CONF_UPPER_FLOOR = "upper_floor_rooms"

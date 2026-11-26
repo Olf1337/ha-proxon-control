@@ -211,6 +211,27 @@ def check(page, data: dict) -> dict:
     page.wait_for_timeout(200)
     r["glass_again"] = js("() => window.panel.hasAttribute('softui')")
 
+    # the look "Tile wall": the headline says whether everything runs, the unit as four tiles, a tap on a room opens it (- and +),
+    # a second tap its details; the font comes from the integration's own files
+    js(f"""() => {{ window.panel._config.look = 'tiles'; window.panel._config.static = '/proxon_control_static'; window.panel.hass = {{ ...window.hassFake }};
+      {root}.getElementById('tab-home').click(); }}""")
+    page.wait_for_timeout(300)
+    r["tiles"] = js(f"""() => {{
+      const room = {root}.querySelector('.rooms > .room'), sheet = {root}.getElementById('sheet');
+      const before = [room.classList.contains('open'), getComputedStyle(room.querySelector('.rs-btn')).display];
+      room.click();
+      const opened = [room.classList.contains('open'), getComputedStyle(room.querySelector('.rs-btn')).display, sheet.hidden];
+      room.click();
+      const details = !sheet.hidden; window.panel._closeSheet();
+      return {{ on: window.panel.hasAttribute('tiles'), hero: {root}.getElementById('hero-h').textContent,
+        heroShown: getComputedStyle({root}.getElementById('hero')).display, unit: getComputedStyle({root}.querySelector('.unit-temps')).display,
+        picture: getComputedStyle({root}.querySelector('svg.diagram')).display, tint: room.style.getPropertyValue('--rt'), before, opened, details,
+        font: [...document.querySelectorAll('style')].some(x => x.textContent.includes('/proxon_control_static/fonts/antonio-latin.woff2')),
+        overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }};
+    }}""")
+    js("() => { window.panel._config.look = 'glass'; window.panel.hass = { ...window.hassFake }; }")
+    page.wait_for_timeout(200)
+
     # settings: every section; the list stays in its column, nothing runs out sideways
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(400)

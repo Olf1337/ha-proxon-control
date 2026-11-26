@@ -79,9 +79,11 @@ In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look u
 * **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der
   gewählte Bereich; auf dem Handy erst die Liste, dann der Bereich.
 * **Sollwerte nur mit − und +** (gedrückt halten wiederholt): Wischen beim Scrollen verstellt nichts.
-* **Zwei Designs** (unter *Konfigurieren* → „Design der Seite ‚Proxon‘“): **Liquid Glass** – durchscheinende Karten über
-  farbigen Flächen – oder **Soft** – erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche (angelehnt an
-  Neumorphismus, aber mit vollem Textkontrast und farbigen Zuständen). Beide hell und dunkel wie das Gerät.
+* **Drei Designs** (unter *Konfigurieren* → „Design der Seite ‚Proxon‘“): **Liquid Glass** – durchscheinende Karten über
+  farbigen Flächen –, **Soft** – erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche (angelehnt an
+  Neumorphismus, aber mit vollem Textkontrast und farbigen Zuständen) – oder **Kachelwand** – oben groß „Alles läuft.“,
+  Räume als Reihe von Kacheln in der Farbe ihrer Temperatur, ein Tipp öffnet den Raum mit − und +, auf breiten
+  Bildschirmen die Navigation links. Alle hell und dunkel wie das Gerät.
 
 Das frühere fertige Dashboard „Proxon Control“ (Aktion *Dashboard erstellen*, nur für Administratoren) ist **abgekündigt**: Es
 funktioniert bis Version 2.0 weiter, danach entfällt es. Solange es existiert, steht ein Hinweis unter *Einstellungen → Reparaturen*.

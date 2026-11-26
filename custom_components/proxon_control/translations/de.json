@@ -930,7 +930,7 @@
           "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: kein Kopfbild.",
           "hot_water_pump_power": "Für den geschätzten Warmwasser-Verbrauch (die Anlage misst ihn nicht): die Nennleistung, solange die Wärmepumpe läuft. Datenblatt PROXON T300: 430 W.",
           "hot_water_heater_power": "Die Nennleistung, solange der Heizstab läuft. T300: 1500 W; mit der Option BOOST 4500 oder 9000 W.",
-          "panel_look": "Liquid Glass: durchscheinende Karten über farbigen Flächen. Soft: erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche."
+          "panel_look": "Liquid Glass: durchscheinende Karten über farbigen Flächen. Soft: erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche. Kachelwand: Reihen aus Kacheln, Räume in ihrer Temperaturfarbe, große schmale Zahlen; ein Tipp auf einen Raum zeigt − und +."
         }
       }
     },
@@ -1024,7 +1024,8 @@
     "panel_look": {
       "options": {
         "glass": "Liquid Glass",
-        "soft": "Soft"
+        "soft": "Soft",
+        "tiles": "Kachelwand"
       }
     }
   },

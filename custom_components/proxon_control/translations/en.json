@@ -930,7 +930,7 @@
           "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: no header picture.",
           "hot_water_pump_power": "For the estimated hot-water consumption (the unit doesn't measure it): the rated power while the heat pump runs. PROXON T300 datasheet: 430 W.",
           "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W.",
-          "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour."
+          "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour. Tile wall: rows of tiles, rooms in their temperature's colour, large narrow numbers; a tap on a room shows − and +."
         }
       }
     },
@@ -1024,7 +1024,8 @@
     "panel_look": {
       "options": {
         "glass": "Liquid glass",
-        "soft": "Soft"
+        "soft": "Soft",
+        "tiles": "Tile wall"
       }
     }
   },

@@ -91,6 +91,11 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         soft = r["soft"]
         assert soft["on"] and soft["backdrop"] == "none" and soft["card"] in ("none", "") and soft["overflow"] <= 0, f"{width}: soft {soft}"
         assert r["glass_again"] is False
+        tl = r["tiles"]
+        assert tl["on"] and tl["hero"] == "Filter wechseln."  # the test unit: filter change in 5 days and tl["heroShown"] == "grid" and tl["font"], f"{width}: tile wall {tl}"
+        assert tl["unit"] == "grid" and tl["picture"] == "none" and tl["tint"].startswith("color-mix"), f"{width}: {tl}"
+        assert tl["before"] == [False, "none"] and tl["opened"] == [True, "block", True] and tl["details"], f"{width}: tap opens {tl}"
+        assert tl["overflow"] <= 0, f"{width}: the tile wall runs out sideways {tl}"
         for sec, s in r["settings"].items():
             assert s["shown"] and s["rows"], f"{width}/{sec}: the section is empty"
             assert s["overflow"] <= 0 and s["rows_out"] == 0, f"{width}/{sec}: runs out sideways: {s}"

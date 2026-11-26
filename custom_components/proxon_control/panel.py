@@ -44,7 +44,8 @@ def panel_config(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         # a fixed tariff (ct/kWh): the costs of every period are worked out from the consumption (the cost sensors only count
         # from when a price was set)
         "price": entry.options.get(CONF_FIXED_PRICE),
-        "look": entry.options.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK),  # liquid glass or soft
+        "look": entry.options.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK),  # liquid glass, soft or tile wall
+        "static": STATIC_URL,  # the page's own files (the tile wall's font)
     }
 
 

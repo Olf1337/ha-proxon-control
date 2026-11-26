@@ -7,6 +7,7 @@
 const TEXT = {
   de: {
     title: "Zuhause", outside: "Außen", op: "Betrieb", ok: "Alles in Ordnung", fault: "Störung", filter: "Filter bald wechseln",
+    heroOk: "Alles läuft.", heroFault: "Störung.", heroFilter: "Filter wechseln.", heroLevel: "Stufe {n}", heroOut: "außen {v}",
     unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", leftSoon: "endet gleich", level: "Stufe", levelBoost: "4 (Intensiv)",
     tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
@@ -75,6 +76,7 @@ const TEXT = {
   },
   en: {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
+    heroOk: "All good.", heroFault: "Fault.", heroFilter: "Change the filter.", heroLevel: "level {n}", heroOut: "outside {v}",
     unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", leftSoon: "ending now", level: "Level", levelBoost: "4 (boost)",
     tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
@@ -212,6 +214,20 @@ const icon = (id, color) => `<span class="ico" style="background:${color}" aria-
 
 // ---------------- springs ----------------
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+let tileFontLoaded = false;
+function loadTileFont(base) {
+  if (tileFontLoaded || !base) return;
+  tileFontLoaded = true;
+  const style = document.createElement("style");
+  style.textContent = `@font-face { font-family: "Antonio"; font-weight: 400 700; font-display: swap; src: url("${base}/fonts/antonio-latin.woff2") format("woff2"); }`;
+  document.head.appendChild(style);
+}
+// a tile's colour from its temperature: cool blue-grey (17 °C and below) to warm amber (24 °C and above), quiet enough for text
+function tempTint(temp, dark) {
+  if (typeof temp !== "number") return "";
+  const k = Math.round(Math.max(0, Math.min(1, (temp - 17) / 7)) * 100);  // a straight blend, no greens on the way
+  return dark ? `color-mix(in oklab, #1b2533, #4a3116 ${k}%)` : `color-mix(in oklab, #e1eaf4, #f6dfc2 ${k}%)`;
+}
 const activeSprings = new Set();
 let ticking = false, lastFrame = 0;
 function frame(t) {
@@ -603,8 +619,69 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   .backdrop { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .live { animation: none; } button.card, .card.tap, .rs-btn, .fchip, .switch::after, .stepper button, .unit-tap, .pill-switch, .auto-more, .disc { transition: none; } }
+/* third look "Kachelwand" (tile wall): a calm wall of tiles in rows per job, numbers and headings in a condensed face, one
+   amber accent; rooms tinted by their own temperature, the tapped room grows and shows its target, the others step back */
+.hero { display: none; }
+:host([tiles]) {
+  --bg: #eceef1; --surface: #ffffff; --surface-solid: #ffffff; --line: rgba(18,22,28,.09); --fg: #12161c; --fg-2: #3f4855; --fg-3: #5a6472;
+  --accent: #a8620e; --glass: #ffffff; --glass-strong: #ffffff; --edge: transparent; --edge-low: transparent; --tile-line: rgba(18,22,28,.1);
+  --shadow: none; --font-display: "Antonio", "Oswald", "Roboto Condensed", "Arial Narrow", sans-serif;
+}
+:host([tiles][dark]) {
+  --bg: #0c0f14; --surface: #12171e; --surface-solid: #12171e; --line: rgba(255,255,255,.08); --fg: #e9edf2; --fg-2: #c3cad4; --fg-3: #aeb7c4;
+  --accent: #e8a33d; --glass: #12171e; --glass-strong: #161c25; --tile-line: #1f2836;
+}
+:host([tiles]) .backdrop { display: none; }
+:host([tiles]) .card, :host([tiles]) .chip, :host([tiles]) .fchip, :host([tiles]) .toast {
+  background: var(--surface) !important; border: 1px solid var(--tile-line) !important; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+:host([tiles]) .card::before, :host([tiles]) .chip::before, :host([tiles]) .fchip::before, :host([tiles]) .toast::before, :host([tiles]) .sheet::before,
+:host([tiles]) .card::after { display: none; }
+:host([tiles]) .card { border-radius: 16px !important; }
+:host([tiles]) .sheet { background: var(--surface-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+:host([tiles]) .head h1, :host([tiles]) .floor h2 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .01em; font-weight: 700; }
+:host([tiles]) .head h1 { font-size: 2.1rem; }
+:host([tiles]) .floor h2 { font-size: 1.7rem; font-weight: 600; }
+:host([tiles]) .label { letter-spacing: .14em; }
+:host([tiles]) .room-temp, :host([tiles]) .fact .huge, :host([tiles]) .e-big, :host([tiles]) .e-mid, :host([tiles]) .unit-temps b, :host([tiles]) .rs-v b,
+:host([tiles]) .stepper output { font-family: var(--font-display); letter-spacing: 0; }
+:host([tiles]) .fchip.run { background: color-mix(in srgb, var(--accent) 22%, var(--surface)) !important; border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+:host([tiles]) .hero { display: grid; gap: 8px; }
+:host([tiles]) .hero h2 { margin: 0; font: 700 clamp(3rem, 7.5vw, 5.5rem)/.92 var(--font-display); text-transform: uppercase; }
+:host([tiles]) .hero p { margin: 0; font-size: 1.1rem; color: var(--fg-2); }
+:host([tiles]) .status > .chip { display: none; }  /* outside, mode and status are in the headline; the function pills stay */
+/* the unit: its four air temperatures as tiles instead of the drawn picture */
+:host([tiles]) svg.diagram { display: none; }
+:host([tiles]) .unit-temps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 600px) { :host([tiles]) .unit-temps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+:host([tiles]) .unit-temps div { background: var(--rt, var(--line)); border: 1px solid var(--tile-line); padding: 14px; }
+:host([tiles]) .unit-temps b { font-size: 2.2rem; font-weight: 700; }
+/* rooms: a row to swipe through, each tile in its own temperature; the tapped one grows and shows - and + */
+:host([tiles]) .rooms { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 10px; scrollbar-width: thin; }
+:host([tiles]) .rooms > .room { flex: 0 0 172px; scroll-snap-align: start; background: var(--rt, var(--surface)) !important; min-height: 168px;
+  display: flex; flex-direction: column; justify-content: space-between; transition: flex-basis 260ms cubic-bezier(.22,1,.36,1), opacity 200ms ease-out; }
+:host([tiles]) .rooms > .room.open { flex-basis: 300px; border: 2px solid var(--accent) !important; }
+:host([tiles]) .rooms:has(.open) > .room:not(.open) { opacity: .7; }
+:host([tiles]) .room .state { display: none; }
+:host([tiles]) .room-temp { font-size: 3.2rem; font-weight: 700; line-height: 1; }
+:host([tiles]) .room:not(.open) .rs-btn { display: none; }
+:host([tiles]) .room:not(.open) .room-step { justify-content: flex-start; margin-top: 6px; }
+:host([tiles]) .room:not(.open) .rs-v { display: flex; gap: 6px; align-items: baseline; }
+:host([tiles]) .room:not(.open) .rs-v b { font: 600 .9375rem/1.2 var(--font); }
+:host([tiles]) .room .rs-btn { width: 48px; height: 48px; }
+/* wide screens: the tabs as a bar on the left */
+@media (min-width: 821px) {
+  :host([tiles]) .page { max-width: 1320px; grid-template-columns: 176px minmax(0, 1fr); column-gap: 36px; align-items: start; }
+  :host([tiles]) .page > .head { grid-row: 1 / span 20; position: sticky; top: 20px; flex-direction: column; align-items: stretch; gap: 26px; }
+  :host([tiles]) .page > :not(.head) { grid-column: 2; }
+  :host([tiles]) .head h1 { margin: 0; }
+  :host([tiles]) .tabs { flex-direction: column; background: transparent; padding: 0; gap: 6px; }
+  :host([tiles]) .tabs button { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid transparent;
+    text-transform: uppercase; letter-spacing: .14em; font-size: .8125rem; text-align: left; color: var(--fg-2); }
+  :host([tiles]) .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); background: transparent; box-shadow: none; }
+  :host([tiles]) .tabs svg { display: block; width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { :host([tiles]) .rooms > .room { transition: none; } }
 `;
-
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
 const FAN = '<circle r="12" fill="var(--surface-solid)" stroke="var(--line)"/><path d="M0-8C3-8 4-3 0 0 -4-3-3-8 0-8ZM8 0C8 3 3 4 0 0 3-4 8-3 8 0ZM0 8C-3 8-4 3 0 0 4 3 3 8 0 8ZM-8 0C-8-3-3-4 0 0-3 4-8 3-8 0Z" fill="var(--fg-2)"/>';
 const FLAME = '<path d="M14 0C20 12 28 16 26 28 24 37 4 37 2 28 0 19 8 14 14 0Z" fill="var(--flame)"/><path d="M14 13C16 19 21 22 19 28 18 32 10 32 9 28 8 23 13 20 14 13Z" fill="#ffd166"/>';
@@ -668,6 +745,7 @@ class ProxonPanel extends HTMLElement {
           <div class="tabs" role="tablist"><button role="tab" id="tab-home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>${t.home}</button><button role="tab" id="tab-energy" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>${t.energy}</button><button role="tab" id="tab-settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M16 4.5v5M8 14.5v5"/></svg>${t.settings}</button></div>
         </header>
         <div class="view" id="v-home">
+        <div class="hero" id="hero"><h2 id="hero-h"></h2><p class="num" id="hero-sub"></p></div>
         <div class="status" id="status">
           <span class="chip">${t.outside} <b class="num" id="c-out">–</b></span>
           <span class="chip" id="c-op-wrap">${t.op} <b id="c-op">–</b></span>
@@ -818,7 +896,10 @@ class ProxonPanel extends HTMLElement {
     if (!this._built || !this._hass) return;
     const t = this.t, dark = this._hass.themes && this._hass.themes.darkMode;
     this.toggleAttribute("dark", !!dark);
-    this.toggleAttribute("softui", (this._config || {}).look === "soft");  // the look chosen in the options
+    const look = (this._config || {}).look;  // the look chosen in the options
+    this.toggleAttribute("softui", look === "soft");
+    this.toggleAttribute("tiles", look === "tiles");
+    if (look === "tiles") loadTileFont((this._config || {}).static);
     const deg = key => { const v = this.num(key); return v === null ? "–" : `${this.fmt(v)}°`; };
     this.$("c-out").textContent = deg("T3Frischluft");
     const op = this.st("AktuellerBetrieb");
@@ -828,7 +909,10 @@ class ProxonPanel extends HTMLElement {
     this.$("c-ok").textContent = fault ? t.fault : filter ? t.filter : t.ok;
     this.$("c-dot").style.background = fault ? "var(--danger)" : filter ? "var(--warm)" : "var(--fine)";
     // unit
-    [["fresh", "T3Frischluft"], ["supply", "T1Zuluft"], ["extract", "T7Abluft"], ["exhaust", "T4Fortluft"]].forEach(([el, k]) => { this.$(`v-${el}`).textContent = deg(k); this.$(`m-${el}`).textContent = deg(k); });
+    [["fresh", "T3Frischluft"], ["supply", "T1Zuluft"], ["extract", "T7Abluft"], ["exhaust", "T4Fortluft"]].forEach(([el, k]) => {
+      this.$(`v-${el}`).textContent = deg(k); this.$(`m-${el}`).textContent = deg(k);
+      this.$(`m-${el}`).parentElement.style.setProperty("--rt", tempTint(this.num(k), this.hasAttribute("dark")));
+    });
     const rs = this.num("DrehzahlZuluft"), re = this.num("DrehzahlAbluft");
     const rpm = v => v === null ? "–" : Math.round(v).toLocaleString(this._hass.language || undefined);
     this.$("rpm-s-t").textContent = rs === null ? "" : `${rpm(rs)} U/min`; this.$("rpm-e-t").textContent = re === null ? "" : `${rpm(re)} U/min`;
@@ -861,6 +945,10 @@ class ProxonPanel extends HTMLElement {
     this.$("boost-left").textContent = left > 0 ? fill(t.left, { m: this.fmt(left, 0) }) : t.leftSoon;
     const lvl = this.num("IstLuefterstufe") ?? this.num("Luefterstufe");
     this.$("u-level").textContent = boost ? t.levelBoost : lvl === null ? "–" : Math.round(lvl);
+    // the tile wall's headline: is everything running, and the unit in one line
+    this.$("hero-h").textContent = fault ? t.heroFault : filter ? t.heroFilter : t.heroOk;
+    this.$("hero-sub").textContent = [op ? this.$("c-op").textContent : null, boost ? t.levelBoost : lvl === null ? null : fill(t.heroLevel, { n: Math.round(lvl) }),
+      this.num("T3Frischluft") === null ? null : fill(t.heroOut, { v: deg("T3Frischluft") })].filter(Boolean).join(" · ");
     const rec = this.num("Waermerueckgewinnung");
     this.$("rec-wrap").hidden = rec === null; this.$("rec").textContent = `${this.fmt(rec, 0)} %`;
     this._level = boost ? 4.5 : (lvl || 0);
@@ -1078,13 +1166,22 @@ class ProxonPanel extends HTMLElement {
       $(".icon").title = t.element[r.element] || "";
       $(".room-temp").innerHTML = r.temp === undefined || r.temp === null ? "–" : `${this.fmt(r.temp)}<small>°</small>`;
       $(".state").style.setProperty("--ring", r.available && r.temp != null ? ring(r) : "transparent");
+      el.style.setProperty("--rt", tempTint(r.temp, this.hasAttribute("dark")));
       $(".tv").textContent = `${this.fmt(r.target, digits())}°`;
       dn.disabled = !r.available || r.target <= r.min; up.disabled = !r.available || r.target >= r.max;
       el.setAttribute("aria-label", `${r.name}: ${this.fmt(r.temp)} °C, ${t.target} ${this.fmt(r.target, digits())} °C, ${t.element[r.element] || ""}`);
     };
     const saved = () => { const v = $(".rs-v"); v.classList.add("ok"); setTimeout(() => v.classList.remove("ok"), 1400); };
     [dn, up].forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); this._roomStep(n, Number(btn.dataset.d), saved); }));
-    el.addEventListener("click", e => { if (!e.target.closest(".rs-btn") && r) this._sheetRoom(n, el); });
+    el.addEventListener("click", e => {
+      if (e.target.closest(".rs-btn") || !r) return;
+      if (this.hasAttribute("tiles") && !el.classList.contains("open")) {
+        el.parentElement.querySelectorAll(".room.open").forEach(o => o.classList.remove("open"));
+        el.classList.add("open");
+        return;
+      }
+      this._sheetRoom(n, el);
+    });
     el.addEventListener("keydown", e => { if (e.target === el && r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this._sheetRoom(n, el); } });
     return { el, render };
   }
