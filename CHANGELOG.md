@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** a CSV download in the "Energy" tab; "Reconfigure" to change password, connection and address
+without removing the integration; rooms connected later get their entities without a restart; better contrast, the four air
+temperatures large on phones, calmer room edges and a distinct dark "Soft" look; icons from `icons.json`; bridge add-on 0.9.4.
+
 **New in 1.0.0:** the first stable release. It contains everything from 1.0.0b1 to 1.0.0b5 (below), unchanged since
 1.0.0b5. Coming from 0.24.0: a tab "Energy" and a second look "Soft" on the page "Proxon", − and + instead of sliders, side
 rooms 14–26 °C, an estimate of the hot-water consumption, a fault that no longer jumps back to OK, one unit per Home
@@ -133,6 +137,24 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **CSV-Export im Tab „Energie“:** Der Knopf mit dem Pfeil lädt den gezeigten Zeitraum als CSV-Datei herunter, eine Zeile je
+  Tag (Woche, Monat) oder Monat (Jahr) mit kWh von Kompressor, Lüftung, Warmwasser und der Summe. Auf Deutsch mit „;“ und
+  Dezimalkomma, damit Excel und Numbers die Werte als Zahlen öffnen.
+* **„Neu konfigurieren“:** Unter *Einstellungen → Geräte & Dienste → Proxon Control → ⋮* lassen sich Passwort, Verbindung
+  und IP-Adresse (bzw. Adresse, Port und Schlüssel der Bridge) ändern, ohne die Integration zu löschen. Die Verbindung wird
+  vor dem Speichern getestet; Entitäten und Verlauf bleiben.
+* **Neue Räume ohne Neustart:** Ein Raum, den die Anlage erst nach dem Start meldet, bekommt beim nächsten Abruf sein
+  Thermostat, seine Temperatur und sein Heizelement, und sein Gerät kommt in den gleichnamigen Bereich.
+* **Lesbarer auf der Seite „Proxon“:** Hinweistexte und kleine Beschriftungen mit mindestens 4,5:1 Kontrast (vorher 2,7 bis
+  3,8:1). Auf dem Handy stehen die vier Lufttemperaturen groß unter dem Anlagenbild statt winzig darin. Räume haben nur noch
+  einen farbigen Rand, wenn ihr Heizelement heizt (orange) oder sie mehr als 1 °C unter dem Ziel liegen (blau). „Soft“ ist im
+  Dunkeln heller und weicher und damit deutlich anders als Liquid Glass. Schalter federn nicht mehr über.
+* **Symbole aus `icons.json`:** wie von Home Assistant empfohlen; sichtbar ändert sich nichts.
+* **Bridge-Add-on 0.9.4:** mit denselben Korrekturen wie die Integration (nur fest eingetragene Debian-Dateien, kein
+  angenommener Grundwert beim Stellen eines Raums).
 
 ### Neu in Version 1.0.0
 

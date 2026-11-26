@@ -29,21 +29,21 @@ def _temp(key: str, tk: str, lo: float, hi: float, step: float = 1) -> ProxonNum
 
 
 NUMBERS: list[ProxonNumberDescription] = [
-    ProxonNumberDescription(key="Luefterstufe", translation_key="level", native_min_value=1, native_max_value=4, native_step=1, mode=NumberMode.SLIDER, icon="mdi:fan"),
+    ProxonNumberDescription(key="Luefterstufe", translation_key="level", native_min_value=1, native_max_value=4, native_step=1, mode=NumberMode.SLIDER),
     ProxonNumberDescription(
         key="GrenzwertCO2", translation_key="co2_limit", native_min_value=400, native_max_value=1500, native_step=50,
-        native_unit_of_measurement=PPM, mode=NumberMode.SLIDER, icon="mdi:molecule-co2",
+        native_unit_of_measurement=PPM, mode=NumberMode.SLIDER,
     ),
     ProxonNumberDescription(
         key="GrenzwertFeuchte", translation_key="humidity_limit", native_min_value=0, native_max_value=100, native_step=5,
-        native_unit_of_measurement=PERCENTAGE, mode=NumberMode.SLIDER, icon="mdi:water-percent",
+        native_unit_of_measurement=PERCENTAGE, mode=NumberMode.SLIDER,
     ),
     _temp("SollWassertemperatur", "water_target", 20, 55),
     _temp("NachtabsenkungTemperatur", "night_setback_temperature", 10, 30, 0.5),
     # how long a boost ventilation runs (the unit ends it by itself)
     ProxonNumberDescription(
         key="IntensivlueftungsDauer", translation_key="boost_duration", native_min_value=1, native_max_value=1440, native_step=1,
-        native_unit_of_measurement=UnitOfTime.MINUTES, mode=NumberMode.BOX, icon="mdi:timer-cog-outline",
+        native_unit_of_measurement=UnitOfTime.MINUTES, mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
     ),
     _temp("Soll-E-Heizstab-Temperatur", "boost_temperature", 20, 70),
@@ -103,17 +103,17 @@ ENERGY_NUMBERS: list[ProxonEnergyNumberDescription] = [
     ProxonEnergyNumberDescription(
         key="SolarSchwelle", translation_key="solar_surplus", setting="surplus_w", native_min_value=200, native_max_value=20000,
         native_step=100, native_unit_of_measurement=UnitOfPower.WATT, device_class=NumberDeviceClass.POWER, mode=NumberMode.BOX,
-        icon="mdi:solar-power-variant", entity_category=EntityCategory.CONFIG,
+        entity_category=EntityCategory.CONFIG,
     ),
     ProxonEnergyNumberDescription(
         key="PreisSchwelle", translation_key="cheap_price", setting="price_ct", native_min_value=-50, native_max_value=100,
-        native_step=0.5, native_unit_of_measurement="ct/kWh", mode=NumberMode.BOX, icon="mdi:cash-clock",
+        native_step=0.5, native_unit_of_measurement="ct/kWh", mode=NumberMode.BOX,
         entity_category=EntityCategory.CONFIG,
     ),
     ProxonEnergyNumberDescription(
         key="SpeicherTemperatur", translation_key="store_temperature", setting="store_temp", native_min_value=40, native_max_value=55,
         native_step=1, native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.BOX, icon="mdi:water-boiler", entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.BOX, entity_category=EntityCategory.CONFIG,
     ),
 ]
 
@@ -122,18 +122,18 @@ COOLING_NUMBERS: list[ProxonEnergyNumberDescription] = [
     ProxonEnergyNumberDescription(
         key="KuehlWunsch", translation_key="cooling_wish", setting="wish", native_min_value=18, native_max_value=28, native_step=0.5,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE, mode=NumberMode.BOX,
-        icon="mdi:home-thermometer", entity_category=EntityCategory.CONFIG,
+        entity_category=EntityCategory.CONFIG,
     ),
     ProxonEnergyNumberDescription(
         key="KuehlStufe", translation_key="cooling_level", setting="level", native_min_value=2, native_max_value=4, native_step=1,
-        mode=NumberMode.SLIDER, icon="mdi:fan", entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.SLIDER, entity_category=EntityCategory.CONFIG,
     ),
 ]
 BOOST_NUMBERS: list[ProxonEnergyNumberDescription] = [
     ProxonEnergyNumberDescription(
         key="BoostGrenze", translation_key="boost_limit", setting="limit", native_min_value=20, native_max_value=55, native_step=1,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE, mode=NumberMode.BOX,
-        icon="mdi:heating-coil", entity_category=EntityCategory.CONFIG,
+        entity_category=EntityCategory.CONFIG,
     ),
 ]
 
@@ -142,12 +142,12 @@ SEASON_NUMBERS: list[ProxonEnergyNumberDescription] = [
     ProxonEnergyNumberDescription(
         key="SaisonWinterUnter", translation_key="season_winter_below", setting="winter_below", native_min_value=0, native_max_value=25,
         native_step=0.5, native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.BOX, icon="mdi:snowflake-thermometer", entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.BOX, entity_category=EntityCategory.CONFIG,
     ),
     ProxonEnergyNumberDescription(
         key="SaisonSommerUeber", translation_key="season_summer_above", setting="summer_above", native_min_value=5, native_max_value=30,
         native_step=0.5, native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE,
-        mode=NumberMode.BOX, icon="mdi:sun-thermometer", entity_category=EntityCategory.CONFIG,
+        mode=NumberMode.BOX, entity_category=EntityCategory.CONFIG,
     ),
 ]
 
@@ -180,7 +180,6 @@ class ProxonHolidayLeadNumber(ProxonEntity, NumberEntity):
     """Holiday plan: how many hours before the return holiday mode goes off (house and water warm up again)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:home-clock-outline"
     _attr_native_min_value = 0
     _attr_native_max_value = 48
     _attr_native_step = 1

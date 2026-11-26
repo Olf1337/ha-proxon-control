@@ -151,6 +151,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry) -> bo
     ).id
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _put_new_rooms_into_areas(hass, entry, coordinator, known)
+    # rooms connected later get their devices at a later reading (entity.watch_new_rooms): into their areas as well
+    known = {d.id for d in dr.async_entries_for_config_entry(devices, entry.entry_id)}
+
+    @callback
+    def new_room_areas() -> None:
+        _put_new_rooms_into_areas(hass, entry, coordinator, known)
+        known.update(d.id for d in dr.async_entries_for_config_entry(devices, entry.entry_id))
+
+    entry.async_on_unload(coordinator.async_add_listener(new_room_areas))
     # hot water as a store for solar surplus / cheap electricity
     coordinator.energy.async_start()
     entry.async_on_unload(coordinator.energy.async_stop)

@@ -51,7 +51,6 @@ class ProxonNightTime(ProxonEntity, TimeEntity):
     def __init__(self, coordinator, end: bool) -> None:
         super().__init__(coordinator, f"Nachtabsenkung{'Ende' if end else 'Start'}", f"night_setback_{'end' if end else 'start'}")
         self._keys = NIGHT_KEYS[end]
-        self._attr_icon = "mdi:weather-sunset-up" if end else "mdi:weather-sunset-down"
 
     @property
     def available(self) -> bool:
@@ -83,7 +82,6 @@ class ProxonPhaseTime(ProxonEntity, TimeEntity):
             device=schedule_day_device(hass, coordinator, day),
         )
         self._day, self._phase, self._end = day, phase, end
-        self._attr_icon = "mdi:clock-end" if end else "mdi:clock-start"
 
     @property
     def available(self) -> bool:
@@ -111,7 +109,6 @@ class ProxonLegionellaTime(ProxonEnergyEntity, TimeEntity):
     integration, nothing is written to the unit)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:clock-alert-outline"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "LegionellenZeit", "legionella_due_time", coordinator.energy.legionella)
@@ -128,7 +125,6 @@ class ProxonLegionellaPlanTime(ProxonEnergyEntity, TimeEntity):
     """Planned legionella protection: the time on its weekday (a setting of the integration, nothing written to the unit)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:calendar-clock"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "LegionellenPlanZeit", "legionella_plan_time", coordinator.energy.legionella)

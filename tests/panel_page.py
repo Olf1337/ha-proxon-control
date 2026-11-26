@@ -69,6 +69,9 @@ def check(page, data: dict) -> dict:
     root = "window.panel.shadowRoot"
     r["overflow_home"] = js("() => Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth")
     r["sliders"] = js(f"() => {root}.querySelectorAll('.slider, input[type=range]').length")
+    # the four air temperatures: in the picture on wide screens, large below it on a phone
+    r["unit_temps"] = js(f"""() => [getComputedStyle({root}.querySelector('.unit-temps')).display,
+      [...{root}.querySelectorAll('.unit-temps b')].map(b => b.textContent), getComputedStyle({root}.getElementById('v-fresh')).display]""")
 
     # a sideways swipe over the hot-water card and a room tile changes nothing
     for sel in ("#water", ".room"):
@@ -168,6 +171,14 @@ def check(page, data: dict) -> dict:
     page.wait_for_timeout(300)
     r["energy_tz"] = js(f"""() => ({{ cols: [...{root}.querySelectorAll('.e-col')].map(c => c.children.length), total: {root}.getElementById('e-total').textContent,
       sub: {root}.getElementById('e-sub').textContent }})""")
+    # the shown period as a CSV download: one row per day, kWh per part and the total (German: ";" and a decimal comma)
+    r["energy_csv"] = js(f"""async () => {{
+      let blob = null, name = null; const make = URL.createObjectURL, click = HTMLAnchorElement.prototype.click;
+      URL.createObjectURL = b => {{ blob = b; return 'blob:test'; }}; HTMLAnchorElement.prototype.click = function () {{ name = this.download; }};
+      {root}.getElementById('e-csv').click();
+      URL.createObjectURL = make; HTMLAnchorElement.prototype.click = click;
+      return {{ name, text: blob ? await blob.text() : null }};
+    }}""")
     # a failed query: said so, not "no values", and earlier periods stay reachable; tried again later
     js("() => { window.wsAnswer = () => { throw new Error('recorder down'); }; window.panel._eStats = {}; window.panel._updateEnergy(); }")
     page.wait_for_timeout(300)

@@ -272,6 +272,70 @@ class ProxonConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="bridge", data_schema=self.add_suggested_values_to_schema(schema, user_input), errors=errors)
 
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Change how the unit is reached without removing it: password, connection and IP address (Device ID + password), or
+        address, port and access key (bridge). The Device ID stays, so entities and history stay too. Tested before saving."""
+        entry = self._get_reconfigure_entry()
+        if entry.data.get(CONF_CONNECTION) == CONNECTION_BRIDGE:
+            return await self.async_step_reconfigure_bridge(user_input)
+        errors: dict[str, str] = {}
+        cloud_possible = library_supported()
+        current = {**entry.data, **entry.options}
+        if user_input is not None:
+            password = user_input.get(CONF_PASSWORD) or entry.data[CONF_PASSWORD]  # empty: keep the one saved
+            mode = user_input.get(CONF_MODE, DEFAULT_MODE) if cloud_possible else MODE_LOCAL
+            host = (user_input.get(CONF_LOCAL_HOST) or "").strip()
+            api = self._login_api(entry.data[CONF_DEVICE_ID], password, mode, host)
+            err = await self._test(api, local_only=api.cloud is None)
+            if err is None:
+                data = {**entry.data, CONF_PASSWORD: password, CONF_MODE: mode}
+                data.pop(CONF_LOCAL_HOST, None)
+                if host:
+                    data[CONF_LOCAL_HOST] = host
+                # the same settings kept in the options (Configure) would hide the new ones
+                options = {k: v for k, v in entry.options.items() if k not in (CONF_MODE, CONF_LOCAL_HOST)}
+                self.hass.config_entries.async_update_entry(entry, options=options)
+                return self.async_update_reload_and_abort(entry, data=data)
+            errors["base"] = err
+        fields: dict[Any, Any] = {vol.Optional(CONF_PASSWORD): str}
+        if cloud_possible:
+            fields[vol.Required(CONF_MODE, default=current.get(CONF_MODE) or DEFAULT_MODE)] = mode_selector()
+        fields[vol.Optional(CONF_LOCAL_HOST)] = str
+        suggested = user_input or {CONF_LOCAL_HOST: current.get(CONF_LOCAL_HOST, "")}
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(vol.Schema(fields), suggested),
+            description_placeholders={"device_id": entry.data.get(CONF_DEVICE_ID, "")},
+            errors=errors,
+        )
+
+    async def async_step_reconfigure_bridge(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            host, port = user_input[CONF_HOST].strip(), user_input[CONF_PORT]
+            token = (user_input.get(CONF_TOKEN) or "").strip()
+            unique_id = f"bridge-{host}-{port}".lower()
+            if any(e.unique_id == unique_id for e in self._async_current_entries() if e.entry_id != entry.entry_id):
+                return self.async_abort(reason="already_configured")
+            err = await self._test(BridgeApi(host, port, token))
+            if err is None:
+                data = {CONF_CONNECTION: CONNECTION_BRIDGE, CONF_HOST: host, CONF_PORT: port}
+                if token:
+                    data[CONF_TOKEN] = token
+                return self.async_update_reload_and_abort(entry, unique_id=unique_id, data=data)
+            errors["base"] = err
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST): str,
+                vol.Required(CONF_PORT): int,
+                vol.Optional(CONF_TOKEN): str,
+            }
+        )
+        suggested = user_input or {CONF_HOST: entry.data.get(CONF_HOST), CONF_PORT: entry.data.get(CONF_PORT, DEFAULT_PORT),
+                                   CONF_TOKEN: entry.data.get(CONF_TOKEN, "")}
+        return self.async_show_form(step_id="reconfigure_bridge", data_schema=self.add_suggested_values_to_schema(schema, suggested), errors=errors)
+
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         return await self.async_step_reauth_confirm()
 

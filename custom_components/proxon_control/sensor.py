@@ -52,7 +52,7 @@ from .comfort import (
 )
 from .const import CONF_FIXED_PRICE, CONF_PRICE_SENSOR, PPM
 from .energy import BLOCKED, HEATING_PRICE, HEATING_SOLAR, NO_SOURCE, OFF, PAUSED, STARTING, WAITING
-from .entity import ProxonEnergyEntity, ProxonEntity, room_device
+from .entity import ProxonEnergyEntity, ProxonEntity, room_device, watch_new_rooms
 from .registers import (
     HOUR_COUNTERS,
     OPERATION_KEYS,
@@ -88,14 +88,14 @@ def _temp(key: str, tk: str, room: int | None = None, diag: bool = False) -> Pro
 def _rpm(key: str, tk: str) -> ProxonSensorDescription:
     return ProxonSensorDescription(
         key=key, translation_key=tk, native_unit_of_measurement=REVOLUTIONS_PER_MINUTE,
-        state_class=SensorStateClass.MEASUREMENT, icon="mdi:fan", entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.MEASUREMENT, entity_category=EntityCategory.DIAGNOSTIC,
     )
 
 
-def _raw(key: str, tk: str, icon: str, enabled: bool = True) -> ProxonSensorDescription:
+def _raw(key: str, tk: str, enabled: bool = True) -> ProxonSensorDescription:
     """A raw diagnostic value of the unit (positions, status words)."""
     return ProxonSensorDescription(
-        key=key, translation_key=tk, icon=icon, entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=enabled,
+        key=key, translation_key=tk, entity_category=EntityCategory.DIAGNOSTIC, entity_registry_enabled_default=enabled,
     )
 
 
@@ -112,11 +112,11 @@ SENSORS: list[ProxonSensorDescription] = [
     _temp("WarmwasserUntenTemperatur", "water_bottom"),
     ProxonSensorDescription(
         key="KompressorLeistung", translation_key="compressor_power_percent", native_unit_of_measurement=PERCENTAGE,
-        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0, icon="mdi:heat-pump",
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0,
     ),
     ProxonSensorDescription(
         key="GeraeteTyp", translation_key="device_type", device_class=SensorDeviceClass.ENUM,
-        options=["heating_only", "heating_cooling"], entity_category=EntityCategory.DIAGNOSTIC, icon="mdi:information-outline",
+        options=["heating_only", "heating_cooling"], entity_category=EntityCategory.DIAGNOSTIC,
     ),
     *[
         ProxonSensorDescription(
@@ -129,15 +129,15 @@ SENSORS: list[ProxonSensorDescription] = [
     ],
     ProxonSensorDescription(
         key="WarmwasserLadezustand", translation_key="water_charge", native_unit_of_measurement=PERCENTAGE,
-        state_class=SensorStateClass.MEASUREMENT, icon="mdi:water-boiler",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     ProxonSensorDescription(
         key="WarmwasserDuschminuten", translation_key="shower_minutes", native_unit_of_measurement=UnitOfTime.MINUTES,
-        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0, icon="mdi:shower-head",
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0,
     ),
     ProxonSensorDescription(
         key="AktuellerBetrieb", translation_key="operation", device_class=SensorDeviceClass.ENUM,
-        options=list(OPERATION_KEYS.values()), icon="mdi:heat-pump-outline",
+        options=list(OPERATION_KEYS.values()),
     ),
     # diagnostics of the heat pump / air paths
     _temp("T12VorKondensator", "t12_pre_condenser", diag=True),
@@ -149,15 +149,15 @@ SENSORS: list[ProxonSensorDescription] = [
         device_class=SensorDeviceClass.PRESSURE, state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=2,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
-    _raw("Schieberposition", "damper_position", "mdi:valve"),
-    _raw("VentilHeizung", "valve_heating", "mdi:valve"),
-    _raw("VentilVorwaerme", "valve_preheat", "mdi:valve"),
-    _raw("VentilKuehlung", "valve_cooling", "mdi:valve"),
+    _raw("Schieberposition", "damper_position"),
+    _raw("VentilHeizung", "valve_heating"),
+    _raw("VentilVorwaerme", "valve_preheat"),
+    _raw("VentilKuehlung", "valve_cooling"),
     # operating hours of the unit's parts (lifetime counters of the unit)
     *[
         ProxonSensorDescription(
             key=key, translation_key=f"hours_{key.removeprefix('Stunden').lower()}", native_unit_of_measurement=UnitOfTime.HOURS,
-            device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, icon="mdi:counter",
+            device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING,
             entity_category=EntityCategory.DIAGNOSTIC,
         )
         for key in HOUR_COUNTERS
@@ -166,7 +166,6 @@ SENSORS: list[ProxonSensorDescription] = [
     *[
         ProxonSensorDescription(
             key=f"{name}StartsHeute", translation_key=f"starts_today_{tk}", state_class=SensorStateClass.TOTAL_INCREASING,
-            icon="mdi:restart",
         )
         for name, tk in (("Kompressor", "compressor"), ("WarmwasserKompressor", "hot_water_compressor"), ("Heizstab", "heater"))
     ],
@@ -174,29 +173,28 @@ SENSORS: list[ProxonSensorDescription] = [
         ProxonSensorDescription(
             key=f"{name}LaufzeitHeute", translation_key=f"runtime_today_{tk}", native_unit_of_measurement=UnitOfTime.HOURS,
             device_class=SensorDeviceClass.DURATION, state_class=SensorStateClass.TOTAL_INCREASING, suggested_display_precision=1,
-            icon="mdi:timer-outline",
         )
         for name, tk in (("Kompressor", "compressor"), ("WarmwasserKompressor", "hot_water_compressor"), ("Heizstab", "heater"))
     ],
     *[
         ProxonSensorDescription(
             key=key, translation_key=tk, native_unit_of_measurement="K", suggested_display_precision=1,
-            icon="mdi:thermometer-chevron-down", entity_category=EntityCategory.DIAGNOSTIC,
+            entity_category=EntityCategory.DIAGNOSTIC,
         )
         for key, tk in (("PTCEinschaltSchwelle", "ptc_on_threshold"), ("PTCAusschaltSchwelle", "ptc_off_threshold"))
     ],
     ProxonSensorDescription(
         key="FilterStandzeit", translation_key="filter_lifetime", native_unit_of_measurement=UnitOfTime.MONTHS,
-        icon="mdi:air-filter", entity_category=EntityCategory.DIAGNOSTIC,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     ProxonSensorDescription(
         key="UhrAbweichung", translation_key="clock_drift", native_unit_of_measurement=UnitOfTime.MINUTES,
-        state_class=SensorStateClass.MEASUREMENT, icon="mdi:clock-alert-outline", entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.MEASUREMENT, entity_category=EntityCategory.DIAGNOSTIC,
     ),
     _rpm("DrehzahlZuluft", "rpm_intake"),
     _rpm("DrehzahlAbluft", "rpm_exhaust"),
     _rpm("DrehzahlKompressor", "rpm_compressor"),
-    ProxonSensorDescription(key="IstLuefterstufe", translation_key="actual_level", icon="mdi:fan", state_class=SensorStateClass.MEASUREMENT),
+    ProxonSensorDescription(key="IstLuefterstufe", translation_key="actual_level", state_class=SensorStateClass.MEASUREMENT),
     ProxonSensorDescription(
         key="CurrentCO2", translation_key="co2", native_unit_of_measurement=PPM,
         device_class=SensorDeviceClass.CO2, state_class=SensorStateClass.MEASUREMENT,
@@ -207,12 +205,12 @@ SENSORS: list[ProxonSensorDescription] = [
     ),
     ProxonSensorDescription(
         key="IntensivlueftungsRestDauer", translation_key="boost_remaining", native_unit_of_measurement=UnitOfTime.MINUTES,
-        device_class=SensorDeviceClass.DURATION, icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.DURATION,
     ),
     ProxonSensorDescription(
         key="FilterRestStunden", translation_key="filter_remaining", native_unit_of_measurement=UnitOfTime.HOURS,
         suggested_unit_of_measurement=UnitOfTime.DAYS, suggested_display_precision=0,
-        device_class=SensorDeviceClass.DURATION, icon="mdi:air-filter",
+        device_class=SensorDeviceClass.DURATION,
     ),
     ProxonSensorDescription(
         key="LaufzeitFilter", translation_key="filter_runtime", native_unit_of_measurement=UnitOfTime.HOURS,
@@ -283,14 +281,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonEnergyStatus(coordinator))
     comfort = coordinator.comfort
     if comfort.cooling.supported:
-        entities.append(ProxonFeatureStatus(coordinator, comfort.cooling, "NachtkuehlungStatus", "night_cooling_status", "mdi:weather-night",
+        entities.append(ProxonFeatureStatus(coordinator, comfort.cooling, "NachtkuehlungStatus", "night_cooling_status",
                                             [C_OFF, C_IDLE, C_WAITING, C_COOLING, C_PROTECTING, C_NOT_SUMMER, C_BLOCKED]))
     if comfort.boost.supported:
-        entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status", "mdi:heating-coil",
+        entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status",
                                             [B_OFF, B_IDLE, B_HEATING, B_ALREADY_ON, B_PAUSED, B_BLOCKED]))
     if coordinator.energy.legionella.supported:
         entities.append(ProxonFeatureStatus(coordinator, coordinator.energy.legionella, "LegionellenStatus", "legionella_status",
-                                            "mdi:bacteria-outline", [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
+                                            [L.OFF, L.WAITING, L.LOOKING, L.STARTING, L.HEATING_SOLAR,
                                                                      L.HEATING_DUE, L.BLOCKED, L.PLANNED, L.HEATING_PLANNED]))
     # electricity cost: with a price sensor (dynamic tariff) or a fixed price
     if (entry.options.get(CONF_PRICE_SENSOR) or entry.options.get(CONF_FIXED_PRICE)) and "LeistungGesamt" in data:
@@ -300,11 +298,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         if energy_year is not None:
             entities.append(ProxonYearForecast(coordinator, cost_periods["year"], "energy_cost_forecast_year", energy=energy_year))
     if comfort.season.supported:
-        entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status", "mdi:sun-snowflake-variant",
+        entities.append(ProxonFeatureStatus(coordinator, comfort.season, "SaisonStatus", "season_status",
                                             [S_OFF, S_COLLECTING, S_SUMMER, S_WINTER, S_MANUAL, S_BLOCKED]))
     if "Antwortzeit" in data:
         entities += [ProxonResponseTime(coordinator), ProxonConnectionPath(coordinator)]
     async_add_entities(entities)
+
+    # a room connected later: its temperature and heating element at the next reading
+    def room_entities(values: dict, i: int) -> list:
+        out: list[SensorEntity] = [ProxonSensor(coordinator, d) for d in SENSORS if d.room == i and d.key in values]
+        if element_state(values, i) is not None:
+            out.append(ProxonHeatingElement(coordinator, i))
+        return out
+
+    watch_new_rooms(entry, coordinator, async_add_entities, room_entities, {i for i in range(ROOM_COUNT) if room_connected(data, i)})
 
 
 class ProxonSensor(ProxonEntity, SensorEntity):
@@ -531,7 +538,6 @@ class ProxonForecast(ProxonEntity, SensorEntity):
     whole period. Only an estimate - the weather of the rest of the period decides."""
 
     _attr_suggested_display_precision = 0
-    _attr_icon = "mdi:chart-timeline-variant-shimmer"
 
     def __init__(self, coordinator, so_far: ProxonEnergyPeriod, tk: str) -> None:
         super().__init__(coordinator, f"{so_far._key}Prognose", tk)
@@ -645,7 +651,6 @@ class ProxonEnergyCost(ProxonEnergy):
 
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
-    _attr_icon = "mdi:cash"
 
     def __init__(self, coordinator, currency: str) -> None:
         super().__init__(coordinator, "Stromkosten", "LeistungGesamt", "energy_cost")
@@ -676,10 +681,6 @@ class ProxonHeatingElement(ProxonEntity, SensorEntity):
         return element_state(self.coordinator.data or {}, self._room)
 
     @property
-    def icon(self) -> str:
-        return {"heating": "mdi:radiator", "ready": "mdi:radiator-disabled"}.get(self.native_value or "", "mdi:radiator-off")
-
-    @property
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data or {}
         temp, target = data.get(f"NBE{self._room}Temperatur"), room_target(data, self._room)
@@ -694,7 +695,6 @@ class ProxonHeatRecovery(ProxonEntity, RestoreSensor):
 
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:heat-wave"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Waermerueckgewinnung", "heat_recovery")
@@ -771,7 +771,6 @@ class ProxonLastWriteError(ProxonEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:alert-circle-outline"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "LetzterSchreibfehler", "last_write_error")
@@ -795,7 +794,6 @@ class ProxonLastWriteError(ProxonEntity, SensorEntity):
 class ProxonScheduleDay(ProxonEntity, SensorEntity):
     """One day of the weekly ventilation schedule in one line; the three phases as attributes."""
 
-    _attr_icon = "mdi:calendar-clock"
 
     def __init__(self, coordinator, day: int) -> None:
         super().__init__(coordinator, f"Zeitprogramm{day}", f"schedule_{DAYS[day]}")
@@ -859,7 +857,6 @@ class ProxonResponseTime(ProxonEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_suggested_display_precision = 0
-    _attr_icon = "mdi:timer-sand"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Antwortzeit", "response_time")
@@ -877,7 +874,6 @@ class ProxonConnectionPath(ProxonEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["local", "internet", "relay"]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:lan-connect"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Antwortzeit", "connection_path")
@@ -906,7 +902,6 @@ class ProxonEnergyStatus(ProxonEnergyEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [OFF, WAITING, STARTING, HEATING_SOLAR, HEATING_PRICE, PAUSED, BLOCKED, NO_SOURCE]
-    _attr_icon = "mdi:water-boiler-auto"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Energiemanager", "energy_status")
@@ -933,9 +928,8 @@ class ProxonFeatureStatus(ProxonEnergyEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
 
-    def __init__(self, coordinator, feature, key: str, tk: str, icon: str, options: list[str]) -> None:
+    def __init__(self, coordinator, feature, key: str, tk: str, options: list[str]) -> None:
         super().__init__(coordinator, key, tk, feature)
-        self._attr_icon = icon
         self._attr_options = options
 
     @property

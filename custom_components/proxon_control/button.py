@@ -28,7 +28,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
 
 class ProxonCopyButton(ProxonEntity, ButtonEntity):
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:content-copy"
 
     def __init__(self, coordinator, key: str, tk: str, days: list[int]) -> None:
         super().__init__(coordinator, key, tk)
@@ -46,7 +45,6 @@ class ProxonClearHolidayPlanButton(ProxonEntity, ButtonEntity):
     """Removes departure and return of the holiday plan (holiday mode itself stays as it is)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:calendar-remove-outline"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "UrlaubsplanLoeschen", "holiday_plan_clear")

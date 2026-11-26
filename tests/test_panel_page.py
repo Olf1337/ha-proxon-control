@@ -47,6 +47,9 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert r["errors"] == [], f"{width}: errors in the page"
         assert r["overflow_home"] <= 0, f"{width}: the home page runs out sideways"
         assert r["sliders"] == 0, f"{width}: a slider is back"
+        grid, temps, in_picture = r["unit_temps"]
+        assert all(v.endswith("°") for v in temps) and len(temps) == 4, f"{width}: {r['unit_temps']}"
+        assert (grid, in_picture) == (("grid", "none") if width == "phone" else ("none", "block")), f"{width}: {r['unit_temps']}"
         assert r["calls_after_swipes"] == [], f"{width}: a swipe over a card changed a value"
         step = r["water_step"]
         assert not step["sheet_open"], f"{width}: + opened the sheet"
@@ -73,6 +76,11 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         tz = r["energy_tz"]
         assert tz["cols"][0] == 1 and tz["cols"][1] == 1 and sum(tz["cols"][2:]) == 0, f"{width}: rows by HA's days {tz}"
         assert tz["total"].startswith("14") and "2,00" in tz["sub"], f"{width}: cost of its time + fixed price before {tz}"
+        csv = r["energy_csv"]
+        lines = csv["text"].lstrip("\ufeff").splitlines()
+        assert csv["name"].startswith("proxon-energie-") and csv["name"].endswith(".csv"), f"{width}: {csv}"
+        assert lines[0].startswith("Datum;Kompressor") and lines[0].endswith("Summe (kWh)") and len(lines) == 8, f"{width}: {lines}"
+        assert lines[1].split(";")[1] == "10,000" and lines[2].split(";")[-1] == "4,000", f"{width}: a day's kWh {lines}"
         failed_shown, empty_hidden, prev_disabled = r["energy_failed"]
         assert not failed_shown and empty_hidden and not prev_disabled, f"{width}: a failed query {r['energy_failed']}"
         assert any("@" in tag for tag in r["energy_tags"]), f"{width}: the running period is fetched per hour {r['energy_tags']}"

@@ -1,0 +1,353 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "bypass": {
+        "default": "mdi:valve"
+      },
+      "filter_change": {
+        "default": "mdi:air-filter"
+      },
+      "geothermal": {
+        "default": "mdi:earth"
+      },
+      "heating_elements": {
+        "default": "mdi:radiator"
+      },
+      "panel_locked": {
+        "default": "mdi:lock-outline"
+      },
+      "pv_enabled": {
+        "default": "mdi:solar-power"
+      },
+      "pv_signal_heat_pump": {
+        "default": "mdi:solar-power-variant"
+      },
+      "pv_signal_heater": {
+        "default": "mdi:solar-power-variant"
+      },
+      "solenoid_valve": {
+        "default": "mdi:valve"
+      }
+    },
+    "button": {
+      "copy_monday_all": {
+        "default": "mdi:content-copy"
+      },
+      "copy_monday_weekdays": {
+        "default": "mdi:content-copy"
+      },
+      "holiday_plan_clear": {
+        "default": "mdi:calendar-remove-outline"
+      }
+    },
+    "datetime": {
+      "holiday_end": {
+        "default": "mdi:airplane-landing"
+      },
+      "holiday_start": {
+        "default": "mdi:airplane-takeoff"
+      }
+    },
+    "number": {
+      "boost_duration": {
+        "default": "mdi:timer-cog-outline"
+      },
+      "boost_limit": {
+        "default": "mdi:heating-coil"
+      },
+      "cheap_price": {
+        "default": "mdi:cash-clock"
+      },
+      "co2_limit": {
+        "default": "mdi:molecule-co2"
+      },
+      "cooling_level": {
+        "default": "mdi:fan"
+      },
+      "cooling_wish": {
+        "default": "mdi:home-thermometer"
+      },
+      "holiday_lead": {
+        "default": "mdi:home-clock-outline"
+      },
+      "humidity_limit": {
+        "default": "mdi:water-percent"
+      },
+      "level": {
+        "default": "mdi:fan"
+      },
+      "season_summer_above": {
+        "default": "mdi:sun-thermometer"
+      },
+      "season_winter_below": {
+        "default": "mdi:snowflake-thermometer"
+      },
+      "solar_surplus": {
+        "default": "mdi:solar-power-variant"
+      },
+      "store_temperature": {
+        "default": "mdi:water-boiler"
+      }
+    },
+    "select": {
+      "legionella_plan_day": {
+        "default": "mdi:calendar-week"
+      },
+      "mode": {
+        "default": "mdi:hvac"
+      },
+      "phase_level": {
+        "default": "mdi:fan-clock"
+      }
+    },
+    "sensor": {
+      "actual_level": {
+        "default": "mdi:fan"
+      },
+      "boost_remaining": {
+        "default": "mdi:timer-outline"
+      },
+      "clock_drift": {
+        "default": "mdi:clock-alert-outline"
+      },
+      "compressor_power_percent": {
+        "default": "mdi:heat-pump"
+      },
+      "connection_path": {
+        "default": "mdi:lan-connect"
+      },
+      "damper_position": {
+        "default": "mdi:valve"
+      },
+      "device_type": {
+        "default": "mdi:information-outline"
+      },
+      "energy_cost": {
+        "default": "mdi:cash"
+      },
+      "energy_status": {
+        "default": "mdi:water-boiler-auto"
+      },
+      "energy_total_forecast_month": {
+        "default": "mdi:chart-timeline-variant-shimmer"
+      },
+      "energy_total_forecast_year": {
+        "default": "mdi:chart-timeline-variant-shimmer"
+      },
+      "filter_lifetime": {
+        "default": "mdi:air-filter"
+      },
+      "filter_remaining": {
+        "default": "mdi:air-filter"
+      },
+      "heat_recovery": {
+        "default": "mdi:heat-wave"
+      },
+      "heating_element": {
+        "default": "mdi:radiator-off",
+        "state": {
+          "heating": "mdi:radiator",
+          "ready": "mdi:radiator-disabled"
+        }
+      },
+      "hot_water_boost_status": {
+        "default": "mdi:heating-coil"
+      },
+      "hours_abtauen": {
+        "default": "mdi:counter"
+      },
+      "hours_kompressorheizen": {
+        "default": "mdi:counter"
+      },
+      "hours_kompressorkuehlen": {
+        "default": "mdi:counter"
+      },
+      "hours_stufe1": {
+        "default": "mdi:counter"
+      },
+      "hours_stufe2": {
+        "default": "mdi:counter"
+      },
+      "hours_stufe3": {
+        "default": "mdi:counter"
+      },
+      "hours_stufe4": {
+        "default": "mdi:counter"
+      },
+      "hours_vorwaerme": {
+        "default": "mdi:counter"
+      },
+      "last_write_error": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "legionella_status": {
+        "default": "mdi:bacteria-outline"
+      },
+      "night_cooling_status": {
+        "default": "mdi:weather-night"
+      },
+      "operation": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ptc_off_threshold": {
+        "default": "mdi:thermometer-chevron-down"
+      },
+      "ptc_on_threshold": {
+        "default": "mdi:thermometer-chevron-down"
+      },
+      "response_time": {
+        "default": "mdi:timer-sand"
+      },
+      "rpm_compressor": {
+        "default": "mdi:fan"
+      },
+      "rpm_exhaust": {
+        "default": "mdi:fan"
+      },
+      "rpm_intake": {
+        "default": "mdi:fan"
+      },
+      "runtime_today_compressor": {
+        "default": "mdi:timer-outline"
+      },
+      "runtime_today_heater": {
+        "default": "mdi:timer-outline"
+      },
+      "runtime_today_hot_water_compressor": {
+        "default": "mdi:timer-outline"
+      },
+      "schedule_friday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_monday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_saturday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_sunday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_thursday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_tuesday": {
+        "default": "mdi:calendar-clock"
+      },
+      "schedule_wednesday": {
+        "default": "mdi:calendar-clock"
+      },
+      "season_status": {
+        "default": "mdi:sun-snowflake-variant"
+      },
+      "shower_minutes": {
+        "default": "mdi:shower-head"
+      },
+      "starts_today_compressor": {
+        "default": "mdi:restart"
+      },
+      "starts_today_heater": {
+        "default": "mdi:restart"
+      },
+      "starts_today_hot_water_compressor": {
+        "default": "mdi:restart"
+      },
+      "t300_fan_rpm": {
+        "default": "mdi:fan"
+      },
+      "valve_cooling": {
+        "default": "mdi:valve"
+      },
+      "valve_heating": {
+        "default": "mdi:valve"
+      },
+      "valve_preheat": {
+        "default": "mdi:valve"
+      },
+      "water_charge": {
+        "default": "mdi:water-boiler"
+      }
+    },
+    "switch": {
+      "all_heating_elements": {
+        "default": "mdi:radiator"
+      },
+      "boost": {
+        "default": "mdi:fan-plus"
+      },
+      "cheap_hot_water": {
+        "default": "mdi:cash-clock"
+      },
+      "cooling": {
+        "default": "mdi:snowflake"
+      },
+      "holiday": {
+        "default": "mdi:bag-suitcase"
+      },
+      "hot_water_boost": {
+        "default": "mdi:heating-coil"
+      },
+      "immersion_heater": {
+        "default": "mdi:heating-coil"
+      },
+      "legionella": {
+        "default": "mdi:bacteria-outline"
+      },
+      "legionella_planned": {
+        "default": "mdi:calendar-check-outline"
+      },
+      "legionella_solar": {
+        "default": "mdi:bacteria-outline"
+      },
+      "night_cooling": {
+        "default": "mdi:weather-night"
+      },
+      "night_setback": {
+        "default": "mdi:weather-night"
+      },
+      "schedule": {
+        "default": "mdi:calendar-clock"
+      },
+      "season_auto": {
+        "default": "mdi:sun-snowflake-variant"
+      },
+      "solar_hot_water": {
+        "default": "mdi:solar-power-variant"
+      },
+      "water_heat_pump": {
+        "default": "mdi:water-boiler"
+      }
+    },
+    "time": {
+      "legionella_due_time": {
+        "default": "mdi:clock-alert-outline"
+      },
+      "legionella_plan_time": {
+        "default": "mdi:calendar-clock"
+      },
+      "night_setback_end": {
+        "default": "mdi:weather-sunset-up"
+      },
+      "night_setback_start": {
+        "default": "mdi:weather-sunset-down"
+      },
+      "phase_end": {
+        "default": "mdi:clock-end"
+      },
+      "phase_start": {
+        "default": "mdi:clock-start"
+      }
+    }
+  },
+  "services": {
+    "set_schedule_phase": {
+      "service": "mdi:calendar-edit"
+    },
+    "copy_schedule_day": {
+      "service": "mdi:content-copy"
+    },
+    "create_dashboard": {
+      "service": "mdi:view-dashboard-outline"
+    }
+  }
+}

@@ -29,7 +29,6 @@ class ProxonHolidayPlanTime(ProxonEntity, DateTimeEntity):
         start = which == "start"
         super().__init__(coordinator, "UrlaubAb" if start else "UrlaubBis", "holiday_start" if start else "holiday_end")
         self._which = which
-        self._attr_icon = "mdi:airplane-takeoff" if start else "mdi:airplane-landing"
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

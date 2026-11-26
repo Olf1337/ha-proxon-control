@@ -17,7 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .const import DOMAIN
-from .entity import ProxonEntity, room_device
+from .entity import ProxonEntity, room_device, watch_new_rooms
 from .registers import MODE_OFF, ROOM_COUNT, room_connected, room_demand, room_heating, room_target, room_write
 
 # ranges of the original app (checked on a real unit): living room 10-30 °C; the other rooms 14-26 °C, whatever their own base
@@ -34,7 +34,12 @@ PARALLEL_UPDATES = 1
 async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator = entry.runtime_data
     data = coordinator.data or {}
-    async_add_entities(ProxonRoomThermostat(coordinator, i) for i in range(ROOM_COUNT) if room_connected(data, i) and room_target(data, i) is not None)
+    def make(values: dict, i: int) -> list:
+        return [ProxonRoomThermostat(coordinator, i)] if room_target(values, i) is not None else []
+
+    present = {i for i in range(ROOM_COUNT) if room_connected(data, i) and make(data, i)}
+    async_add_entities(ProxonRoomThermostat(coordinator, i) for i in sorted(present))
+    watch_new_rooms(entry, coordinator, async_add_entities, make, present)
 
 
 # Home Assistant 2026.11 renamed the temperature properties of thermostats to native_* (the old names stop working in 2027.11).

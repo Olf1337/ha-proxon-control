@@ -53,6 +53,27 @@
         "data": {
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Change the connection",
+        "description": "Device ID {device_id} stays; its entities and history stay too. Leave the password empty to keep the saved one. The connection is tested before it is saved.",
+        "data": {
+          "password": "Password (empty: keep)",
+          "mode": "Connection",
+          "local_host": "IP address of the unit (optional)"
+        },
+        "data_description": {
+          "local_host": "Empty: the unit is found automatically in the home network."
+        }
+      },
+      "reconfigure_bridge": {
+        "title": "Change the bridge connection",
+        "description": "Address, port and access key of the Proxon bridge. The connection is tested before it is saved.",
+        "data": {
+          "host": "Address",
+          "port": "Port",
+          "token": "Access key (optional)"
+        }
       }
     },
     "error": {
@@ -64,7 +85,8 @@
     },
     "abort": {
       "already_configured": "This unit is already set up.",
-      "reauth_successful": "Logged in again."
+      "reauth_successful": "Logged in again.",
+      "reconfigure_successful": "The connection is changed; the integration has been reloaded."
     }
   },
   "entity": {

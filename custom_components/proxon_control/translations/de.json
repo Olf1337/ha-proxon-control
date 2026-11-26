@@ -53,6 +53,27 @@
         "data": {
           "password": "Passwort"
         }
+      },
+      "reconfigure": {
+        "title": "Verbindung ändern",
+        "description": "Die Device ID {device_id} bleibt, und damit auch ihre Entitäten und der Verlauf. Passwort leer lassen, um das gespeicherte zu behalten. Die Verbindung wird vor dem Speichern getestet.",
+        "data": {
+          "password": "Passwort (leer: behalten)",
+          "mode": "Verbindung",
+          "local_host": "IP-Adresse der Anlage (optional)"
+        },
+        "data_description": {
+          "local_host": "Leer: Die Anlage wird im Heimnetz automatisch gesucht."
+        }
+      },
+      "reconfigure_bridge": {
+        "title": "Bridge-Verbindung ändern",
+        "description": "Adresse, Port und Zugangsschlüssel der Proxon-Bridge. Die Verbindung wird vor dem Speichern getestet.",
+        "data": {
+          "host": "Adresse",
+          "port": "Port",
+          "token": "Zugangsschlüssel (optional)"
+        }
       }
     },
     "error": {
@@ -64,7 +85,8 @@
     },
     "abort": {
       "already_configured": "Diese Anlage ist bereits eingerichtet.",
-      "reauth_successful": "Erneut angemeldet."
+      "reauth_successful": "Erneut angemeldet.",
+      "reconfigure_successful": "Die Verbindung ist geändert; die Integration wurde neu geladen."
     }
   },
   "entity": {

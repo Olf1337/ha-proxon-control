@@ -28,7 +28,7 @@ const TEXT = {
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
     e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
-      earlier: "Früher", later: "Später", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
+      earlier: "Früher", later: "Später", csv: "Als CSV herunterladen", csvDate: "Datum", csvMonth: "Monat", csvTotal: "Summe", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
       avgMonth: "Im Schnitt pro Monat", ofWater: "davon Warmwasser {v}",
       noPrice: "Für die Kosten unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren einen Strompreis eintragen (fest oder als Sensor).", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
@@ -96,7 +96,7 @@ const TEXT = {
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
     e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
-      earlier: "Earlier", later: "Later", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
+      earlier: "Earlier", later: "Later", csv: "Download as CSV", csvDate: "Date", csvMonth: "Month", csvTotal: "Total", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
       avgMonth: "On average per month", ofWater: "of which hot water {v}",
       noPrice: "For the cost, enter an electricity price under Settings → Devices & services → Proxon Control → Configure (fixed or as a sensor).", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
@@ -246,7 +246,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const STYLE = `
 :host {
   --bg: #eef1f4; --surface: rgba(255,255,255,.78); --surface-solid: #fff; --line: rgba(20,32,45,.08); --fg: #14202d; --fg-2: #586675;
-  --fg-3: #8a96a3; --accent: #1d8a7a; --fresh: #3b8fd9; --supply: #e08a3c; --extract: #c26d7e; --exhaust: #8b97a4; --cold: #3b82d6;
+  --fg-3: #5f6b77; --accent: #1d8a7a; --fresh: #3b8fd9; --supply: #e08a3c; --extract: #c26d7e; --exhaust: #8b97a4; --cold: #3b82d6;
   --fine: #1f9d6c; --warm: #d8602f; --flame: #ff6a2b; --water-hot: #f07a3a; --water-cool: #f6c79a; --danger: #d64545;
   --tank-deep: #1c64ad; --tank-mid: #3a8fd6; --tank-top: #6cb8ea;
   --scrim: rgba(10,18,28,.32); --shadow: 0 1px 2px rgba(20,32,45,.06), 0 8px 24px rgba(20,32,45,.06); --sheet-shadow: 0 -10px 40px rgba(10,18,28,.18);
@@ -258,7 +258,7 @@ const STYLE = `
 }
 :host([dark]) {
   --bg: #0e1318; --surface: rgba(28,35,43,.78); --surface-solid: #1c232b; --line: rgba(255,255,255,.07); --fg: #eef2f5; --fg-2: #a3afbb;
-  --fg-3: #6f7c89; --accent: #3cc3ab; --fresh: #5aa8ec; --supply: #f0a056; --extract: #d98a9a; --exhaust: #7d8a97; --cold: #5c9ceb;
+  --fg-3: #8d99a6; --accent: #3cc3ab; --fresh: #5aa8ec; --supply: #f0a056; --extract: #d98a9a; --exhaust: #7d8a97; --cold: #5c9ceb;
   --fine: #3cc08a; --warm: #f07b4a; --flame: #ff7a3d; --water-hot: #f58a4c; --water-cool: #7a5236; --danger: #f06a6a;
   --tank-deep: #123f6e; --tank-mid: #2466a3; --tank-top: #4a95d2;
   --scrim: rgba(0,0,0,.5); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); --sheet-shadow: 0 -10px 40px rgba(0,0,0,.5);
@@ -314,6 +314,7 @@ button { font: inherit; color: inherit; }
 .e-nav { display: inline-flex; align-items: center; gap: 2px; }
 .e-nav button { width: 34px; height: 32px; border: 0; border-radius: 9px; background: var(--line); font-size: 1.15rem; cursor: pointer; color: var(--fg); }
 .e-nav button:disabled { opacity: .3; cursor: default; }
+.e-nav button svg { display: block; margin: auto; }
 .e-chart { position: relative; height: 190px; margin: 8px 0 0 34px; }
 .e-grid-l { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--line); }
 .e-grid-l span { position: absolute; right: calc(100% + 6px); top: -.6em; font-size: .6875rem; color: var(--fg-3); white-space: nowrap; }
@@ -337,7 +338,14 @@ button { font: inherit; color: inherit; }
   .tabs button[aria-selected="true"] { color: var(--accent); }
   .tabs svg { display: block; }
   .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important; }
+  /* the unit's picture shrinks with the screen: its small labels go, the four air temperatures stand large below it */
+  svg.diagram .t-val, svg.diagram .t-name, svg.diagram .t-small, svg.diagram .zone { display: none; }
+  :host .unit-temps { display: grid; }
 }
+.unit-temps { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.unit-temps div { padding: 10px 12px; border-radius: 14px; background: var(--line); min-width: 0; }
+.unit-temps span { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-2); }
+.unit-temps b { display: block; font: 700 1.5rem/1.15 var(--font-display); letter-spacing: -.02em; margin-top: 2px; }
 .view { display: grid; gap: 20px; }
 .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .group { display: grid; gap: 6px; }
@@ -423,7 +431,7 @@ button.card:active { transform: scale(.985); }
 .pill-text small { font-size: .75rem; font-weight: 500; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .switch { position: relative; width: 52px; height: 32px; border-radius: 16px; border: 0; background: var(--line); cursor: pointer; flex: none; transition: background 200ms ease; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform 320ms cubic-bezier(.3,1.4,.5,1); }
+  box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform 280ms cubic-bezier(.22,1,.36,1); }
 .switch[aria-checked="true"] { background: var(--accent); }
 .switch[aria-busy="true"] { opacity: .55; cursor: progress; }
 .row-label small.pend { color: var(--accent); font-weight: 600; }
@@ -567,7 +575,8 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   --raised: 3px 3px 7px var(--s-lo), -3px -3px 7px var(--s-hi);
   --pressed: inset 3px 3px 7px var(--s-lo), inset -3px -3px 7px var(--s-hi);
 }
-:host([softui][dark]) { --bg: #1c2229; --s-hi: #29313b; --s-lo: #11151a; --edge: rgba(255,255,255,.06); --edge-low: rgba(255,255,255,.06); }
+:host([softui][dark]) { --bg: #272e36; --s-hi: #343d47; --s-lo: #161a1f; --edge: rgba(255,255,255,.05); --edge-low: rgba(255,255,255,.05);
+  --shadow: 8px 8px 18px var(--s-lo), -6px -6px 16px var(--s-hi); }
 :host([softui]) .backdrop { display: none; }
 :host([softui]) .card, :host([softui]) .chip, :host([softui]) .fchip, :host([softui]) .toast, :host([softui]) .sheet {
   background: var(--bg) !important; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: var(--shadow); }
@@ -707,6 +716,10 @@ class ProxonPanel extends HTMLElement {
                 <text class="t-name" x="660" y="312" text-anchor="end">${t.exhaust}</text><text class="t-val num" id="v-exhaust" x="660" y="344" text-anchor="end">–</text>
                 <text class="t-name" x="60" y="312">${t.supply}</text><text class="t-val num" id="v-supply" x="60" y="344">–</text>
               </svg>
+              <div class="unit-temps">
+                <div><span>${t.extract}</span><b class="num" id="m-extract">–</b></div><div><span>${t.fresh}</span><b class="num" id="m-fresh">–</b></div>
+                <div><span>${t.supply}</span><b class="num" id="m-supply">–</b></div><div><span>${t.exhaust}</span><b class="num" id="m-exhaust">–</b></div>
+              </div>
               <div class="unit-chips">
                 <span class="chip soft" id="ch-comp">${t.compressor} <b class="num" id="comp">–</b></span>
                 <span class="chip soft" id="rec-wrap">${t.recovery} <b class="num" id="rec">–</b></span>
@@ -815,7 +828,7 @@ class ProxonPanel extends HTMLElement {
     this.$("c-ok").textContent = fault ? t.fault : filter ? t.filter : t.ok;
     this.$("c-dot").style.background = fault ? "var(--danger)" : filter ? "var(--warm)" : "var(--fine)";
     // unit
-    [["v-fresh", "T3Frischluft"], ["v-supply", "T1Zuluft"], ["v-extract", "T7Abluft"], ["v-exhaust", "T4Fortluft"]].forEach(([el, k]) => { this.$(el).textContent = deg(k); });
+    [["fresh", "T3Frischluft"], ["supply", "T1Zuluft"], ["extract", "T7Abluft"], ["exhaust", "T4Fortluft"]].forEach(([el, k]) => { this.$(`v-${el}`).textContent = deg(k); this.$(`m-${el}`).textContent = deg(k); });
     const rs = this.num("DrehzahlZuluft"), re = this.num("DrehzahlAbluft");
     const rpm = v => v === null ? "–" : Math.round(v).toLocaleString(this._hass.language || undefined);
     this.$("rpm-s-t").textContent = rs === null ? "" : `${rpm(rs)} U/min`; this.$("rpm-e-t").textContent = re === null ? "" : `${rpm(re)} U/min`;
@@ -1056,7 +1069,7 @@ class ProxonPanel extends HTMLElement {
     const $ = s => el.querySelector(s), [dn, up] = el.querySelectorAll(".rs-btn");
     let r = null;
     const digits = () => (r && r.step < 1 ? 1 : 0);
-    const ring = x => { const d = x.temp - x.target; return d < -1 ? "var(--cold)" : d > 1 ? "var(--warm)" : "var(--fine)"; };
+    const ring = x => (x.element === "heating" ? "var(--warm)" : x.temp - x.target < -1 ? "var(--cold)" : "transparent");
     const render = () => {
       r = this._room(n); if (!r) return;
       $(".nm").textContent = r.name;
@@ -1104,7 +1117,7 @@ class ProxonPanel extends HTMLElement {
     this.$("v-energy").innerHTML = `<section class="card e-card">
         <div class="e-head"><div style="display:grid;gap:4px"><span class="label" id="e-title"></span><div class="e-big num" id="e-total"></div><div class="sub num" id="e-sub"></div></div>
           <div style="display:grid;gap:8px;justify-items:end"><div class="seg" id="e-per">${["week", "month", "year"].map(p => `<button data-p="${p}">${e.per[p]}</button>`).join("")}</div>
-            <div class="e-nav"><button id="e-prev" aria-label="${e.earlier}">‹</button><button id="e-next" aria-label="${e.later}">›</button></div></div></div>
+            <div class="e-nav"><button id="e-csv" aria-label="${e.csv}" title="${e.csv}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button><button id="e-prev" aria-label="${e.earlier}">‹</button><button id="e-next" aria-label="${e.later}">›</button></div></div></div>
         <div class="e-chart" id="e-chart" role="img"><div id="e-gridl"></div><div class="e-cols" id="e-cols"></div></div>
         <div class="e-xl" id="e-xl"></div>
         <div class="e-detail num" id="e-detail"></div>
@@ -1120,6 +1133,7 @@ class ProxonPanel extends HTMLElement {
       this._ePer = b.dataset.p; this._eOff = 0; this._eSel = null; this._updateEnergy();
     }));
     this.$("e-prev").addEventListener("click", () => { this._eOff -= 1; this._eSel = null; this._updateEnergy(); });
+    this.$("e-csv").addEventListener("click", () => this._eCsv());
     this.$("e-next").addEventListener("click", () => { this._eOff = Math.min(0, this._eOff + 1); this._eSel = null; this._updateEnergy(); });
     this.$("e-cols").addEventListener("click", ev => { const c = ev.target.closest(".e-col"); if (c) { this._eSel = +c.dataset.i; this._updateEnergy(); } });
   }
@@ -1183,6 +1197,22 @@ class ProxonPanel extends HTMLElement {
     const unitE = this.num(`EnergieGesamt${fs}`), c = this.num(`Stromkosten${fs}`);
     const price = c !== null && unitE > 0.01 ? c / unitE : null;
     return { kwh: fc + wfc, cost: fcCost === null ? null : fcCost + (price ? wfc * price : 0), waterCost: price ? wfc * price : null };
+  }
+  // the shown period as a CSV file: one row per day (week, month) or month (year), kWh per part and the total. German files use
+  // ";" and a decimal comma, so a spreadsheet opens them as numbers
+  _eCsv() {
+    const L = this._eLast; if (!L || L.empty) return;
+    const e = this.t.e, de = (this._hass.language || "").startsWith("de"), sep = de ? ";" : ",";
+    const num = v => (Math.round(v * 1000) / 1000).toFixed(3).replace(".", de ? "," : ".");
+    const day = d => d.toISOString().slice(0, L.P.gran === "month" ? 7 : 10);
+    const head = [L.P.gran === "month" ? e.csvMonth : e.csvDate, ...L.parts.map(p => `${e[p.k]} (kWh)`), `${e.csvTotal} (kWh)`];
+    const rows = L.cols.filter(c => !c.future).map(c => [day(c.d), ...c.values.map(num), num(c.total)]);
+    const text = [head, ...rows].map(r => r.map(v => (String(v).includes(sep) || /["\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v)).join(sep)).join("\r\n") + "\r\n";
+    const url = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `proxon-energie-${day(L.cols[0].d)}.csv`;
+    this.shadowRoot.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   _eKey(parts, values, unit = "kWh", fmt = v => this._kwh(v)) {
     return parts.map((p, i) => `<span><i style="background:var(${p.color})"></i>${this.t.e[p.k]} <b class="num">${fmt(values[i])} ${unit}</b></span>`).join("");
@@ -1314,6 +1344,7 @@ class ProxonPanel extends HTMLElement {
       : P.name(s.d, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
       s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}` : "";
     this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
+    this._eLast = { P, parts, cols, empty }; this.$("e-csv").disabled = empty || failed;
     this._updateCosts(parts);
     // now
     const power = parts.map(p => this._eSum(p.power));

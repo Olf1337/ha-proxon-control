@@ -3,7 +3,7 @@
 How Proxon Control stands against Home Assistant's [Integration Quality Scale](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
 (made for integrations in Home Assistant itself; a custom integration can use it as a checklist). Checked for 1.0.
 
-**Bronze and Silver: met. Gold: mostly met, see the open points.**
+**Bronze, Silver and Gold: met** (Gold since 1.1; discovery does not apply to this unit).
 
 ## Bronze
 
@@ -49,9 +49,9 @@ How Proxon Control stands against Home Assistant's [Integration Quality Scale](h
 | Docs: data update, examples, known limits, supported devices and functions, troubleshooting, use cases | ✅ | README, blueprints |
 | Stale devices | ✅ | a room the unit no longer reports can be deleted on its device page; the unit and current rooms can't |
 | Discovery / discovery update info | ➖ | the unit has no DHCP or zeroconf signature; the setup searches the home network itself |
-| Dynamic devices | ⏳ | rooms are created at start; a room connected later appears after a restart |
-| Icon translations | ⏳ | icons are set in code, not in `icons.json` |
-| Reconfiguration flow | ⏳ | connection details are changed in the options; no separate *Reconfigure* step yet |
+| Dynamic devices | ✅ | a room connected later gets its entities at the next reading (`entity.watch_new_rooms`) and goes into its area |
+| Icon translations | ✅ | every icon in `icons.json` (state icons for the heating element); `tests/test_icons.py` keeps icons out of the code |
+| Reconfiguration flow | ✅ | *Reconfigure*: password, connection and address (bridge: address, port, key), tested before saving |
 
 ## Platinum
 

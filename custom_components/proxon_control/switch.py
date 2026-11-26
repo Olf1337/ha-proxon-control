@@ -14,14 +14,14 @@ from homeassistant.util import dt as dt_util
 from . import ProxonConfigEntry
 from .entity import ProxonEnergyEntity, ProxonEntity, house_rooms, room_name
 
-SWITCHES: list[tuple[str, str, str, int | None]] = [
-    ("Intensivlueftung", "boost", "mdi:fan-plus", None),
-    ("GlobalKuehlungFreigabe", "cooling", "mdi:snowflake", None),
-    ("T300Betriebsart", "water_heat_pump", "mdi:water-boiler", None),
-    ("E-Heizstab", "immersion_heater", "mdi:heating-coil", None),
-    ("Legionellenfunktion", "legionella", "mdi:bacteria-outline", None),
-    ("NachtabsenkungAktiv", "night_setback", "mdi:weather-night", None),
-    ("ZeitprogrammAktiv", "schedule", "mdi:calendar-clock", None),
+SWITCHES: list[tuple[str, str, int | None]] = [
+    ("Intensivlueftung", "boost", None),
+    ("GlobalKuehlungFreigabe", "cooling", None),
+    ("T300Betriebsart", "water_heat_pump", None),
+    ("E-Heizstab", "immersion_heater", None),
+    ("Legionellenfunktion", "legionella", None),
+    ("NachtabsenkungAktiv", "night_setback", None),
+    ("ZeitprogrammAktiv", "schedule", None),
 ]
 
 
@@ -33,8 +33,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     coordinator = entry.runtime_data
     data = coordinator.data or {}
     entities: list[SwitchEntity] = [
-        ProxonSwitch(coordinator, key, tk, icon, room)
-        for key, tk, icon, room in SWITCHES
+        ProxonSwitch(coordinator, key, tk, room)
+        for key, tk, room in SWITCHES
         # no cooling switch on units that can only heat (device type reported by the unit)
         if key in data and not (key == "GlobalKuehlungFreigabe" and data.get("GeraeteTyp") == 0)
     ]
@@ -43,26 +43,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonAllElementsSwitch(coordinator))
     comfort = coordinator.comfort
     if comfort.cooling.supported:
-        entities.append(ProxonEnergySwitch(coordinator, "on", "Nachtkuehlung", "night_cooling", "mdi:weather-night", comfort.cooling))
+        entities.append(ProxonEnergySwitch(coordinator, "on", "Nachtkuehlung", "night_cooling", comfort.cooling))
     if comfort.boost.supported:
-        entities.append(ProxonEnergySwitch(coordinator, "on", "WarmwasserBoost", "hot_water_boost", "mdi:heating-coil", comfort.boost))
+        entities.append(ProxonEnergySwitch(coordinator, "on", "WarmwasserBoost", "hot_water_boost", comfort.boost))
     if comfort.season.supported:
-        entities.append(ProxonEnergySwitch(coordinator, "on", "SaisonAutomatik", "season_auto", "mdi:sun-snowflake-variant", comfort.season))
+        entities.append(ProxonEnergySwitch(coordinator, "on", "SaisonAutomatik", "season_auto", comfort.season))
     if coordinator.energy.supported:
-        entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water", "mdi:solar-power-variant"),
-                     ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water", "mdi:cash-clock")]
+        entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water"),
+                     ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water")]
     if coordinator.energy.legionella.supported:
-        entities += [ProxonEnergySwitch(coordinator, "on", "LegionellenSonne", "legionella_solar", "mdi:bacteria-outline",
+        entities += [ProxonEnergySwitch(coordinator, "on", "LegionellenSonne", "legionella_solar",
                                         coordinator.energy.legionella),
-                     ProxonEnergySwitch(coordinator, "plan_on", "LegionellenGeplant", "legionella_planned", "mdi:calendar-check-outline",
+                     ProxonEnergySwitch(coordinator, "plan_on", "LegionellenGeplant", "legionella_planned",
                                         coordinator.energy.legionella)]
     async_add_entities(entities)
 
 
 class ProxonSwitch(ProxonEntity, SwitchEntity):
-    def __init__(self, coordinator, key: str, tk: str, icon: str, room: int | None) -> None:
+    def __init__(self, coordinator, key: str, tk: str, room: int | None) -> None:
         super().__init__(coordinator, key, tk)
-        self._attr_icon = icon
 
     @property
     def is_on(self) -> bool | None:
@@ -78,7 +77,6 @@ class ProxonSwitch(ProxonEntity, SwitchEntity):
 class ProxonHolidaySwitch(ProxonEntity, SwitchEntity):
     """Holiday mode: lowers ventilation and temperatures and switches off hot water; switching off restores the saved values."""
 
-    _attr_icon = "mdi:bag-suitcase"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Urlaubsmodus", "holiday")
@@ -122,10 +120,9 @@ class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
 
     _attr_entity_category = EntityCategory.CONFIG
 
-    def __init__(self, coordinator, setting: str, key: str, tk: str, icon: str, manager=None) -> None:
+    def __init__(self, coordinator, setting: str, key: str, tk: str, manager=None) -> None:
         super().__init__(coordinator, key, tk, manager)
         self._setting = setting
-        self._attr_icon = icon
 
     @property
     def is_on(self) -> bool:
@@ -147,7 +144,6 @@ class ProxonAllElementsSwitch(ProxonEntity, SwitchEntity):
     """The heating elements of all rooms at once: on when every room's element is released; switching writes each room
     whose element differs (one write per room, like in the room's thermostat)."""
 
-    _attr_icon = "mdi:radiator"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "WaermeelementeAlle", "all_heating_elements")

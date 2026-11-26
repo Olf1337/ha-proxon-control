@@ -2,11 +2,14 @@
 schedule a device of its own linked to it (so rooms can be put into their areas)."""
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 import re
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_BASEMENT, CONF_DEVICE_ID, CONF_UPPER_FLOOR, DEFAULT_ROOM_NAMES, DOMAIN, MANUFACTURER, MODEL, ROOM_MODEL
@@ -149,3 +152,24 @@ class ProxonEnergyEntity(ProxonEntity):
     @property
     def available(self) -> bool:
         return self.coordinator.last_update_success and self.manager.supported
+
+
+def watch_new_rooms(
+    entry: ConfigEntry, coordinator: ProxonCoordinator, add: Callable[[list], None], make: Callable[[dict, int], list[Entity]],
+    present: set[int],
+) -> None:
+    """A room the unit reports later (a room panel added or connected after the start) gets its entities at the next reading,
+    without restarting Home Assistant. `present`: the rooms that already have them; `make`: a room's entities (none yet: [])."""
+
+    @callback
+    def check() -> None:
+        data = coordinator.data or {}
+        new: list[Entity] = []
+        for i in range(ROOM_COUNT):
+            if i not in present and room_connected(data, i) and (entities := make(data, i)):
+                present.add(i)
+                new += entities
+        if new:
+            add(new)
+
+    entry.async_on_unload(coordinator.async_add_listener(check))

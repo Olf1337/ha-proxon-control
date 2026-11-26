@@ -32,7 +32,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
 
 
 class ProxonModeSelect(ProxonEntity, SelectEntity):
-    _attr_icon = "mdi:hvac"
 
     def __init__(self, coordinator) -> None:
         super().__init__(coordinator, "Betriebsart", "mode")
@@ -58,7 +57,6 @@ class ProxonPhaseLevel(ProxonEntity, SelectEntity):
     """Ventilation level of one phase of the weekly schedule ("off" = phase not active)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:fan-clock"
     _attr_options = LEVEL_OPTIONS
 
     def __init__(self, hass: HomeAssistant, coordinator, day: int, phase: int) -> None:
@@ -88,7 +86,6 @@ class ProxonLegionellaDay(ProxonEnergyEntity, SelectEntity):
     """Planned legionella protection: the weekday (a setting of the integration, nothing is written to the unit)."""
 
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_icon = "mdi:calendar-week"
     _attr_options = WEEKDAYS
 
     def __init__(self, coordinator) -> None:
