@@ -5,6 +5,14 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.0.0:** the first stable release. It contains everything from 1.0.0b1 to 1.0.0b5 (below), unchanged since
+1.0.0b5. Coming from 0.24.0: a tab "Energy" and a second look "Soft" on the page "Proxon", − and + instead of sliders, side
+rooms 14–26 °C, an estimate of the hot-water consumption, a fault that no longer jumps back to OK, one unit per Home
+Assistant. Removed: the dashboard pictures, the action "Install glass theme" (the theme is `themes/proxon_control.yaml` in the
+repository), four unchecked sensors and the heater's operating hours; "Create dashboard" is for admins only and the
+ready-made dashboard is deprecated (it goes in 2.0). The helper program is built from source by GitHub Actions and only
+pinned, checksum-verified Debian files are downloaded.
+
 **New in 1.0.0b5 (beta, HACS review):** the helper program is built from `helper/` by GitHub Actions with a build attestation;
 only the pinned Debian packages are downloaded (from deb.debian.org or snapshot.debian.org) and a wrong SHA-256 stops with
 an error; "Create dashboard" is for admins only; the action "Install glass theme" is removed – the old dashboard's theme is
@@ -125,6 +133,21 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.0.0
+
+Die erste stabile Version. Sie enthält alles aus 1.0.0b1 bis 1.0.0b5 (Abschnitte darunter), seit 1.0.0b5 unverändert.
+
+**Wer von 0.24.0 kommt, sollte wissen:**
+
+* **Neu:** Tab „Energie“ (Verbrauch, Kosten, Hochrechnung), zweites Design „Soft“, − und + statt Schieberegler,
+  Nebenräume 14–26 °C wie in der Proxon-App, geschätzter Warmwasser-Verbrauch, eine Störung springt nicht mehr auf „OK“.
+* **Entfernt:** die Dashboard-Bilder, die Aktion „Glas-Theme installieren“ (das Theme liegt als
+  `themes/proxon_control.yaml` im Repository), vier ungeprüfte Sensoren und die Betriebsstunden des Heizstabs.
+* **Geändert:** „Dashboard erstellen“ nur für Administratoren; das fertige Dashboard ist abgekündigt (entfällt in 2.0) –
+  wer es nutzt, führt „Dashboard erstellen“ einmal aus. Eine Anlage pro Home Assistant.
+* **Sicherheit:** Das Hilfsprogramm für den Weg über den Proxon-Server baut GitHub Actions aus dem Quelltext, mit
+  Herkunftsnachweis; heruntergeladen werden nur fest eingetragene Debian-Dateien mit geprüfter Prüfsumme.
 
 ### Neu in Version 1.0.0b5 (Beta)
 
