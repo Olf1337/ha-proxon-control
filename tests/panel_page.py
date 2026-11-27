@@ -191,6 +191,13 @@ def check(page, data: dict) -> dict:
     r["energy_cmp"] = js(f"""() => ({{ pressed: {root}.getElementById('e-cmp').getAttribute('aria-pressed'), sub: {root}.getElementById('e-sub').textContent,
       marks: {root}.querySelectorAll('.e-pm').length, head: [...{root}.querySelectorAll('.e-tbl th')].map(x => x.textContent),
       total: [...{root}.querySelectorAll('.e-tbl tr.sum td')].map(x => [...x.childNodes].map(n => n.textContent).join(' ').trim()) }})""")
+    r["energy_csv_cmp"] = js(f"""async () => {{
+      let blob = null; const make = URL.createObjectURL, click = HTMLAnchorElement.prototype.click;
+      URL.createObjectURL = b => {{ blob = b; return 'blob:test'; }}; HTMLAnchorElement.prototype.click = function () {{}};
+      {root}.getElementById('e-csv').click();
+      URL.createObjectURL = make; HTMLAnchorElement.prototype.click = click;
+      return blob ? (await blob.text()).split('\\r\\n').slice(0, 3) : null;
+    }}""")
     js(f"() => {{ {root}.getElementById('e-cmp').click(); }}")
     page.wait_for_timeout(200)
     r["energy_cmp_off"] = js(f"() => [{root}.querySelectorAll('.e-pm').length, {root}.getElementById('e-sub').textContent.includes('Vorwoche')]")
@@ -271,6 +278,10 @@ def check(page, data: dict) -> dict:
               .slice(0, 5).map(e => `${{e.tagName}}.${{e.className}}#${{e.id}}`),  // what sticks out, for the message
           }};
         }}""")
+    # a room's target: a decimal only where there is one; the unit's picture cropped to the drawing on a phone
+    r["targets"] = js(f"() => [...{root}.querySelectorAll('.rooms .tv')].map(x => x.textContent)")
+    r["diagram_box"] = js(f"() => {root}.querySelector('svg.diagram').getAttribute('viewBox')")
+
     # the hot water as a shower supply (switch in the automations): the card's label, value and − / + follow it
     E = data["config"]["entities"]
     if E.get("DuschvorratModus"):

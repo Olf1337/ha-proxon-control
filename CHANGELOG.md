@@ -7,7 +7,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 **Not yet released:** hot water can be set as a shower supply (35–55 minutes, switch under Settings → Automations; the
 integration picks the lowest water target that holds them); the "Energy" tab compares with the period before (a mark per
-column, the difference over finished days) and shows the period as a table (total, average, lowest and highest day).
+column, the difference over finished days, also in the CSV) and shows the period as a table (total, average, lowest and
+highest day); tile wall: the unit's four tiles fill their card; room targets without ",0"; the unit's picture larger on
+phones; the clock notice names only the control panel.
 
 **New in 1.1.0b2 (beta):** security (also released alone as 1.0.1): entity names and options are escaped before they go into the page's markup (HACS
 review); tile wall: a second tap closes an open room, its name opens the details.
@@ -155,6 +157,14 @@ nobody home).
 * **Energie: Vergleich mit dem Zeitraum davor:** Der neue Knopf neben dem CSV-Download zeigt in jeder Säule mit einem Strich,
   wie viel derselbe Tag der Vorwoche (Tag des Vormonats, Monat des Vorjahrs) brauchte, und oben die Veränderung, z. B.
   „+12 % gegenüber Vorwoche“. Gerechnet wird nur über abgeschlossene Tage, damit der angebrochene Tag nicht täuscht.
+* **CSV mit Vergleich:** Ist der Vergleich an, hat die CSV-Datei eine Spalte mit dem Wert des Zeitraums davor.
+* **Kachelwand:** Die vier Luft-Kacheln füllen am Computer ihre Karte neben dem Warmwasser (2 × 2), statt unten eine leere
+  Fläche zu lassen.
+* **Sollwerte einheitlich:** In den Raumkacheln steht „18°“ statt „18,0°“; eine Nachkommastelle nur, wo es eine gibt (18,5°).
+* **Anlagenbild auf dem Handy größer:** Das Bild zeigt dort nur die Zeichnung (die Beschriftungen stehen ohnehin in den Kacheln
+  darunter) und nutzt die Breite der Karte; etwa ein Fünftel größer.
+* **Hinweis zur Uhr:** „Die Uhr der Anlage geht falsch“ nennt nur noch das Bedienpanel – in der Proxon-App lässt sich die Uhr
+  nicht stellen (Rückmeldung aus dem Forum). Laut offizieller Registerliste geht es übers Netz nur mit Service-Berechtigung.
 * **Energie: Werte als Tabelle:** Aufklappbar unter dem Diagramm je Teil und gesamt: Summe, Durchschnitt, niedrigster und
   höchster Tag (Monat) mit Datum.
 

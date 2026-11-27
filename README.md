@@ -118,7 +118,8 @@ kein Theme nötig.
 
 ## Bekannte Grenzen
 
-* Die **Uhr der Anlage** lässt sich nicht stellen – die Anlage lehnt das Schreiben übers Netz ab (in der Proxon-App geht es).
+* Die **Uhr der Anlage** lässt sich nicht stellen – die Anlage lehnt das Schreiben übers Netz ab (die offizielle Registerliste
+  erlaubt es nur mit Service-Berechtigung). Gestellt wird sie am Bedienpanel der Anlage.
 * Der Ausweichweg über den **Proxon-Server** braucht Nabtos Bibliothek, die es nur für Linux auf Intel/AMD und Mac mit Apple-Chip gibt
   (Raspberry Pi: nur Heimnetz).
 * **Eine Anlage pro Home Assistant.** Eine zweite lässt sich nicht hinzufügen; mehrere Anlagen kommen frühestens in einem

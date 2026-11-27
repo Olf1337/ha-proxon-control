@@ -30,7 +30,7 @@ const TEXT = {
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
     e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
       earlier: "Früher", later: "Später", cmp: "Mit dem Zeitraum davor vergleichen", vs: "{v} gegenüber {p}", prevName: { week: "Vorwoche", month: "Vormonat", year: "Vorjahr" },
-      table: "Werte als Tabelle", tSum: "Summe", tAvgDay: "Ø Tag", tAvgMonth: "Ø Monat", tMin: "Min.", tMax: "Max.", tTotal: "Gesamt", csv: "Als CSV herunterladen", csvDate: "Datum", csvMonth: "Monat", csvTotal: "Summe", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
+      table: "Werte als Tabelle", tSum: "Summe", tAvgDay: "Ø Tag", tAvgMonth: "Ø Monat", tMin: "Min.", tMax: "Max.", tTotal: "Gesamt", csv: "Als CSV herunterladen", csvDate: "Datum", csvMonth: "Monat", csvTotal: "Summe", csvPrev: { week: "Vorwoche", month: "Vormonat", year: "Vorjahr" }, failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
       avgMonth: "Im Schnitt pro Monat", ofWater: "davon Warmwasser {v}",
       noPrice: "Für die Kosten unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren einen Strompreis eintragen (fest oder als Sensor).", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
@@ -102,7 +102,7 @@ const TEXT = {
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
     e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
       earlier: "Earlier", later: "Later", cmp: "Compare with the period before", vs: "{v} compared with {p}", prevName: { week: "the week before", month: "the month before", year: "the year before" },
-      table: "Values as a table", tSum: "Total", tAvgDay: "Ø day", tAvgMonth: "Ø month", tMin: "Min", tMax: "Max", tTotal: "Total", csv: "Download as CSV", csvDate: "Date", csvMonth: "Month", csvTotal: "Total", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
+      table: "Values as a table", tSum: "Total", tAvgDay: "Ø day", tAvgMonth: "Ø month", tMin: "Min", tMax: "Max", tTotal: "Total", csv: "Download as CSV", csvDate: "Date", csvMonth: "Month", csvTotal: "Total", csvPrev: { week: "Week before", month: "Month before", year: "Year before" }, failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
       avgMonth: "On average per month", ofWater: "of which hot water {v}",
       noPrice: "For the cost, enter an electricity price under Settings → Devices & services → Proxon Control → Configure (fixed or as a sensor).", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
@@ -380,6 +380,7 @@ button { font: inherit; color: inherit; }
   .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important; }
   /* the unit's picture shrinks with the screen: its small labels go, the four air temperatures stand large below it */
   svg.diagram .t-val, svg.diagram .t-name, svg.diagram .t-small, svg.diagram .zone { display: none; }
+  svg.diagram { width: calc(100% + 16px); margin: 2px -8px 0; }
   :host .unit-temps { display: grid; }
 }
 .unit-temps { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
@@ -679,6 +680,12 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 @media (max-width: 600px) { :host([tiles]) .unit-temps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 :host([tiles]) .unit-temps div { background: var(--rt, var(--line)); border: 1px solid var(--tile-line); padding: 14px; }
 :host([tiles]) .unit-temps b { font-size: 2.2rem; font-weight: 700; }
+@media (min-width: 601px) {
+  :host([tiles]) .top > .card:first-child, :host([tiles]) .unit-tap { display: flex; flex-direction: column; }
+  :host([tiles]) .unit-tap { flex: 1; }
+  :host([tiles]) .unit-temps { flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(96px, 1fr); }
+  :host([tiles]) .unit-temps div { display: flex; flex-direction: column; justify-content: space-between; }
+}
 /* rooms: a row to swipe through, each tile in its own temperature; the tapped one grows and shows - and + */
 :host([tiles]) .rooms { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 10px; scrollbar-width: thin; }
 :host([tiles]) .rooms > .room { flex: 0 0 172px; scroll-snap-align: start; background: var(--rt, var(--surface)) !important; min-height: 168px;
@@ -888,6 +895,11 @@ class ProxonPanel extends HTMLElement {
     this._buildSheet();
     this._buildToast();
     this._buildAir();
+    // on a phone the picture shows only the drawing (its side labels are hidden there): about a fifth larger
+    const diagram = this.shadowRoot.querySelector("svg.diagram"), narrow = matchMedia("(max-width: 600px)");
+    const crop = () => diagram.setAttribute("viewBox", narrow.matches ? "48 28 624 304" : "0 0 720 360");
+    if (this._cropOff) this._cropOff();
+    crop(); narrow.addEventListener("change", crop); this._cropOff = () => narrow.removeEventListener("change", crop);
     this._startAir();
     let tab = "home"; try { tab = sessionStorage.getItem("proxon-tab") || "home"; } catch (_) { /* no storage */ }
     if (tab === "settings" || tab === "energy") this._tab(tab, true);
@@ -1184,7 +1196,7 @@ class ProxonPanel extends HTMLElement {
         <span class="rs-v"><small>${t.target}</small><b class="num tv"></b></span><button class="rs-btn" data-d="1" aria-label="${t.warmer}">+</button></div>`;
     const $ = s => el.querySelector(s), [dn, up] = el.querySelectorAll(".rs-btn");
     let r = null;
-    const digits = () => (r && r.step < 1 ? 1 : 0);
+    const digits = () => (r && r.step < 1 && !Number.isInteger(r.target) ? 1 : 0);  // 18°, but 18,5°
     const ring = x => (x.element === "heating" ? "var(--warm)" : x.temp - x.target < -1 ? "var(--cold)" : "transparent");
     const render = () => {
       r = this._room(n); if (!r) return;
@@ -1340,8 +1352,10 @@ class ProxonPanel extends HTMLElement {
     const e = this.t.e, de = (this._hass.language || "").startsWith("de"), sep = de ? ";" : ",";
     const num = v => (Math.round(v * 1000) / 1000).toFixed(3).replace(".", de ? "," : ".");
     const day = d => d.toISOString().slice(0, L.P.gran === "month" ? 7 : 10);
-    const head = [L.P.gran === "month" ? e.csvMonth : e.csvDate, ...L.parts.map(p => `${e[p.k]} (kWh)`), `${e.csvTotal} (kWh)`];
-    const rows = L.cols.filter(c => !c.future).map(c => [day(c.d), ...c.values.map(num), num(c.total)]);
+    const head = [L.P.gran === "month" ? e.csvMonth : e.csvDate, ...L.parts.map(p => `${e[p.k]} (kWh)`), `${e.csvTotal} (kWh)`,
+      ...(L.prev ? [`${e.csvPrev[L.P.per]} (kWh)`] : [])];
+    const rows = L.cols.map((c, i) => [c, i]).filter(([c]) => !c.future)
+      .map(([c, i]) => [day(c.d), ...c.values.map(num), num(c.total), ...(L.prev ? [i < L.prev.length ? num(L.prev[i]) : ""] : [])]);
     const text = [head, ...rows].map(r => r.map(v => (String(v).includes(sep) || /["\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v)).join(sep)).join("\r\n") + "\r\n";
     const url = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -1515,7 +1529,7 @@ class ProxonPanel extends HTMLElement {
       pv(sel) !== null ? ` · ${e.prevName[P.per]} ${this._kwh(pv(sel))}` : ""}` : "";
     this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
     this._eTable(P, parts, cols, totals, empty || failed);
-    this._eLast = { P, parts, cols, empty }; this.$("e-csv").disabled = empty || failed;
+    this._eLast = { P, parts, cols, empty, prev }; this.$("e-csv").disabled = empty || failed;
     this._updateCosts(parts);
     // now
     const power = parts.map(p => this._eSum(p.power));
@@ -1961,7 +1975,7 @@ class ProxonPanel extends HTMLElement {
     }, () => {
       const cur = this._room(n); if (!cur) return;
       this.$("r-sub").textContent = `${t.now} ${this.fmt(cur.temp)}° · ${t.element[cur.element] || ""}`;
-      this.$("rt-out").textContent = `${this.fmt(cur.target, d)} °C`;
+      this.$("rt-out").textContent = `${this.fmt(cur.target, Number.isInteger(cur.target) ? 0 : d)} °C`;
       this.$("rt-dn").disabled = !cur.available || cur.target <= cur.min; this.$("rt-up").disabled = !cur.available || cur.target >= cur.max;
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
     });

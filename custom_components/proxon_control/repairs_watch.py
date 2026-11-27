@@ -13,7 +13,7 @@ from .registers import t300_fault_texts
 
 # same limit as the binary sensor "Filter change soon" (30 days)
 FILTER_WARN_HOURS = 30 * 24
-# the unit's clock can only be set at the unit (or in the app); the weekly schedule runs on it
+# the unit's clock can only be set at its control panel (not over the network, not in the app); the weekly schedule runs on it
 CLOCK_WARN_MINUTES = 10
 # a compressor starting this often a day is short-cycling (an inverter heat pump normally runs long and steadily)
 CYCLING_STARTS_PER_DAY = 30

@@ -91,6 +91,10 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         soft = r["soft"]
         assert soft["on"] and soft["backdrop"] == "none" and soft["card"] in ("none", "") and soft["overflow"] <= 0, f"{width}: soft {soft}"
         assert r["glass_again"] is False
+        csv = r["energy_csv_cmp"]
+        assert csv[0].endswith(";Summe (kWh);Vorwoche (kWh)") and csv[1].endswith(";10,000;5,000") and csv[2].endswith(";4,000;5,000"), csv
+        assert r["targets"] and not any(x.endswith(",0°") for x in r["targets"]), r["targets"]
+        assert r["diagram_box"] == ("48 28 624 304" if width == "phone" else "0 0 720 360"), r["diagram_box"]
         cmp = r["energy_cmp"]
         assert cmp["pressed"] == "true" and "+40 % gegenüber Vorwoche" in cmp["sub"] and cmp["marks"] == 2, cmp
         assert cmp["head"] == ["", "Summe", "Ø Tag", "Min.", "Max."] and cmp["total"] == ["Gesamt", "14,0", "2,00", "0,00 Mi", "10,0 Mo"], cmp

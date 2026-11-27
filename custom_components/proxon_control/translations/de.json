@@ -1046,7 +1046,7 @@
     },
     "clock_drift": {
       "title": "Proxon: Die Uhr der Anlage geht falsch",
-      "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung und die Nachtabsenkung richten sich nach dieser Uhr. Bitte die Uhr am Bedienpanel der Anlage oder in der Proxon-App stellen – über das Netz lässt die Anlage das Stellen der Uhr nicht zu. Häufige Ursache: Die automatische Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
+      "description": "Die Uhr der Anlage weicht um {direction}{minutes} Minuten von der Uhrzeit von Home Assistant ab. Das Wochenprogramm der Lüftung und die Nachtabsenkung richten sich nach dieser Uhr. Bitte die Uhr am Bedienpanel der Anlage stellen – weder übers Netz noch in der Proxon-App lässt sie sich stellen. Häufige Ursache: Die automatische Umstellung auf Sommer- bzw. Winterzeit ist an der Anlage ausgeschaltet. Der Hinweis verschwindet von selbst, sobald die Uhr stimmt."
     },
     "compressor_cycling": {
       "title": "Proxon: Der Kompressor startet sehr oft",

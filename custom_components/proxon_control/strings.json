@@ -1046,7 +1046,7 @@
     },
     "clock_drift": {
       "title": "Proxon: The unit's clock is wrong",
-      "description": "The unit's clock is {direction}{minutes} minutes off Home Assistant's time. The weekly ventilation schedule runs on this clock. Please set the clock at the unit's control panel or in the Proxon app – it can't be set over the network. A common cause: the switch to summer/winter time is turned off at the unit. This notice disappears by itself once the clock is right."
+      "description": "The unit's clock is {direction}{minutes} minutes off Home Assistant's time. The weekly ventilation schedule runs on this clock. Please set the clock at the unit's control panel – neither the network nor the Proxon app can set it. A common cause: the switch to summer/winter time is turned off at the unit. This notice disappears by itself once the clock is right."
     },
     "compressor_cycling": {
       "title": "Proxon: The compressor starts very often",
