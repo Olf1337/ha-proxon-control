@@ -498,6 +498,19 @@
       },
       "energy_immersion_heater_year": {
         "name": "Energieverbrauch Heizstab dieses Jahr (geschätzt)"
+      },
+      "pv_cooling_status": {
+        "name": "Kühlen mit PV-Überschuss",
+        "state": {
+          "off": "Aus",
+          "idle": "Nichts zu tun",
+          "cooling": "Kühlung freigegeben (PV)",
+          "already_on": "Von Hand freigegeben",
+          "paused": "Pause (10 min)",
+          "not_mode": "Nur im ECO-Komfort / Sommer",
+          "no_sensor": "Kein Überschuss-Sensor",
+          "blocked": "Pausiert (Urlaub / Werte fehlen)"
+        }
       }
     },
     "select": {
@@ -589,6 +602,12 @@
       },
       "shower_low_limit": {
         "name": "Duschvorrat: Hinweis unter"
+      },
+      "pv_cooling_surplus": {
+        "name": "Kühlen mit PV: Überschuss ab"
+      },
+      "pv_cooling_wish": {
+        "name": "Kühlen mit PV: Wunschtemperatur innen"
       }
     },
     "switch": {
@@ -713,6 +732,24 @@
       },
       "shower_mode": {
         "name": "Warmwasser als Duschvorrat einstellen"
+      },
+      "pv_cooling": {
+        "name": "Kühlen mit PV-Überschuss",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "idle": "Nichts zu tun",
+              "cooling": "Kühlung freigegeben (PV)",
+              "already_on": "Von Hand freigegeben",
+              "paused": "Pause (10 min)",
+              "not_mode": "Nur im ECO-Komfort / Sommer",
+              "no_sensor": "Kein Überschuss-Sensor",
+              "blocked": "Pausiert (Urlaub / Werte fehlen)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {

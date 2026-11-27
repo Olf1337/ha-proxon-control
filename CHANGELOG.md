@@ -5,6 +5,12 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b1 (beta):** cooling on the page "Proxon": a section "Cooling" with the unit's cooling release (it cools in ECO
+comfort and summer) and a chip on "Home" while it is released; a new automation "Cooling with solar surplus" releases the
+cooling while there is enough surplus and it is warmer inside than wished (at least 20 minutes, a release set by hand is
+left alone). The diagnostics now hold every raw set point of the unit, to find the panel's key lock by comparing two
+downloads.
+
 **New in 1.1.1:** home page: the hot-water card has no empty strip below its target next to the taller ventilation
 card (Glass, Soft), the unit's picture sits in the middle of a taller card, and "40 min" no longer pushes the + out of a
 narrow card.
@@ -157,6 +163,23 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b1 (Beta)
+
+* **Kühlen auf der Seite „Proxon“:** Unter *Einstellungen* gibt es den Bereich **„Kühlen“** mit dem Schalter „Kühlung
+  freigegeben“. Bisher gab es ihn nur auf der Geräteseite in Home Assistant. Die Wärmepumpe kühlt im ECO-Komfort- und im
+  Sommerbetrieb; in anderen Betriebsarten sagt die Kurzinfo das. Solange die Kühlung freigegeben ist, steht auf „Zuhause“
+  eine Kapsel „Kühlung“ („freigegeben“ bzw. „kühlt jetzt“). (Wunsch aus dem Forum.)
+* **Kühlen mit PV-Überschuss:** neue Automatik unter *Einstellungen → Automatiken*. Sie gibt die Kühlung frei, solange
+  mindestens der eingestellte Überschuss da ist (Standard 1.500 W) und es innen (Abluft) wärmer als die Wunschtemperatur ist
+  (Standard 24 °C) – mindestens 20 Minuten lang; nach 10 Minuten ohne Überschuss oder wenn es 0,5 °C kühler als gewünscht ist,
+  geht die Freigabe wieder aus, danach 10 Minuten Pause. Nur im ECO-Komfort- und Sommerbetrieb, nicht im Urlaub. Eine von Hand
+  gesetzte Freigabe lässt sie in Ruhe, und schaltet man ihre Freigabe von Hand aus, bleibt sie aus. Nutzt den
+  Überschuss-Sensor, der unter *Konfigurieren* auch fürs Warmwasser gewählt wird. Neu: „Kühlen mit PV-Überschuss“ (Schalter),
+  „Überschuss ab“, „Wunschtemperatur innen“ und ein Status-Sensor.
+* **Tastensperre finden:** Die Diagnosedaten enthalten jetzt alle Sollwerte der Anlage roh (`raw_setpoints`, nur lesend, ohne
+  Raumnamen; nicht über das Bridge-Add-on). Zwei Downloads – einer ohne, einer mit Tastensperre am Bedienteil – zeigen, wo die
+  Sperre steht; dann lässt sie sich einbauen.
 
 ### Neu in Version 1.1.1
 

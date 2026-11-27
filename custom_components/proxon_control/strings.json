@@ -498,6 +498,19 @@
       },
       "energy_immersion_heater_year": {
         "name": "Energy immersion heater this year (estimated)"
+      },
+      "pv_cooling_status": {
+        "name": "Cooling with solar surplus",
+        "state": {
+          "off": "Off",
+          "idle": "Nothing to do",
+          "cooling": "Cooling released (solar)",
+          "already_on": "Released by hand",
+          "paused": "Paused (10 min)",
+          "not_mode": "Only in ECO comfort / summer",
+          "no_sensor": "No surplus sensor",
+          "blocked": "Paused (holiday / values missing)"
+        }
       }
     },
     "select": {
@@ -589,6 +602,12 @@
       },
       "shower_low_limit": {
         "name": "Shower supply: warn below"
+      },
+      "pv_cooling_surplus": {
+        "name": "Cooling with solar: surplus from"
+      },
+      "pv_cooling_wish": {
+        "name": "Cooling with solar: wish temperature inside"
       }
     },
     "switch": {
@@ -713,6 +732,24 @@
       },
       "shower_mode": {
         "name": "Set hot water as shower supply"
+      },
+      "pv_cooling": {
+        "name": "Cooling with solar surplus",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "idle": "Nothing to do",
+              "cooling": "Cooling released (solar)",
+              "already_on": "Released by hand",
+              "paused": "Paused (10 min)",
+              "not_mode": "Only in ECO comfort / summer",
+              "no_sensor": "No surplus sensor",
+              "blocked": "Paused (holiday / values missing)"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {

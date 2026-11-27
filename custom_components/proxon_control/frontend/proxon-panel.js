@@ -46,13 +46,16 @@ const TEXT = {
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
       DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein ({t} °C, {f} l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
       DuschvorratGrenze: "Darunter ist „Warmwasser knapp“ an – z. B. für eine Automation, die den Boost einschaltet oder eine Nachricht schickt.",
+      GlobalKuehlungFreigabe: "Die Wärmepumpe kühlt nur im ECO-Komfort- und im Sommerbetrieb; in den anderen Betriebsarten bleibt die Freigabe ohne Wirkung.",
+      PVKuehlSchwelle: "Gibt die Kühlung frei, solange so viel PV-Überschuss da ist und es innen (Abluft) wärmer als gewünscht ist; mindestens 20 Minuten, nach 10 Minuten ohne Überschuss wieder aus. Eine von Hand gesetzte Freigabe bleibt unberührt. Braucht den Überschuss-Sensor unter Konfigurieren.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", span: "{a} bis {b}", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
-      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur",
+      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur", coolrel: "Kühlen", pvcool: "Kühlen mit PV-Überschuss",
+      GlobalKuehlungFreigabe: "Kühlung freigegeben", PVKuehlung: "Kühlen mit PV an", PVKuehlSchwelle: "Überschuss ab", PVKuehlWunsch: "Wunschtemperatur innen",
       DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
       ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
@@ -75,7 +78,9 @@ const TEXT = {
       legionella: ["Legionellenschutz", "heizt das Warmwasser auf 60 °C"],
       cooling: ["Nachtkühlung", "kühlt mit Stufe {l}"],
       season: ["Sommer/Winter automatisch"],
-    }, fnOn: "eingeschaltet", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
+      coolrel: ["Kühlung", "kühlt jetzt", "freigegeben"],
+      pvcool: ["Kühlen mit PV-Überschuss"],
+    }, fnOn: "eingeschaltet", coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
     chip: { holiday: "Urlaub", season: "Sommer/Winter", heat: "heizt auf {t}°", boost: "heizt bis {t}°", cool: "kühlt, Stufe {l}", hot: "heizt auf 60°", from: "ab {d}", until: "bis {d}" },
   },
   en: {
@@ -119,13 +124,16 @@ const TEXT = {
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
       DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees ({t} °C, {f} l a minute, full tank). The integration picks the lowest water target that holds them.",
       DuschvorratGrenze: "Below this, “Hot water low” is on – e.g. for an automation that switches on the boost or sends a message.",
+      GlobalKuehlungFreigabe: "The heat pump cools only in ECO comfort and summer; in the other modes the release has no effect.",
+      PVKuehlSchwelle: "Releases the cooling while there is this much solar surplus and it is warmer inside (extract air) than wished; at least 20 minutes, off again after 10 minutes without surplus. A release set by hand is left alone. Needs the surplus sensor under Configure.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", span: "{a} to {b}", sure: "Sure? Tap again", empty: "no phase",
     failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
-      season: "Summer/winter automatic", night: "Night setback", heating: "Heating", shower: "Shower supply instead of temperature",
+      season: "Summer/winter automatic", night: "Night setback", heating: "Heating", coolrel: "Cooling", pvcool: "Cooling with solar surplus",
+      GlobalKuehlungFreigabe: "Cooling released", PVKuehlung: "Cooling with solar on", PVKuehlSchwelle: "Surplus from", PVKuehlWunsch: "Wish temperature inside", shower: "Shower supply instead of temperature",
       DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
       ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
@@ -148,7 +156,9 @@ const TEXT = {
       legionella: ["Legionella protection", "heating the hot water to 60 °C"],
       cooling: ["Night cooling", "cooling at level {l}"],
       season: ["Summer/winter automatically"],
-    }, fnOn: "switched on", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
+      coolrel: ["Cooling", "cooling now", "released"],
+      pvcool: ["Cooling with solar surplus"],
+    }, fnOn: "switched on", coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
     chip: { holiday: "Holiday", season: "Summer/winter", heat: "heating to {t}°", boost: "heating up to {t}°", cool: "cooling, level {l}", hot: "heating to 60°", from: "from {d}", until: "until {d}" },
   },
 };
@@ -171,6 +181,10 @@ const FUNCS = [
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
   { k: "cooling", on: ["Nachtkuehlung"], status: "NachtkuehlungStatus", sec: "cooling", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
+  { k: "coolrel", on: ["GlobalKuehlungFreigabe"], sec: "coolrel", run: (st, p) => p.num("AktuellerBetrieb") === 2, tint: "--cold",
+    icon: "M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7" },
+  { k: "pvcool", on: ["PVKuehlung"], status: "PVKuehlStatus", sec: "pvcool", run: st => st.attributes.status === "cooling", tint: "--cold",
+    icon: "M7 3v2M2 8h2M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM16 10v12M11.5 13l9 6M11.5 19l9-6" },
   { k: "season", on: ["SaisonAutomatik"], status: "SaisonStatus", sec: "season", run: () => false, tint: "--exhaust",
     icon: "M12 3v18M4 7l16 10M20 7L4 17" },
 ];
@@ -202,6 +216,8 @@ const ICONS = {
   legionella: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z",
   cooling: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
   season: "M12 3v18M4 7l16 10M20 7L4 17",
+  coolrel: "M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7M9 4l3 2 3-2M9 20l3-2 3 2",
+  pvcool: "M7 3v2M2 8h2M3.5 4.5l1.4 1.4M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM16 10v12M11.5 13l9 6M11.5 19l9-6",
   shower: "M4 20L14 10M9 5a8 8 0 0 1 10 10zM15 17v2M18 15v2M19 19v2",
   night: "M3 17h18M7 13a5 5 0 0 1 10 0M12 4v2",
 };
@@ -215,8 +231,10 @@ const SETTINGS = [
   { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
   { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
+  { id: "pvcool", auto: true, color: "#3b9ad6", main: "PVKuehlung", status: "PVKuehlStatus", rows: [["switch", "PVKuehlung"], ["num", "PVKuehlSchwelle"], ["num", "PVKuehlWunsch"]] },
   { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
   { id: "season", auto: true, color: "#8e8e93", main: "SaisonAutomatik", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
+  { id: "coolrel", color: "#3b82d6", rows: [["switch", "GlobalKuehlungFreigabe"]] },
   { id: "night", color: "#6e6ad6", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
 ];
 const AUTO_COLOR = "#1d8a7a";
@@ -1107,6 +1125,8 @@ class ProxonPanel extends HTMLElement {
       if (planned) { full = fill(t.fnPlanned, { d: when(a.plan_on_at) }); short = fill(c.from, { d: soon(a.plan_on_at) }); }
       else if (a.plan_off_at) { full = fill(words[2], { d: when(a.plan_off_at) }); short = fill(c.until, { d: soon(a.plan_off_at) }); }
       else full = short = words[1];
+    } else if (f.k === "coolrel") {
+      full = short = running ? words[1] : words[2];
     } else if (running && f.temp) {
       full = fill(words[1], { t: this.fmt(this.num(f.temp), 0) }); short = fill(f.k === "boostww" ? c.boost : c.heat, { t: this.fmt(this.num(f.temp), 0) });
     } else if (running && f.k === "cooling") {
@@ -1710,6 +1730,10 @@ class ProxonPanel extends HTMLElement {
     if (id === "auto") {
       const n = (this._autoSecs || []).filter(a => this._autoOn(a)).length;
       return fill(t.nOn, { a: n, b: (this._autoSecs || []).length });
+    }
+    if (id === "coolrel") {
+      const mode = this.num("Betriebsart");
+      return [yn("GlobalKuehlungFreigabe"), mode !== null && ![1, 3].includes(mode) ? t.coolOnly : ""].filter(Boolean).join(" · ");
     }
     if (id === "night") {
       if (!on("NachtabsenkungAktiv")) return t.no;

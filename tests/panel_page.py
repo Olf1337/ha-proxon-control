@@ -290,6 +290,14 @@ def check(page, data: dict) -> dict:
     # next to the taller ventilation card the hot-water card has no empty strip below its target (wide screens)
     r["water_gap"] = js(f"""() => {{ const w = {root}.getElementById('water'), set = {root}.getElementById('w-set-wrap');
       return Math.round(w.getBoundingClientRect().bottom - set.getBoundingClientRect().bottom); }}""")
+    # cooling: a section with the release switch and its function chip while it is released; cooling with solar in the automations
+    cool = data["config"]["entities"].get("GlobalKuehlungFreigabe")
+    if cool:
+        js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: 'on' } }; window.panel.hass = { ...h }; }""", cool)
+        page.wait_for_timeout(300)
+        r["cool_chip"] = js(f"() => [...{root}.querySelectorAll('.fchip, .fn')].map(x => x.textContent.replace(/\\s+/g, ' ').trim()).filter(x => x.includes('Kühlung'))")
+        js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: 'off' } }; window.panel.hass = { ...h }; }""", cool)
+        page.wait_for_timeout(200)
     # a room's target: a decimal only where there is one; the unit's picture cropped to the drawing on a phone
     r["targets"] = js(f"() => [...{root}.querySelectorAll('.rooms .tv')].map(x => x.textContent)")
     r["diagram_box"] = js(f"() => {root}.querySelector('svg.diagram').getAttribute('viewBox')")

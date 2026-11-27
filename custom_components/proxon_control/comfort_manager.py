@@ -68,6 +68,8 @@ class ComfortManager:
         self.boost.status = C.B_OFF
         self.season = Feature(self, C.SeasonSettings(), C.SeasonState(), ("T3Frischluft", "Betriebsart"))
         self.season.status = C.S_OFF
+        self.pvcool = Feature(self, C.PVCoolSettings(), C.PVCoolState(), ("GlobalKuehlungFreigabe", "T7Abluft", "Betriebsart"))
+        self.pvcool.status = C.PV_OFF
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.comfort")
         self._lock = asyncio.Lock()
         self._pending = False
@@ -79,6 +81,7 @@ class ComfortManager:
             (self.cooling, C.CoolSettings, C.CoolState, "cooling"),
             (self.boost, C.BoostSettings, C.BoostState, "boost"),
             (self.season, C.SeasonSettings, C.SeasonState, "season"),
+            (self.pvcool, C.PVCoolSettings, C.PVCoolState, "pvcool"),
         ):
             part = data.get(key) or {}
             s = part.get("settings") or {}
@@ -90,6 +93,7 @@ class ComfortManager:
             "cooling": {"settings": vars(self.cooling.settings), "state": self.cooling.state.to_dict()},
             "boost": {"settings": vars(self.boost.settings), "state": self.boost.state.to_dict()},
             "season": {"settings": vars(self.season.settings), "state": self.season.state.to_dict()},
+            "pvcool": {"settings": vars(self.pvcool.settings), "state": self.pvcool.state.to_dict()},
         })
 
     @callback
@@ -190,8 +194,23 @@ class ComfortManager:
                     await self._write("Betriebsart", write, f"automatic summer/winter: mode {'Summer' if write == C.MODE_SUMMER else 'Winter'}")
                 elif (len(self.season.state.samples), self.season.state.last_switch, self.season.state.last_mode) != before:
                     changed = True  # a new outdoor temperature or a mode set by hand: keep it across restarts
+            if self.pvcool.supported:
+                mode, released = num("Betriebsart"), num("GlobalKuehlungFreigabe")
+                energy = getattr(self.coordinator, "energy", None)
+                surplus = energy.surplus_w() if energy is not None else None
+                action, status = C.decide_pv_cooling(
+                    now, self.pvcool.settings, self.pvcool.state, mode=None if mode is None else int(mode), inside=num("T7Abluft"),
+                    surplus=surplus, released=None if released is None else bool(released), holiday=self._holiday(),
+                )
+                self.pvcool.status = status
+                self.pvcool.details = {"inside": num("T7Abluft"), "surplus": surplus}
+                if action is not None:
+                    changed = True
+                    await self.async_save()  # saved first: after a restart it still knows it released the cooling
+                    await self._write("GlobalKuehlungFreigabe", 1 if action == "on" else 0, f"cooling with solar surplus: release {action}")
             if changed:
                 await self.async_save()
+            self.pvcool.notify()
             self.cooling.notify()
             self.boost.notify()
             self.season.notify()

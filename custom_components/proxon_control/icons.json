@@ -99,6 +99,12 @@
       },
       "shower_low_limit": {
         "default": "mdi:water-alert-outline"
+      },
+      "pv_cooling_surplus": {
+        "default": "mdi:solar-power"
+      },
+      "pv_cooling_wish": {
+        "default": "mdi:thermometer-chevron-down"
       }
     },
     "select": {
@@ -278,6 +284,9 @@
       },
       "water_charge": {
         "default": "mdi:water-boiler"
+      },
+      "pv_cooling_status": {
+        "default": "mdi:snowflake-thermometer"
       }
     },
     "switch": {
@@ -333,6 +342,12 @@
         "default": "mdi:shower",
         "state": {
           "off": "mdi:thermometer-water"
+        }
+      },
+      "pv_cooling": {
+        "default": "mdi:solar-power-variant",
+        "state": {
+          "off": "mdi:solar-power-variant-outline"
         }
       }
     },

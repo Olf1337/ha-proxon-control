@@ -94,6 +94,10 @@ class DirectApi:
     def read_schedule(self) -> dict[str, float]:
         return self._call(registers.read_schedule)
 
+    def read_raw(self, chunks: list[list[tuple[int, int]]]) -> dict[str, int | None]:
+        """Raw set points for the diagnostics (one session)."""
+        return self._call(lambda c: registers.read_raw(c, chunks))
+
     def write(self, key: str, value: float) -> dict:
         """Write and read back; returns the values the unit reports afterwards."""
         try:
@@ -172,6 +176,10 @@ class LocalApi:
     def read_schedule(self) -> dict[str, float]:
         return self._call(registers.read_schedule)
 
+    def read_raw(self, chunks: list[list[tuple[int, int]]]) -> dict[str, int | None]:
+        """Raw set points for the diagnostics (one session)."""
+        return self._call(lambda c: registers.read_raw(c, chunks))
+
     def write(self, key: str, value: float) -> dict:
         try:
             return self._call(lambda c: registers.write_and_verify(c, key, value))
@@ -242,6 +250,9 @@ class HybridApi:
 
     def read_schedule(self) -> dict[str, float]:
         return self._run(lambda api: api.read_schedule())[0]
+
+    def read_raw(self, chunks: list[list[tuple[int, int]]]) -> dict[str, int | None]:
+        return self._run(lambda api: api.read_raw(chunks))[0]
 
     def write(self, key: str, value: float) -> dict:
         return self._run(lambda api: api.write(key, value))[0]

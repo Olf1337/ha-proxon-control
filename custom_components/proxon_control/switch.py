@@ -51,6 +51,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities.append(ProxonEnergySwitch(coordinator, "on", "WarmwasserBoost", "hot_water_boost", comfort.boost))
     if comfort.season.supported:
         entities.append(ProxonEnergySwitch(coordinator, "on", "SaisonAutomatik", "season_auto", comfort.season))
+    if comfort.pvcool.supported:
+        entities.append(ProxonEnergySwitch(coordinator, "on", "PVKuehlung", "pv_cooling", comfort.pvcool))
     if coordinator.energy.supported:
         entities += [ProxonEnergySwitch(coordinator, "solar_on", "SolarWarmwasser", "solar_hot_water"),
                      ProxonEnergySwitch(coordinator, "price_on", "PreisWarmwasser", "cheap_hot_water")]

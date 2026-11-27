@@ -162,7 +162,10 @@ In der Seitenleiste erscheint die Seite **„Proxon“** – in einem von drei D
   Minute, voller Speicher); die Integration wählt die niedrigste Solltemperatur, die dafür reicht. Duschtemperatur und
   Durchfluss (z. B. 6 l/min für einen Sparduschkopf) stellt man unter *Konfigurieren* ein. Der Sensor **„Warmwasser
   knapp“** ist an, solange der Duschvorrat unter einer einstellbaren Grenze liegt – praktisch für Automationen.
-* **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der
+* **Kühlen:** Der Bereich „Kühlen“ schaltet die Kühlfreigabe der Wärmepumpe (sie kühlt im ECO-Komfort- und Sommerbetrieb);
+  unter *Automatiken* gibt es **„Kühlen mit PV-Überschuss“**, das die Kühlung freigibt, solange genug Solarstrom übrig und
+  es innen wärmer als gewünscht ist.
+* **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Kühlen, Nachtabsenkung) mit Kurzinfo, rechts der
   gewählte Bereich; auf dem Handy erst die Liste, dann der Bereich.
 * **Sollwerte nur mit − und +** (gedrückt halten wiederholt): Wischen beim Scrollen verstellt nichts.
 * **Drei Designs** (unter *Konfigurieren* → „Design der Seite ‚Proxon‘“): **Liquid Glass** – durchscheinende Karten über

@@ -72,6 +72,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonEnergyNumber(coordinator, d, comfort.boost) for d in BOOST_NUMBERS]
     if comfort.season.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.season) for d in SEASON_NUMBERS]
+    if comfort.pvcool.supported:
+        entities += [ProxonEnergyNumber(coordinator, d, comfort.pvcool) for d in PV_COOL_NUMBERS]
     if has_shower_target(data):
         entities += [ProxonShowerTargetNumber(coordinator), ProxonShowerLowLimit(coordinator)]
     entities.append(ProxonHolidayLeadNumber(coordinator))
@@ -140,6 +142,18 @@ BOOST_NUMBERS: list[ProxonEnergyNumberDescription] = [
 ]
 
 
+PV_COOL_NUMBERS: list[ProxonEnergyNumberDescription] = [
+    ProxonEnergyNumberDescription(
+        key="PVKuehlSchwelle", translation_key="pv_cooling_surplus", setting="surplus_w", native_min_value=200, native_max_value=6000,
+        native_step=100, native_unit_of_measurement=UnitOfPower.WATT, device_class=NumberDeviceClass.POWER, mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+    ),
+    ProxonEnergyNumberDescription(
+        key="PVKuehlWunsch", translation_key="pv_cooling_wish", setting="wish", native_min_value=18, native_max_value=28, native_step=0.5,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=NumberDeviceClass.TEMPERATURE, mode=NumberMode.BOX,
+        entity_category=EntityCategory.CONFIG,
+    ),
+]
 SEASON_NUMBERS: list[ProxonEnergyNumberDescription] = [
     ProxonEnergyNumberDescription(
         key="SaisonWinterUnter", translation_key="season_winter_below", setting="winter_below", native_min_value=0, native_max_value=25,

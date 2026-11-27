@@ -63,7 +63,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert [c[:2] + [c[2]["value"]] for c in lv["calls"]] == [["number", "set_value", lv["chosen"]]], f"{width}: {lv}"
         assert any(c.startswith("Legionellenschutz") for c in r["chips"]), f"{width}: no chip for a switched-on function"
         assert r["chip_opens"] == ["settings", "auto"]
-        assert {"vent", "water", "auto"} <= set(r["sections"])
+        assert {"vent", "water", "auto", "coolrel"} <= set(r["sections"])
         en = r["energy"]
         assert en["shown"] and en["parts"] == ["comp", "vent", "water"] and en["overflow"] <= 0, f"{width}: energy tab {en}"
         assert en["week"][0] == 7 and en["week"][1].endswith("kWh") and en["week"][2], f"{width}: a column per weekday {en}"
@@ -94,6 +94,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         csv = r["energy_csv_cmp"]
         assert csv[0].endswith(";Summe (kWh);Vorwoche (kWh)") and csv[1].endswith(";10,000;5,000") and csv[2].endswith(";4,000;5,000"), csv
         assert r["water_gap"] < 40, f"{width}: empty strip below the hot-water target ({r['water_gap']} px)"
+        assert r["cool_chip"] and "freigegeben" in r["cool_chip"][0], r["cool_chip"]
         assert r["targets"] and not any(x.endswith(",0°") for x in r["targets"]), r["targets"]
         assert r["diagram_box"] == ("48 28 624 304" if width == "phone" else "0 0 720 360"), r["diagram_box"]
         to = r["tiles_opts"]

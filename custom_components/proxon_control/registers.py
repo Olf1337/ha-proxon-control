@@ -572,6 +572,31 @@ def expected_value(key: str, value: float) -> float:
     return float(out if out is not None else value)
 
 
+# For the diagnostics: every set point of these objects, raw, to find a value by comparing two downloads (e.g. the panel's
+# key lock off and on). Object 6 (room names) is left out. Read only; one session per SCAN_PER_SESSION points.
+SCAN_RANGES = ((0, 500), (1, 100), (3, 100), (4, 50), (5, 130), (7, 50))
+SCAN_CHUNK = 25
+SCAN_PER_SESSION = 4  # chunks per session (the unit allows only a few queries per session)
+
+
+def scan_sessions() -> list[list[list[tuple[int, int]]]]:
+    points = [(obj, a) for obj, n in SCAN_RANGES for a in range(n)]
+    chunks = [points[i:i + SCAN_CHUNK] for i in range(0, len(points), SCAN_CHUNK)]
+    return [chunks[i:i + SCAN_PER_SESSION] for i in range(0, len(chunks), SCAN_PER_SESSION)]
+
+
+def read_raw(client, chunks: list[list[tuple[int, int]]]) -> dict[str, int | None]:
+    """The raw set point values at these addresses ("object:address"), a chunk per query; None where the unit gave none."""
+    out: dict[str, int | None] = {}
+    for chunk in chunks:
+        reply = client.invoke(QUERY_SET_READ, {"list": [{"obj": o, "address": a} for o, a in chunk]})
+        data = ((reply or {}).get("response") or {}).get("data") or []
+        for k, (o, a) in enumerate(chunk):
+            v = data[k].get("value") if k < len(data) and isinstance(data[k], dict) else None
+            out[f"{o}:{a}"] = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+    return out
+
+
 def read_keys(client, keys: list[str]) -> dict[str, float | str]:
     """Read just these values."""
     regs = [BY_KEY[k] for k in dict.fromkeys(keys)]

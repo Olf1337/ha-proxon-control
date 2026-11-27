@@ -119,6 +119,10 @@ class EnergyManager:
         except ValueError:
             return None, None
 
+    def surplus_w(self) -> float | None:
+        """The solar surplus in W (positive: fed into the grid), or None without a surplus sensor."""
+        return self._surplus()
+
     def _surplus(self) -> float | None:
         value, unit = self._sensor_value(CONF_SURPLUS_SENSOR)
         return None if value is None else E.power_in_watt(value, unit, bool(self.entry.options.get(CONF_FEED_IN_NEGATIVE)))

@@ -27,6 +27,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
+from . import comfort as CF
 from . import legionella as L
 from .api import PATH_KEY
 from .comfort import (
@@ -283,6 +284,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if comfort.cooling.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.cooling, "NachtkuehlungStatus", "night_cooling_status",
                                             [C_OFF, C_IDLE, C_WAITING, C_COOLING, C_PROTECTING, C_NOT_SUMMER, C_BLOCKED]))
+    if comfort.pvcool.supported:
+        entities.append(ProxonFeatureStatus(coordinator, comfort.pvcool, "PVKuehlStatus", "pv_cooling_status",
+                                            [CF.PV_OFF, CF.PV_IDLE, CF.PV_COOLING, CF.PV_ALREADY_ON, CF.PV_PAUSED, CF.PV_NOT_MODE,
+                                             CF.PV_NO_SENSOR, CF.PV_BLOCKED]))
     if comfort.boost.supported:
         entities.append(ProxonFeatureStatus(coordinator, comfort.boost, "BoostStatus", "hot_water_boost_status",
                                             [B_OFF, B_IDLE, B_HEATING, B_ALREADY_ON, B_PAUSED, B_BLOCKED]))

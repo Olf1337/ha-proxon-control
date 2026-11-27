@@ -123,6 +123,92 @@ def decide_cooling(
     return CoolDecision(level if level != level_now else None, C_COOLING if wanted == COOLING else C_PROTECTING, details)
 
 
+# ---------------- cooling with solar surplus ----------------
+# The unit's cooling release on while there is enough solar surplus and it is warmer inside than wished (ECO comfort and
+# summer only, the modes the unit cools in). Switched off again only if it switched it on - a release set by hand stays -
+# once the surplus has been missing for PV_LOW_HOLD or it is cool enough, and not before PV_MIN_RUN; then PV_MIN_PAUSE off.
+PV_MIN_RUN = timedelta(minutes=20)
+PV_MIN_PAUSE = timedelta(minutes=10)
+PV_LOW_HOLD = timedelta(minutes=10)
+PV_MODES = (1, 3)  # summer, ECO comfort
+PV_OFF = "off"
+PV_IDLE = "idle"  # not enough surplus / cool enough
+PV_COOLING = "cooling"  # cooling release switched on by the automation
+PV_ALREADY_ON = "already_on"  # cooling released by hand
+PV_PAUSED = "paused"
+PV_NOT_MODE = "not_mode"  # only in ECO comfort and summer
+PV_NO_SENSOR = "no_sensor"  # no surplus sensor chosen (or it has no value)
+PV_BLOCKED = "blocked"  # holiday mode or values missing
+
+
+@dataclass
+class PVCoolSettings:
+    on: bool = False
+    surplus_w: float = 1500.0
+    wish: float = 24.0
+
+
+@dataclass
+class PVCoolState:
+    active: bool = False  # the automation switched the cooling release on
+    since: datetime | None = None
+    low_since: datetime | None = None  # since when there is too little surplus (or it is cool enough)
+    last_stop: datetime | None = None
+
+    def to_dict(self) -> dict:
+        return {"active": self.active, "since": self.since.isoformat() if self.since else None,
+                "last_stop": self.last_stop.isoformat() if self.last_stop else None}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> PVCoolState:
+        def t(k):
+            return datetime.fromisoformat(d[k]) if d.get(k) else None
+        return cls(active=bool(d.get("active")), since=t("since"), last_stop=t("last_stop"))
+
+
+def decide_pv_cooling(
+    now: datetime, s: PVCoolSettings, st: PVCoolState, *, mode: int | None, inside: float | None, surplus: float | None,
+    released: bool | None, holiday: bool,
+) -> tuple[str | None, str]:
+    """("on" / "off" / None, status)."""
+    def stop(status: str) -> tuple[str | None, str]:
+        if st.active and released:
+            st.active, st.since, st.low_since, st.last_stop = False, None, None, now
+            return "off", status
+        st.active, st.since, st.low_since = False, None, None
+        return None, status
+
+    if not s.on:
+        return stop(PV_OFF)
+    if mode is not None and mode not in PV_MODES:
+        return stop(PV_NOT_MODE)
+    if holiday or mode is None or inside is None or released is None:
+        return stop(PV_BLOCKED)
+    if st.active and not released:  # switched off by hand meanwhile: that stays
+        st.active, st.since, st.low_since, st.last_stop = False, None, None, now
+        return None, PV_IDLE
+    if surplus is None:
+        return (None, PV_COOLING) if st.active else (None, PV_NO_SENSOR)
+    want = surplus >= s.surplus_w and inside > s.wish
+    if st.active:
+        if want or inside > s.wish - TARGET_BAND and surplus >= s.surplus_w:
+            st.low_since = None
+            return None, PV_COOLING
+        st.low_since = st.low_since or now
+        cool_enough = inside <= s.wish - TARGET_BAND
+        if (cool_enough or now - st.low_since >= PV_LOW_HOLD) and now - (st.since or now) >= PV_MIN_RUN:
+            return stop(PV_IDLE)
+        return None, PV_COOLING
+    if released:
+        return None, PV_ALREADY_ON
+    if not want:
+        return None, PV_IDLE
+    if st.last_stop is not None and now - st.last_stop < PV_MIN_PAUSE:
+        return None, PV_PAUSED
+    st.active, st.since, st.low_since = True, now, None
+    return "on", PV_COOLING
+
+
 # ---------------- hot-water boost ----------------
 MIN_RUN = timedelta(minutes=10)
 MIN_PAUSE = timedelta(minutes=10)
