@@ -5,7 +5,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** home page: the hot-water card has no empty strip below its target next to the taller ventilation
+**New in 1.1.1:** home page: the hot-water card has no empty strip below its target next to the taller ventilation
 card (Glass, Soft), the unit's picture sits in the middle of a taller card, and "40 min" no longer pushes the + out of a
 narrow card.
 
@@ -158,7 +158,7 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.1.1
 
 * **Zuhause ohne leere Flächen:** Neben der höheren Lüftungskarte füllt die Warmwasser-Karte ihre Höhe (Glass, Soft) – Speicher
   und Werte in der Mitte, der Sollwert unten statt eines leeren Streifens darunter. Umgekehrt sitzt das Anlagenbild mittig, wenn
