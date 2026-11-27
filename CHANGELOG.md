@@ -5,6 +5,13 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.1.0:** contains everything from 1.1.0b1 to 1.1.0b3 (below): a third look "Tile wall", hot water as a shower
+supply, the "Energy" tab compared with the period before and as a table, CSV download, "Reconfigure", new rooms without a
+restart, icons for every entity (Gold), and the escaping fix from 1.0.1. New since 1.1.0b3: the shower supply counts with
+your own shower (temperature and flow under Configure); a "Hot water low" sensor with its own limit, for automations; the
+comparison also shows the difference in money; the tile wall can show the rooms in a grid, with small, medium or large
+tiles and an amber, blue, green or rose accent (under Configure).
+
 **New in 1.1.0b3 (beta):** hot water can be set as a shower supply (35–55 minutes, switch under Settings → Automations; the
 integration picks the lowest water target that holds them); the "Energy" tab compares with the period before (a mark per
 column, the difference over finished days, also in the CSV) and shows the period as a table (total, average, lowest and
@@ -146,6 +153,24 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.1.0
+
+Die volle Version mit allem aus 1.1.0b1 bis 1.1.0b3 (Abschnitte darunter) – drittes Design „Kachelwand“, Warmwasser als
+Duschvorrat, Energie mit Vergleich, Tabelle und CSV, „Neu konfigurieren“, neue Räume ohne Neustart, Symbole für alle
+Entitäten (Gold) und die Sicherheitskorrektur aus 1.0.1. Neu seit 1.1.0b3:
+
+* **Duschvorrat nach der eigenen Dusche:** Unter *Konfigurieren* lassen sich Duschtemperatur (37–42 °C) und Durchfluss
+  (5–12 l/min) einstellen. Der Sensor „Duschvorrat“, sein Sollwert und die Texte auf der Seite rechnen damit; wer z. B. mit
+  einem Sparduschkopf (6 l/min) duscht, sieht realistischere Minuten. Ohne Angabe bleibt es bei 40 °C und 8 l/min.
+* **„Warmwasser knapp“:** Ein neuer Sensor ist an, solange der Duschvorrat unter einer Grenze liegt (Standard 10 Minuten,
+  einstellbar unter *Einstellungen → Automatiken → Duschvorrat statt Temperatur* oder als Entität „Duschvorrat: Hinweis
+  unter“). Gedacht für Automationen, z. B. den Boost einschalten oder eine Nachricht aufs Handy.
+* **Vergleich auch in Euro:** Neben „+12 % gegenüber Vorwoche“ steht jetzt auch der Unterschied der Kosten, z. B. „(+0,85 €)“.
+* **Kachelwand einstellbar:** Unter *Konfigurieren*: Räume als Reihe zum Wischen (wie bisher) oder alle im Raster, Kacheln
+  klein, mittel oder groß, Akzentfarbe Bernstein, Blau, Grün oder Rosé.
+* **README:** zwei Installationswege (HACS und von Hand), die Einrichtung Schritt für Schritt mit Bildern und ein Abschnitt
+  zur Qualitätssicherung. Proxon Control steht jetzt im offiziellen HACS-Katalog.
 
 ### Neu in Version 1.1.0b3 (Beta)
 

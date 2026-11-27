@@ -586,6 +586,9 @@
       },
       "shower_target": {
         "name": "Duschvorrat (Soll)"
+      },
+      "shower_low_limit": {
+        "name": "Duschvorrat: Hinweis unter"
       }
     },
     "switch": {
@@ -745,6 +748,9 @@
       },
       "heating_elements": {
         "name": "Wärmeelemente heizen"
+      },
+      "hot_water_low": {
+        "name": "Warmwasser knapp"
       }
     },
     "climate": {
@@ -920,7 +926,12 @@
           "house_photo": "Hausfoto (optional)",
           "hot_water_pump_power": "Leistung der Warmwasser-Wärmepumpe",
           "hot_water_heater_power": "Leistung des Heizstabs",
-          "panel_look": "Design der Seite „Proxon“"
+          "panel_look": "Design der Seite „Proxon“",
+          "tiles_layout": "Kachelwand: Räume als",
+          "tiles_size": "Kachelwand: Kachelgröße",
+          "tiles_accent": "Kachelwand: Akzentfarbe",
+          "shower_temperature": "Duschtemperatur",
+          "shower_flow": "Durchfluss der Dusche"
         },
         "data_description": {
           "mode": "Heimnetz zuerst: am schnellsten, der Proxon-Server wird nur genutzt, wenn die Anlage direkt nicht erreichbar ist.",
@@ -936,7 +947,12 @@
           "house_photo": "Ein eigenes Foto deines Hauses als Kopfbild der Startseite im fertigen Dashboard. Lege es z. B. unter /config/www/proxon/haus.jpg ab und trage /local/proxon/haus.jpg ein. Leer: kein Kopfbild.",
           "hot_water_pump_power": "Für den geschätzten Warmwasser-Verbrauch (die Anlage misst ihn nicht): die Nennleistung, solange die Wärmepumpe läuft. Datenblatt PROXON T300: 430 W.",
           "hot_water_heater_power": "Die Nennleistung, solange der Heizstab läuft. T300: 1500 W; mit der Option BOOST 4500 oder 9000 W.",
-          "panel_look": "Liquid Glass: durchscheinende Karten über farbigen Flächen. Soft: erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche. Kachelwand: Reihen aus Kacheln, Räume in ihrer Temperaturfarbe, große schmale Zahlen; ein Tipp auf einen Raum zeigt − und +."
+          "panel_look": "Liquid Glass: durchscheinende Karten über farbigen Flächen. Soft: erhabene Karten und gedrückte Knöpfe auf einer ruhigen Fläche. Kachelwand: Reihen aus Kacheln, Räume in ihrer Temperaturfarbe, große schmale Zahlen; ein Tipp auf einen Raum zeigt − und +.",
+          "tiles_layout": "Raster zeigt alle Räume auf einmal, eine Reihe wischt man zur Seite (nur Kachelwand).",
+          "tiles_size": "Größere Kacheln lesen sich besser aus der Entfernung (nur Kachelwand).",
+          "tiles_accent": "Die Farbe des gewählten Tabs, der Knöpfe und Markierungen (nur Kachelwand).",
+          "shower_temperature": "Wie warm das Wasser hier aus der Dusche kommt. Danach rechnen der Duschvorrat und sein Sollwert (üblich: 40 °C).",
+          "shower_flow": "Wie viel Wasser der Duschkopf durchlässt (ein normaler: 8 l/min, ein Sparduschkopf: etwa 6)."
         }
       }
     },
@@ -1032,6 +1048,27 @@
         "glass": "Liquid Glass",
         "soft": "Soft",
         "tiles": "Kachelwand"
+      }
+    },
+    "tiles_layout": {
+      "options": {
+        "grid": "Raster",
+        "row": "Reihe zum Wischen"
+      }
+    },
+    "tiles_size": {
+      "options": {
+        "small": "Klein",
+        "medium": "Mittel",
+        "large": "Groß"
+      }
+    },
+    "tiles_accent": {
+      "options": {
+        "amber": "Bernstein",
+        "blue": "Blau",
+        "green": "Grün",
+        "rose": "Rosé"
       }
     }
   },

@@ -40,6 +40,19 @@ CONF_FIXED_PRICE = "fixed_price"  # ct/kWh of a fixed tariff: for the electricit
 CONF_PANEL_LOOK = "panel_look"
 PANEL_LOOKS = ["glass", "soft", "tiles"]
 DEFAULT_PANEL_LOOK = "glass"
+# the tile wall: rooms as a row to swipe or all in a grid, the size of the tiles, the accent colour
+CONF_TILES_LAYOUT = "tiles_layout"
+TILES_LAYOUTS = ["row", "grid"]
+CONF_TILES_SIZE = "tiles_size"
+TILES_SIZES = ["small", "medium", "large"]
+CONF_TILES_ACCENT = "tiles_accent"
+TILES_ACCENTS = ["amber", "blue", "green", "rose"]
+TILES_DEFAULTS = {CONF_TILES_LAYOUT: "row", CONF_TILES_SIZE: "medium", CONF_TILES_ACCENT: "amber"}
+# the shower supply: how warm and how much water a shower takes (an ordinary shower head: 40 °C, 8 l/min)
+CONF_SHOWER_TEMP = "shower_temperature"
+CONF_SHOWER_FLOW = "shower_flow"
+DEFAULT_SHOWER_TEMP = 40.0
+DEFAULT_SHOWER_FLOW = 8.0
 # dashboard: the rooms on the upper floor (room numbers; guessed from the names until chosen), the user's own house photo
 CONF_UPPER_FLOOR = "upper_floor_rooms"
 CONF_BASEMENT = "basement_rooms"

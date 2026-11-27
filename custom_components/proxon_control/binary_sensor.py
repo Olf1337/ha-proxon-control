@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity
+from .entity import ProxonEntity, has_shower_target
 from .registers import FAULT_POINTS, fault_key, heating_channels, t300_fault_texts
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
@@ -48,6 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         for key, tk, dc, diag in STATES
         if key in data and (key not in T300_KEYS or "T300Betriebsart" in data)
     ]
+    if has_shower_target(data):
+        entities.append(ProxonHotWaterLow(coordinator))
     async_add_entities(entities)
 
 
@@ -131,3 +133,24 @@ class ProxonFault(ProxonEntity, BinarySensorEntity):
         last = self.coordinator.last_fault
         attrs["last_fault"] = {"time": last[0].isoformat(), **{k: f"0x{v:04X}" for k, v in last[1].items()}} if last else None
         return attrs
+
+
+class ProxonHotWaterLow(ProxonEntity, BinarySensorEntity):
+    """On while the shower supply is below the limit set with "Shower supply: warn below" - for an automation that, say,
+    switches on the hot-water boost or sends a message."""
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "WarmwasserKnapp", "hot_water_low")
+
+    @property
+    def available(self) -> bool:
+        return super(ProxonEntity, self).available and (self.coordinator.data or {}).get("WarmwasserDuschminuten") is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        minutes = (self.coordinator.data or {}).get("WarmwasserDuschminuten")
+        return None if minutes is None else float(minutes) < self.coordinator.shower_low_limit
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"shower_minutes": (self.coordinator.data or {}).get("WarmwasserDuschminuten"), "limit": self.coordinator.shower_low_limit}

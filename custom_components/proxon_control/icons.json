@@ -27,6 +27,12 @@
       },
       "solenoid_valve": {
         "default": "mdi:valve"
+      },
+      "hot_water_low": {
+        "default": "mdi:water-thermometer",
+        "state": {
+          "on": "mdi:water-alert"
+        }
       }
     },
     "button": {
@@ -90,6 +96,9 @@
       },
       "shower_target": {
         "default": "mdi:shower-head"
+      },
+      "shower_low_limit": {
+        "default": "mdi:water-alert-outline"
       }
     },
     "select": {

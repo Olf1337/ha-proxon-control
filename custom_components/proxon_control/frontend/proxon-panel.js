@@ -14,7 +14,7 @@ const TEXT = {
     hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
     compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
-    litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei 40 °C", bottom: "Unten", target: "Soll", showerTarget: "Duschvorrat", charge: "Ladezustand",
+    litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei {t} °C", bottom: "Unten", target: "Soll", showerTarget: "Duschvorrat", charge: "Ladezustand",
     floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
     allOff: "Wärmeelemente aller Räume aus", allOnDone: "Wärmeelemente aller Räume an",
     element: { off: "Heizpanel aus", ready: "Heizpanel bereit", heating: "Heizpanel heizt" },
@@ -44,7 +44,8 @@ const TEXT = {
       GrenzwertFeuchte: "Darunter lüftet die Anlage im ECO-Komfortbetrieb schwächer, damit die Luft nicht zu trocken wird.",
       LegionellenGeplant: "Heizt jede Woche am gewählten Tag zur gewählten Uhrzeit auf 60 °C, mit oder ohne Sonne.",
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
-      DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein (40 °C, 8 l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
+      DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein ({t} °C, {f} l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
+      DuschvorratGrenze: "Darunter ist „Warmwasser knapp“ an – z. B. für eine Automation, die den Boost einschaltet oder eine Nachricht schickt.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", span: "{a} bis {b}", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
@@ -52,7 +53,7 @@ const TEXT = {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
       season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur",
-      DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)",
+      DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
       ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
       UrlaubVorlauf: "Vor der Rückkehr aufwärmen", UrlaubsplanLoeschen: "Urlaubsplan löschen", SollWassertemperatur: "Solltemperatur",
@@ -86,7 +87,7 @@ const TEXT = {
     hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
     compressor: "Compressor", compOff: "off", humidity: "Humidity",
     water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
-    litersSub: "of warm water in the tank", showerSub: "of showering at 40 °C", bottom: "Bottom", target: "Target", showerTarget: "Shower supply", charge: "Charge",
+    litersSub: "of warm water in the tank", showerSub: "of showering at {t} °C", bottom: "Bottom", target: "Target", showerTarget: "Shower supply", charge: "Charge",
     floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
     allOff: "Heating elements of all rooms off", allOnDone: "Heating elements of all rooms on",
     element: { off: "Heating panel off", ready: "Heating panel ready", heating: "Heating panel heating" },
@@ -116,7 +117,8 @@ const TEXT = {
       GrenzwertFeuchte: "Below it the unit ventilates less in ECO comfort mode, so the air doesn't get too dry.",
       LegionellenGeplant: "Heats to 60 °C every week on the chosen day at the chosen time, sun or not.",
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
-      DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees (40 °C, 8 l a minute, full tank). The integration picks the lowest water target that holds them.",
+      DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees ({t} °C, {f} l a minute, full tank). The integration picks the lowest water target that holds them.",
+      DuschvorratGrenze: "Below this, “Hot water low” is on – e.g. for an automation that switches on the boost or sends a message.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", span: "{a} to {b}", sure: "Sure? Tap again", empty: "no phase",
     failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
@@ -124,7 +126,7 @@ const TEXT = {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
       season: "Summer/winter automatic", night: "Night setback", heating: "Heating", shower: "Shower supply instead of temperature",
-      DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target",
+      DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
       ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
       UrlaubVorlauf: "Warm up before the return", UrlaubsplanLoeschen: "Clear holiday plan", SollWassertemperatur: "Target temperature",
@@ -210,7 +212,7 @@ const SETTINGS = [
   { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
   { id: "boost", auto: true, color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
   { id: "store", auto: true, color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
-  { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"]] },
+  { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
   { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
   { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
@@ -652,6 +654,12 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   --accent: #a8620e; --glass: #ffffff; --glass-strong: #ffffff; --edge: transparent; --edge-low: transparent; --tile-line: rgba(18,22,28,.1);
   --shadow: none; --font-display: "Antonio", "Oswald", "Roboto Condensed", "Arial Narrow", sans-serif;
 }
+:host([tiles]) { --tile-w: 172px; --tile-h: 168px; --tile-num: 3.2rem; }
+:host([tiles][tl-size="small"]) { --tile-w: 140px; --tile-h: 136px; --tile-num: 2.6rem; }
+:host([tiles][tl-size="large"]) { --tile-w: 212px; --tile-h: 200px; --tile-num: 3.9rem; }
+:host([tiles][tl-accent="blue"]) { --accent: #1f6fb2; }
+:host([tiles][tl-accent="green"]) { --accent: #2e7d4f; }
+:host([tiles][tl-accent="rose"]) { --accent: #b2456a; }
 :host([tiles][dark]) {
   --bg: #0c0f14; --surface: #12171e; --surface-solid: #12171e; --line: rgba(255,255,255,.08); --fg: #e9edf2; --fg-2: #c3cad4; --fg-3: #aeb7c4;
   --accent: #e8a33d; --glass: #12171e; --glass-strong: #161c25; --tile-line: #1f2836;
@@ -688,12 +696,12 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 }
 /* rooms: a row to swipe through, each tile in its own temperature; the tapped one grows and shows - and + */
 :host([tiles]) .rooms { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 10px; scrollbar-width: thin; }
-:host([tiles]) .rooms > .room { flex: 0 0 172px; scroll-snap-align: start; background: var(--rt, var(--surface)) !important; min-height: 168px;
+:host([tiles]) .rooms > .room { flex: 0 0 var(--tile-w); scroll-snap-align: start; background: var(--rt, var(--surface)) !important; min-height: var(--tile-h);
   display: flex; flex-direction: column; justify-content: space-between; transition: flex-basis 260ms cubic-bezier(.22,1,.36,1), opacity 200ms ease-out; }
 :host([tiles]) .rooms > .room.open { flex-basis: 300px; border: 2px solid var(--accent) !important; }
 :host([tiles]) .rooms:has(.open) > .room:not(.open) { opacity: .7; }
 :host([tiles]) .room .state { display: none; }
-:host([tiles]) .room-temp { font-size: 3.2rem; font-weight: 700; line-height: 1; }
+:host([tiles]) .room-temp { font-size: var(--tile-num); font-weight: 700; line-height: 1; }
 :host([tiles]) .room:not(.open) .rs-btn { display: none; }
 :host([tiles]) .room.open .room-name .nm::after { content: " ›"; color: var(--accent); }
 :host([tiles]) .room:not(.open) .room-step { justify-content: flex-start; margin-top: 6px; }
@@ -713,6 +721,12 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   :host([tiles]) .tabs svg { display: block; width: 20px; height: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { :host([tiles]) .rooms > .room { transition: none; } }
+:host([tiles][dark][tl-accent="blue"]) { --accent: #5da2dc; }
+:host([tiles][dark][tl-accent="green"]) { --accent: #6cc08b; }
+:host([tiles][dark][tl-accent="rose"]) { --accent: #e58ba6; }
+/* all rooms in a grid instead of a row to swipe; an opened room takes two columns where there are two */
+:host([tiles][tl-layout="grid"]) .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tile-w)), 1fr)); overflow: visible; }
+@media (min-width: 601px) { :host([tiles][tl-layout="grid"]) .rooms > .room.open { grid-column: span 2; } }
 `;
 const FAN_BLADES = '<path d="M0-12C4-12 5-4 0 0-5-4-4-12 0-12ZM12 0C12 4 4 5 0 0 4-5 12-4 12 0ZM0 12C-4 12-5 4 0 0 5 4 4 12 0 12ZM-12 0C-12-4-4-5 0 0-4 5-12 4-12 0Z" fill="var(--fg-2)"/>';
 const FAN = '<circle r="12" fill="var(--surface-solid)" stroke="var(--line)"/><path d="M0-8C3-8 4-3 0 0 -4-3-3-8 0-8ZM8 0C8 3 3 4 0 0 3-4 8-3 8 0ZM0 8C-3 8-4 3 0 0 4 3 3 8 0 8ZM-8 0C-8-3-3-4 0 0-3 4-8 3-8 0Z" fill="var(--fg-2)"/>';
@@ -860,7 +874,7 @@ class ProxonPanel extends HTMLElement {
               </div>
               <div class="a-facts">
                 <div class="fact" id="w-liters-wrap"><span class="huge num" id="w-liters">–</span><span>${t.litersSub}</span></div>
-                <div class="fact" id="w-shower-wrap"><span class="huge num" id="w-shower">–</span><span>${t.showerSub}</span></div>
+                <div class="fact" id="w-shower-wrap"><span class="huge num" id="w-shower">–</span><span id="w-shower-sub">${fill(t.showerSub, this._shower())}</span></div>
                 <div class="fact"><span class="huge num" id="w-temp">–</span><span>${t.middle}<span id="w-charge-wrap"> · ${t.charge} <b class="num" id="w-charge">–</b></span></span></div>
               </div>
             </div>
@@ -937,6 +951,8 @@ class ProxonPanel extends HTMLElement {
     this.toggleAttribute("softui", look === "soft");
     this.toggleAttribute("tiles", look === "tiles");
     if (look === "tiles") loadTileFont((this._config || {}).static);
+    const tl = (this._config || {}).tiles || {};  // the tile wall's layout, tile size and accent (options)
+    this.setAttribute("tl-layout", tl.layout || "row"); this.setAttribute("tl-size", tl.size || "medium"); this.setAttribute("tl-accent", tl.accent || "amber");
     const deg = key => { const v = this.num(key); return v === null ? "–" : `${this.fmt(v)}°`; };
     this.$("c-out").textContent = deg("T3Frischluft");
     const op = this.st("AktuellerBetrieb");
@@ -998,6 +1014,7 @@ class ProxonPanel extends HTMLElement {
       this.$("w-mid").textContent = w === null ? "–" : `${this.fmt(w)}°`;
       const sh = this.num("WarmwasserDuschminuten");
       this.$("w-shower-wrap").hidden = sh === null; this.$("w-shower").textContent = `${this.fmt(sh, 0)} ${t.min}`;
+      this.$("w-shower-sub").textContent = fill(t.showerSub, this._shower());  // the options may have changed
       this.$("w-bottom").textContent = deg("WarmwasserUntenTemperatur");
       const wn = this.st("SollWassertemperatur");
       this.$("w-set-wrap").hidden = !wn;
@@ -1498,12 +1515,27 @@ class ProxonPanel extends HTMLElement {
     if (this._eCmp && !empty && !failed) {
       const Q = this._ePeriod(this._eOff - 1), ps = this._eFetch(`${Q.per}${Q.start.getTime()}`, Q.start, Q.end, Q.gran);
       if (ps && !ps.failed && parts.some(p => p.keys.some(k => (ps.rows[k] || []).length))) {
-        prev = Q.cols.map(d => parts.reduce((a, p) => a + p.keys.reduce((x, k) => x + (ps.rows[k] || []).filter(r => sameBucket(dayOf(r), d)).reduce((y, r) => y + r.change, 0), 0), 0));
+        const sumOf = (st, k, d) => (st.rows[k] || []).filter(r => sameBucket(dayOf(r), d)).reduce((y, r) => y + r.change, 0);
+        const partOf = (st, p, d) => p.keys.reduce((x, k) => x + sumOf(st, k, d), 0);
+        prev = Q.cols.map(d => parts.reduce((a, p) => a + partOf(ps, p, d), 0));
+        // what a column cost: the cost sensor's rise (the estimated hot water at its average price), else the fixed price
+        const fixed = this._ePrice(), costOf = (st, d, total, w) => {
+          if ((st.rows.Stromkosten || []).some(r => sameBucket(dayOf(r), d))) {
+            const cc = sumOf(st, "Stromkosten", d), u = sumOf(st, "EnergieGesamt", d);
+            return cc + (w && u > 0.01 ? w * cc / u : 0);
+          }
+          return fixed !== null ? total * fixed : null;
+        };
         const done = cols.map((c, i) => (!c.future && !c.live && i < prev.length ? i : -1)).filter(i => i >= 0);
         const a = done.reduce((x, i) => x + cols[i].total, 0), b = done.reduce((x, i) => x + prev[i], 0);
         if (done.length && b > 0.05) {
-          const pct = Math.round((a - b) / b * 100);
-          vs = fill(e.vs, { v: `${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${this.fmt(Math.abs(pct), 0)} %`, p: e.prevName[P.per] });
+          const pct = Math.round((a - b) / b * 100), sign = v => (v > 0 ? "+" : v < 0 ? "−" : "±");
+          const water = parts.find(p => p.k === "water"), wi = parts.indexOf(water);
+          const ca = stats ? done.map(i => costOf(stats, cols[i].d, cols[i].total, wi >= 0 ? cols[i].values[wi] : 0)) : [null];
+          const cb = done.map(i => costOf(ps, Q.cols[i], prev[i], water ? partOf(ps, water, Q.cols[i]) : 0));
+          const money = [...ca, ...cb].every(v => v !== null) ? ca.reduce((x, v) => x + v, 0) - cb.reduce((x, v) => x + v, 0) : null;
+          const m = money !== null && Math.abs(money) >= 0.005 ? ` (${sign(money)}${this._money(Math.abs(money))})` : "";
+          vs = fill(e.vs, { v: `${sign(pct)}${this.fmt(Math.abs(pct), 0)} %${m}`, p: e.prevName[P.per] });
         }
       }
     }
@@ -1550,7 +1582,7 @@ class ProxonPanel extends HTMLElement {
     this._settingsBuilt = true; this._settingCtl = [];
     const t = this.t, has = k => !!this.id(k);
     const body = rows => rows.map(([kind, key]) => {
-      const hint = (t.hint || {})[key];
+      const hint = (t.hint || {})[key] && fill(t.hint[key], this._shower());
       if (kind === "switch") return this._sw(`set-${key}`, this._label(key), hint);
       if (kind === "select") {
         const st = this.st(key), opts = st ? st.attributes.options || [] : [];
@@ -1680,6 +1712,8 @@ class ProxonPanel extends HTMLElement {
     }
     return "";
   }
+  // how a shower is counted here (options): for the texts next to the shower supply
+  _shower() { const s = (this._config || {}).shower || {}, f = v => this.fmt(v, Number.isInteger(v) ? 0 : 1); return { t: f(s.temp ?? 40), f: f(s.flow ?? 8) }; }
   _showerMode() { return this.swOn("DuschvorratModus") && !!this.st("DuschvorratSoll"); }
   _autoOn({ main, rows }) { return main ? this.swOn(main) : rows.some(([kind, key]) => kind === "switch" && this.swOn(key)); }
   _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }

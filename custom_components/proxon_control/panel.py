@@ -18,7 +18,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
-from .const import CONF_FIXED_PRICE, CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK, DOMAIN
+from .const import (
+    CONF_FIXED_PRICE,
+    CONF_PANEL_LOOK,
+    CONF_SHOWER_FLOW,
+    CONF_SHOWER_TEMP,
+    DEFAULT_PANEL_LOOK,
+    DEFAULT_SHOWER_FLOW,
+    DEFAULT_SHOWER_TEMP,
+    DOMAIN,
+    TILES_DEFAULTS,
+)
 from .dashboard import entity_ids
 from .entity import house_rooms, room_floors
 
@@ -46,6 +56,10 @@ def panel_config(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         "price": entry.options.get(CONF_FIXED_PRICE),
         "look": entry.options.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK),  # liquid glass, soft or tile wall
         "static": STATIC_URL,  # the page's own files (the tile wall's font)
+        # the tile wall's layout, tile size and accent colour
+        "tiles": {k.removeprefix("tiles_"): entry.options.get(k, v) for k, v in TILES_DEFAULTS.items()},
+        # how a shower is counted (°C, l/min): the page says it next to the shower supply
+        "shower": {"temp": entry.options.get(CONF_SHOWER_TEMP, DEFAULT_SHOWER_TEMP), "flow": entry.options.get(CONF_SHOWER_FLOW, DEFAULT_SHOWER_FLOW)},
     }
 
 

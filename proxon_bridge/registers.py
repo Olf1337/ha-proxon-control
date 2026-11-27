@@ -457,31 +457,36 @@ SHOWER_TEMP = 40.0  # °C at the shower head
 SHOWER_LITERS_PER_MINUTE = 8.0  # an ordinary shower head
 
 
-def shower_minutes(values: dict) -> float | None:
-    """For how many minutes of showering (40 °C, 8 l/min) the hot water lasts, in steps of 5 minutes. The tank's upper half
-    counted at the middle sensor's temperature, its lower half at the bottom sensor's; only water warmer than 40 °C counts,
-    mixed down with cold water. An estimate - the tank has no sensor at the top."""
+def shower_minutes(values: dict, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float | None:
+    """For how many minutes of showering (at `shower` °C, `flow` l/min) the hot water lasts, in steps of 5 minutes. The
+    tank's upper half counted at the middle sensor's temperature, its lower half at the bottom sensor's; only water warmer
+    than the shower counts, mixed down with cold water. An estimate - the tank has no sensor at the top."""
     mid, bottom = values.get("WarmwasserIstTemperatur"), values.get("WarmwasserUntenTemperatur")
     if not isinstance(mid, (int, float)) or not isinstance(bottom, (int, float)):
         return None
-    liters = sum(TANK_LITERS / 2 * (t - COLD_WATER) / (SHOWER_TEMP - COLD_WATER) for t in (mid, bottom) if t > SHOWER_TEMP)
-    return float(int(liters / SHOWER_LITERS_PER_MINUTE) // 5 * 5)
+    liters = sum(TANK_LITERS / 2 * (t - COLD_WATER) / (shower - COLD_WATER) for t in (mid, bottom) if t > shower)
+    return float(int(liters / flow) // 5 * 5)
 
 
 SHOWER_TARGET_RANGE = (35, 55)  # minutes a full tank can hold: just above 40 °C ... at 55 °C, the highest water target
 WATER_TARGET_MAX = 55
 
 
-def shower_minutes_at(target: float) -> float:
+def shower_minutes_at(target: float, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float:
     """The shower reserve of a full tank at this target temperature (both halves at the target)."""
-    return shower_minutes({"WarmwasserIstTemperatur": target, "WarmwasserUntenTemperatur": target}) or 0.0
+    return shower_minutes({"WarmwasserIstTemperatur": target, "WarmwasserUntenTemperatur": target}, shower, flow) or 0.0
 
 
-def target_for_shower_minutes(minutes: float) -> float:
-    """The lowest whole-degree water target whose full tank holds at least these shower minutes (41-55 °C)."""
-    need = minutes * SHOWER_LITERS_PER_MINUTE / TANK_LITERS * (SHOWER_TEMP - COLD_WATER) + COLD_WATER
-    target = min(WATER_TARGET_MAX, max(int(SHOWER_TEMP) + 1, math.ceil(need)))
-    while target < WATER_TARGET_MAX and shower_minutes_at(target) < minutes:
+def shower_target_range(shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> tuple[float, float]:
+    """The shower reserves a full tank can be set to: just warmer than the shower ... the highest water target."""
+    return shower_minutes_at(math.floor(shower) + 1, shower, flow), shower_minutes_at(WATER_TARGET_MAX, shower, flow)
+
+
+def target_for_shower_minutes(minutes: float, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float:
+    """The lowest whole-degree water target whose full tank holds at least these shower minutes (above the shower, max 55 °C)."""
+    need = minutes * flow / TANK_LITERS * (shower - COLD_WATER) + COLD_WATER
+    target = min(WATER_TARGET_MAX, max(math.floor(shower) + 1, math.ceil(need)))
+    while target < WATER_TARGET_MAX and shower_minutes_at(target, shower, flow) < minutes:
         target += 1
     return float(target)
 

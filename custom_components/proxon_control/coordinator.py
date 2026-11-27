@@ -17,16 +17,20 @@ from .api import AuthError, BridgeApi, DirectApi, HybridApi, ProxonError, WriteN
 from .const import (
     CONF_READ_ONLY,
     CONF_SCAN_INTERVAL,
+    CONF_SHOWER_FLOW,
+    CONF_SHOWER_TEMP,
     CONF_WATER_HEATER_POWER,
     CONF_WATER_PUMP_POWER,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHOWER_FLOW,
+    DEFAULT_SHOWER_TEMP,
     DEFAULT_WATER_HEATER_POWER,
     DEFAULT_WATER_PUMP_POWER,
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault
+from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault, shower_minutes
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
 
@@ -65,6 +69,10 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_write_error: dict | None = None
         self.write_errors = 0
         self.device_id: str | None = None  # the appliance's device (rooms and schedule days are linked to it)
+        # how this household showers (°C, l/min): for the shower supply and its target
+        self.shower = (float(entry.options.get(CONF_SHOWER_TEMP, DEFAULT_SHOWER_TEMP)), float(entry.options.get(CONF_SHOWER_FLOW, DEFAULT_SHOWER_FLOW)))
+        # below how many minutes of shower supply "hot water low" comes on (set by its number entity, restored at start)
+        self.shower_low_limit = 10.0
         # how often / how long compressor and immersion heater ran today (kept across restarts)
         self.runtime = RuntimeTracker()
         # which rooms' heating elements heat, by the unit's thresholds (needs the previous state: switch-on/off gap)
@@ -91,6 +99,9 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 data["UhrAbweichung"] = float(drift)
             data.update(self.heating.update(data))
             data.update(self.water_power(data))
+            # the shower supply as this household showers (the unit's reading assumes 40 °C and 8 l/min)
+            if (minutes := shower_minutes(data, *self.shower)) is not None:
+                data["WarmwasserDuschminuten"] = minutes
             interval = self.update_interval.total_seconds() if self.update_interval else 0
             data.update(self.runtime.update(data, dt_util.now(), max(MAX_GAP_SECONDS, 3 * interval)))
             self._runtime_store.async_delay_save(self.runtime.dump, 120)

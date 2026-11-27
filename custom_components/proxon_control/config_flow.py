@@ -39,7 +39,12 @@ from .const import (
     CONF_PRICE_SENSOR,
     CONF_READ_ONLY,
     CONF_SCAN_INTERVAL,
+    CONF_SHOWER_FLOW,
+    CONF_SHOWER_TEMP,
     CONF_SURPLUS_SENSOR,
+    CONF_TILES_ACCENT,
+    CONF_TILES_LAYOUT,
+    CONF_TILES_SIZE,
     CONF_TOKEN,
     CONF_UPPER_FLOOR,
     CONF_WATER_HEATER_POWER,
@@ -50,6 +55,8 @@ from .const import (
     DEFAULT_PANEL_LOOK,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHOWER_FLOW,
+    DEFAULT_SHOWER_TEMP,
     DEFAULT_WATER_HEATER_POWER,
     DEFAULT_WATER_PUMP_POWER,
     DOMAIN,
@@ -59,6 +66,10 @@ from .const import (
     MIN_SCAN_INTERVAL,
     MODES,
     PANEL_LOOKS,
+    TILES_ACCENTS,
+    TILES_DEFAULTS,
+    TILES_LAYOUTS,
+    TILES_SIZES,
 )
 from .entity import guess_floor, house_rooms, room_name
 from .nabto import library_supported
@@ -92,6 +103,12 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                     data[key] = int(user_input[key])
             if user_input.get(CONF_PANEL_LOOK, DEFAULT_PANEL_LOOK) != DEFAULT_PANEL_LOOK:
                 data[CONF_PANEL_LOOK] = user_input[CONF_PANEL_LOOK]
+            for key, choice in TILES_DEFAULTS.items():  # kept only when it differs from the tile wall's default
+                if user_input.get(key, choice) != choice:
+                    data[key] = user_input[key]
+            for key, usual in ((CONF_SHOWER_TEMP, DEFAULT_SHOWER_TEMP), (CONF_SHOWER_FLOW, DEFAULT_SHOWER_FLOW)):
+                if user_input.get(key) is not None and float(user_input[key]) != usual:
+                    data[key] = float(user_input[key])
             rooms = self._rooms()
             for key, floor in ((CONF_UPPER_FLOOR, 1), (CONF_BASEMENT, -1)):  # kept only when it differs from the guess
                 if rooms and key in user_input:
@@ -157,6 +174,17 @@ class ProxonOptionsFlow(OptionsFlowWithReload):
                 # the look of the page "Proxon"
                 vol.Optional(CONF_PANEL_LOOK, default=DEFAULT_PANEL_LOOK): SelectSelector(
                     SelectSelectorConfig(options=PANEL_LOOKS, mode=SelectSelectorMode.LIST, translation_key=CONF_PANEL_LOOK)
+                ),
+                # the tile wall: rooms as a row or a grid, tile size, accent colour
+                **{vol.Optional(key, default=TILES_DEFAULTS[key]): SelectSelector(
+                    SelectSelectorConfig(options=opts, mode=SelectSelectorMode.DROPDOWN, translation_key=key))
+                   for key, opts in ((CONF_TILES_LAYOUT, TILES_LAYOUTS), (CONF_TILES_SIZE, TILES_SIZES), (CONF_TILES_ACCENT, TILES_ACCENTS))},
+                # the shower supply: how warm and how much water a shower takes here
+                vol.Optional(CONF_SHOWER_TEMP, default=DEFAULT_SHOWER_TEMP): NumberSelector(
+                    NumberSelectorConfig(min=37, max=42, step=0.5, unit_of_measurement="°C", mode=NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_SHOWER_FLOW, default=DEFAULT_SHOWER_FLOW): NumberSelector(
+                    NumberSelectorConfig(min=5, max=12, step=0.5, unit_of_measurement="l/min", mode=NumberSelectorMode.BOX)
                 ),
                 **house,
             }

@@ -64,3 +64,66 @@ async def test_no_shower_target_without_hot_water_module(hass: HomeAssistant, de
     device.raw = {k: v for k, v in device.raw.items() if k != (False, *R.BY_KEY["WarmwasserIstTemperatur"].read)}
     await setup(hass)
     assert no_entity(hass, "number", "DuschvorratSoll") and no_entity(hass, "switch", "DuschvorratModus")
+
+
+# ---------------- 1.1.0: the household's own shower, "hot water low", the tile wall's options ----------------
+def test_a_different_shower() -> None:
+    # an economy shower head (6 l/min) at 38 °C: the same tank lasts longer
+    assert R.shower_minutes({"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 48.0}, 38.0, 6.0) == 70.0  # 427 l at 6 l/min
+    assert R.shower_target_range(38.0, 6.0) == (50.0, 80.0)
+    target = R.target_for_shower_minutes(70, 38.0, 6.0)
+    assert R.shower_minutes_at(target, 38.0, 6.0) >= 70 > R.shower_minutes_at(target - 1, 38.0, 6.0)
+    assert R.shower_target_range() == (35.0, 55.0)  # the usual shower: unchanged
+
+
+async def _configure(hass: HomeAssistant, entry, **changes):
+    from homeassistant.data_entry_flow import FlowResultType
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(flow["flow_id"], {"scan_interval": 10, **changes})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    return result
+
+
+async def test_shower_options_change_supply_and_target(hass: HomeAssistant, device) -> None:
+    from custom_components.proxon_control import panel as P
+    entry = await setup(hass)
+    await _configure(hass, entry, shower_temperature=38, shower_flow=6)
+    assert entry.options["shower_temperature"] == 38.0 and entry.options["shower_flow"] == 6.0
+    st = hass.states.get(eid(hass, "number", "DuschvorratSoll"))
+    assert (st.attributes["min"], st.attributes["max"]) == (50, 80)
+    await call(hass, "number", "set_value", entity_id=eid(hass, "number", "DuschvorratSoll"), value=70)
+    await hass.async_block_till_done()
+    assert device.writes[-1]["value"] == 10 * R.target_for_shower_minutes(70, 38.0, 6.0)
+    assert P.panel_config(hass, entry)["shower"] == {"temp": 38.0, "flow": 6.0}
+    await _configure(hass, entry, shower_temperature=40, shower_flow=8)  # back to the usual: nothing kept
+    assert "shower_temperature" not in entry.options and "shower_flow" not in entry.options
+
+
+async def test_hot_water_low_follows_its_limit(hass: HomeAssistant, device) -> None:
+    await setup(hass)  # middle 36 °C: no shower supply at all
+    low, limit = eid(hass, "binary_sensor", "WarmwasserKnapp"), eid(hass, "number", "DuschvorratGrenze")
+    assert hass.states.get(limit).state == "10.0"
+    assert hass.states.get(low).state == "on" and hass.states.get(low).attributes["shower_minutes"] == 0
+    await call(hass, "number", "set_value", entity_id=limit, value=0)
+    assert hass.states.get(low).state == "off"  # nothing is below 0 minutes
+
+
+async def test_hot_water_low_limit_survives_a_restart(hass: HomeAssistant, device) -> None:
+    from pytest_homeassistant_custom_component.common import mock_restore_cache_with_extra_data
+    mock_restore_cache_with_extra_data(hass, [(State("number.proxon_shower_supply_warn_below", "0"), {
+        "native_value": 0.0, "native_min_value": 0, "native_max_value": 60, "native_step": 5, "native_unit_of_measurement": "min"})])
+    await setup(hass)
+    assert eid(hass, "number", "DuschvorratGrenze") == "number.proxon_shower_supply_warn_below"
+    assert hass.states.get("number.proxon_shower_supply_warn_below").state == "0.0"
+    assert hass.states.get(eid(hass, "binary_sensor", "WarmwasserKnapp")).state == "off"
+
+
+async def test_tile_wall_options(hass: HomeAssistant, device) -> None:
+    from custom_components.proxon_control import panel as P
+    entry = await setup(hass)
+    assert P.panel_config(hass, entry)["tiles"] == {"layout": "row", "size": "medium", "accent": "amber"}
+    await _configure(hass, entry, tiles_layout="grid", tiles_size="large", tiles_accent="blue")
+    assert P.panel_config(hass, entry)["tiles"] == {"layout": "grid", "size": "large", "accent": "blue"}
+    await _configure(hass, entry, tiles_layout="row", tiles_size="medium", tiles_accent="amber")
+    assert not any(k.startswith("tiles_") for k in entry.options)

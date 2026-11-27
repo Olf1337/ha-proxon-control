@@ -253,7 +253,16 @@ def check(page, data: dict) -> dict:
         font: [...document.querySelectorAll('style')].some(x => x.textContent.includes('/proxon_control_static/fonts/antonio-latin.woff2')),
         overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }};
     }}""")
-    js("() => { window.panel._config.look = 'glass'; window.panel.hass = { ...window.hassFake }; }")
+    # the tile wall's options: all rooms in a grid, large tiles, a blue accent; the shower counted as set under Configure
+    r["tiles_opts"] = js(f"""() => {{
+      window.panel._config.tiles = {{ layout: 'grid', size: 'large', accent: 'blue' }}; window.panel._config.shower = {{ temp: 38, flow: 6 }};
+      window.panel.hass = {{ ...window.hassFake }};
+      const rooms = {root}.querySelector('.rooms'), cs = getComputedStyle(window.panel);
+      return {{ display: getComputedStyle(rooms).display, width: cs.getPropertyValue('--tile-w').trim(), accent: cs.getPropertyValue('--accent').trim(),
+        shower: {root}.getElementById('w-shower-wrap').textContent,
+        overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }};
+    }}""")
+    js("() => { window.panel._config.tiles = null; window.panel._config.shower = null; window.panel._config.look = 'glass'; window.panel.hass = { ...window.hassFake }; }")
     page.wait_for_timeout(200)
 
     # settings: every section; the list stays in its column, nothing runs out sideways

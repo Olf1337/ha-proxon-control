@@ -95,8 +95,11 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert csv[0].endswith(";Summe (kWh);Vorwoche (kWh)") and csv[1].endswith(";10,000;5,000") and csv[2].endswith(";4,000;5,000"), csv
         assert r["targets"] and not any(x.endswith(",0°") for x in r["targets"]), r["targets"]
         assert r["diagram_box"] == ("48 28 624 304" if width == "phone" else "0 0 720 360"), r["diagram_box"]
+        to = r["tiles_opts"]
+        assert to["display"] == "grid" and to["width"] == "212px" and to["accent"] == "#1f6fb2" and to["overflow"] <= 0, to
+        assert "Duschen bei 38 °C" in to["shower"], to
         cmp = r["energy_cmp"]
-        assert cmp["pressed"] == "true" and "+40 % gegenüber Vorwoche" in cmp["sub"] and cmp["marks"] == 2, cmp
+        assert cmp["pressed"] == "true" and "+40 % (+1,00\xa0€) gegenüber Vorwoche" in cmp["sub"] and cmp["marks"] == 2, cmp
         assert cmp["head"] == ["", "Summe", "Ø Tag", "Min.", "Max."] and cmp["total"] == ["Gesamt", "14,0", "2,00", "0,00 Mi", "10,0 Mo"], cmp
         assert r["energy_cmp_off"] == [0, False], r["energy_cmp_off"]
         assert r["shower_card"] == ["Duschvorrat", "0 Min.", "Mehr"], f"{width}: {r['shower_card']}"

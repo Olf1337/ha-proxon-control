@@ -586,6 +586,9 @@
       },
       "shower_target": {
         "name": "Shower supply target"
+      },
+      "shower_low_limit": {
+        "name": "Shower supply: warn below"
       }
     },
     "switch": {
@@ -745,6 +748,9 @@
       },
       "heating_elements": {
         "name": "Heating elements heating"
+      },
+      "hot_water_low": {
+        "name": "Hot water low"
       }
     },
     "climate": {
@@ -920,7 +926,12 @@
           "house_photo": "House photo (optional)",
           "hot_water_pump_power": "Power of the hot-water heat pump",
           "hot_water_heater_power": "Power of the immersion heater",
-          "panel_look": "Look of the page \"Proxon\""
+          "panel_look": "Look of the page \"Proxon\"",
+          "tiles_layout": "Tile wall: rooms as",
+          "tiles_size": "Tile wall: tile size",
+          "tiles_accent": "Tile wall: accent colour",
+          "shower_temperature": "Shower temperature",
+          "shower_flow": "Shower flow"
         },
         "data_description": {
           "mode": "Home network first: fastest, the Proxon server is only used when the unit can't be reached directly.",
@@ -936,7 +947,12 @@
           "house_photo": "Your own photo of your house as the header of the ready-made dashboard's start page. Put it e.g. at /config/www/proxon/house.jpg and enter /local/proxon/house.jpg. Empty: no header picture.",
           "hot_water_pump_power": "For the estimated hot-water consumption (the unit doesn't measure it): the rated power while the heat pump runs. PROXON T300 datasheet: 430 W.",
           "hot_water_heater_power": "The rated power while the heater runs. T300: 1500 W; with the BOOST option 4500 or 9000 W.",
-          "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour. Tile wall: rows of tiles, rooms in their temperature's colour, large narrow numbers; a tap on a room shows − and +."
+          "panel_look": "Liquid glass: translucent cards over soft colour. Soft: raised cards and pressed buttons on one calm surface colour. Tile wall: rows of tiles, rooms in their temperature's colour, large narrow numbers; a tap on a room shows − and +.",
+          "tiles_layout": "A grid shows all rooms at once; a row is swiped sideways (only the tile wall).",
+          "tiles_size": "Larger tiles read better from a distance (only the tile wall).",
+          "tiles_accent": "The colour of the selected tab, buttons and marks (only the tile wall).",
+          "shower_temperature": "How warm the water comes out of the shower here. The shower supply and its target count with it (usual: 40 °C).",
+          "shower_flow": "How much water the shower head lets through (an ordinary one: 8 l/min, an economy one: about 6)."
         }
       }
     },
@@ -1032,6 +1048,27 @@
         "glass": "Liquid glass",
         "soft": "Soft",
         "tiles": "Tile wall"
+      }
+    },
+    "tiles_layout": {
+      "options": {
+        "grid": "Grid",
+        "row": "Row to swipe"
+      }
+    },
+    "tiles_size": {
+      "options": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      }
+    },
+    "tiles_accent": {
+      "options": {
+        "amber": "Amber",
+        "blue": "Blue",
+        "green": "Green",
+        "rose": "Rose"
       }
     }
   },

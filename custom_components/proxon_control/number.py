@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberEntityDescription, NumberMode
+from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberEntityDescription, NumberMode, RestoreNumber
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import ProxonConfigEntry
 from .const import DOMAIN, PPM
 from .entity import ProxonEnergyEntity, ProxonEntity, has_shower_target
-from .registers import MODE_COMFORT, SHOWER_TARGET_RANGE, shower_minutes_at, target_for_shower_minutes
+from .registers import MODE_COMFORT, shower_minutes_at, shower_target_range, target_for_shower_minutes
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -73,7 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if comfort.season.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.season) for d in SEASON_NUMBERS]
     if has_shower_target(data):
-        entities.append(ProxonShowerTargetNumber(coordinator))
+        entities += [ProxonShowerTargetNumber(coordinator), ProxonShowerLowLimit(coordinator)]
     entities.append(ProxonHolidayLeadNumber(coordinator))
     async_add_entities(entities)
 
@@ -208,10 +208,9 @@ class ProxonHolidayLeadNumber(ProxonEntity, NumberEntity):
 
 
 class ProxonShowerTargetNumber(ProxonEntity, NumberEntity):
-    """The hot-water target said as a shower reserve (minutes at 40 °C, 8 l/min, full tank). Not a value of its own: it is
-    worked out from the water target, and setting it writes the lowest water target that holds that many minutes."""
+    """The hot-water target said as a shower reserve (minutes of showering as set under Configure, full tank). Not a value of
+    its own: it is worked out from the water target, and setting it writes the lowest water target that holds that many."""
 
-    _attr_native_min_value, _attr_native_max_value = SHOWER_TARGET_RANGE
     _attr_native_step = 5
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_mode = NumberMode.SLIDER
@@ -220,9 +219,17 @@ class ProxonShowerTargetNumber(ProxonEntity, NumberEntity):
         super().__init__(coordinator, "DuschvorratSoll", "shower_target")
 
     @property
+    def native_min_value(self) -> float:
+        return shower_target_range(*self.coordinator.shower)[0]
+
+    @property
+    def native_max_value(self) -> float:
+        return shower_target_range(*self.coordinator.shower)[1]
+
+    @property
     def raw_value(self) -> float | None:
         target = (self.coordinator.data or {}).get("SollWassertemperatur")
-        return shower_minutes_at(float(target)) if isinstance(target, (int, float)) else None
+        return shower_minutes_at(float(target), *self.coordinator.shower) if isinstance(target, (int, float)) else None
 
     @property
     def native_value(self) -> float | None:
@@ -233,4 +240,36 @@ class ProxonShowerTargetNumber(ProxonEntity, NumberEntity):
         return {"water_target": (self.coordinator.data or {}).get("SollWassertemperatur")}
 
     async def async_set_native_value(self, value: float) -> None:
-        await self.coordinator.async_write("SollWassertemperatur", target_for_shower_minutes(value))
+        await self.coordinator.async_write("SollWassertemperatur", target_for_shower_minutes(value, *self.coordinator.shower))
+
+
+class ProxonShowerLowLimit(ProxonEntity, RestoreNumber):
+    """Below how many minutes of shower supply "hot water low" comes on. Kept in Home Assistant, not in the unit."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 0
+    _attr_native_max_value = 60
+    _attr_native_step = 5
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "DuschvorratGrenze", "shower_low_limit")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_number_data()) is not None and last.native_value is not None:
+            self.coordinator.shower_low_limit = float(last.native_value)
+            self.coordinator.async_update_listeners()
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.shower_low_limit
+
+    async def async_set_native_value(self, value: float) -> None:
+        self.coordinator.shower_low_limit = float(value)
+        self.coordinator.async_update_listeners()  # "hot water low" follows at once
