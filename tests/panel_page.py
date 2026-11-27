@@ -310,6 +310,20 @@ def check(page, data: dict) -> dict:
         js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: 'off' } }; window.panel.hass = { ...h }; }""", lid)
         page.wait_for_timeout(200)
 
+    # the settings: automations in two groups, the shower supply in "Hot water", the cooling section jumps to its automations
+    js(f"() => {root}.getElementById('tab-settings').click()")
+    page.wait_for_timeout(300)
+    r["auto_view"] = js(f"""() => {{ const p = window.panel, q = s => {root}.querySelector(s);
+      const groups = [...{root}.querySelectorAll('#page-auto .auto-group')].map(h => h.textContent);
+      const autos = [...{root}.querySelectorAll('#page-auto .auto-head')].map(h => h.id.slice(3));
+      const showerInWater = !!q('#page-water #set-DuschvorratModus'), showerInAuto = !!q('#page-auto #set-DuschvorratModus');
+      const summary = {root}.getElementById('navsum-auto').textContent;
+      p._showSection('coolrel', false); const jump = q('#page-coolrel .jump[data-open="pvcool"]'); if (jump) jump.click();
+      const opened = q('#ah-pvcool') ? q('#ah-pvcool').getAttribute('aria-expanded') : null, page = !q('#page-auto').hidden;
+      return {{ groups, autos, showerInWater, showerInAuto, summary, jump: !!jump, opened, page }}; }}""")
+    js(f"() => {root}.getElementById('tab-home').click()")
+    page.wait_for_timeout(200)
+
     # a room's target: a decimal only where there is one; the unit's picture cropped to the drawing on a phone
     r["targets"] = js(f"() => [...{root}.querySelectorAll('.rooms .tv')].map(x => x.textContent)")
     r["diagram_box"] = js(f"() => {root}.querySelector('svg.diagram').getAttribute('viewBox')")

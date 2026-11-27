@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b5 (beta):** the settings, tidied up: the automations in two groups (hot water / heating & cooling), each with a
+status line; the shower supply moved to "Hot water"; the cooling section lists the cooling automations with their status and
+opens them; the list says which automations are on.
+
 **New in 1.2.0b4 (beta):** the key lock is shown, not switched (the unit refuses setting it: NO_ACCESS) - a small lock
 in each room tile, lit while locked; a new automation "No electric heating" works like the unit's global heating release;
 the 4-way valve reads "Heating mode" / "Cooling mode".
@@ -173,6 +177,18 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b5 (Beta)
+
+* **Einstellungen aufgeräumt:**
+  * Die *Automatiken* stehen in zwei Gruppen: **Warmwasser** (Boost, PV-Überschuss & günstiger Strom, Legionellenschutz) und
+    **Heizen & Kühlen** (Elektrisches Heizen sperren, Kühlen mit PV-Überschuss, Sommer-Nachtkühlung, Sommer/Winter
+    automatisch). Jede zeigt jetzt eine Statuszeile, auch „Elektrisches Heizen sperren“.
+  * **„Warmwasser als Duschvorrat einstellen“** ist keine Automatik, sondern legt fest, wie die Seite das Warmwasser
+    einstellt – es steht jetzt mit Soll und Hinweis-Grenze im Bereich *Warmwasser*.
+  * Der Bereich **Kühlen** zeigt unter der Freigabe von Hand auch die beiden Kühl-Automatiken mit ihrem Status; ein Tipp
+    öffnet sie unter *Automatiken*.
+  * Die Kurzinfo zu *Automatiken* nennt, was an ist („Boost, Legionellen, Sommer/Winter“), statt „4 von 7 an“.
 
 ### Neu in Version 1.2.0b4 (Beta)
 

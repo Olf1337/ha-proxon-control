@@ -82,7 +82,7 @@ const TEXT = {
       heatlock: ["Elektrisch heizen gesperrt"],
       coolrel: ["Kühlung", "kühlt jetzt", "freigegeben"],
       pvcool: ["Kühlen mit PV-Überschuss"],
-    }, fnOn: "eingeschaltet", coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
+    }, fnOn: "eingeschaltet", autoGroup: { water: "Warmwasser", climate: "Heizen & Kühlen" }, autoShort: { boost: "Boost", store: "PV/Strom", legionella: "Legionellen", heatlock: "Heizen gesperrt", pvcool: "PV-Kühlen", cooling: "Nachtkühlung", season: "Sommer/Winter" }, autoNone: "keine an", autoMore: "und {n} weitere", autoOn: { heatlock: "Gesperrt – kein Raum heizt elektrisch" }, coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
     chip: { holiday: "Urlaub", season: "Sommer/Winter", heat: "heizt auf {t}°", boost: "heizt bis {t}°", cool: "kühlt, Stufe {l}", hot: "heizt auf 60°", from: "ab {d}", until: "bis {d}" },
   },
   en: {
@@ -162,7 +162,7 @@ const TEXT = {
       heatlock: ["No electric heating"],
       coolrel: ["Cooling", "cooling now", "released"],
       pvcool: ["Cooling with solar surplus"],
-    }, fnOn: "switched on", coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
+    }, fnOn: "switched on", autoGroup: { water: "Hot water", climate: "Heating & cooling" }, autoShort: { boost: "Boost", store: "Solar/price", legionella: "Legionella", heatlock: "No electric heating", pvcool: "Solar cooling", cooling: "Night cooling", season: "Summer/winter" }, autoNone: "none on", autoMore: "and {n} more", autoOn: { heatlock: "Locked - no room heats electrically" }, coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
     chip: { holiday: "Holiday", season: "Summer/winter", heat: "heating to {t}°", boost: "heating up to {t}°", cool: "cooling, level {l}", hot: "heating to 60°", from: "from {d}", until: "until {d}" },
   },
 };
@@ -232,17 +232,16 @@ const SETTINGS = [
   { id: "vent", color: "#3b8fd9", rows: [["num", "IntensivlueftungsDauer"], ["num", "GrenzwertCO2"], ["num", "GrenzwertFeuchte"]] },
   { id: "schedule", color: "#5856d6", rows: [["switch", "ZeitprogrammAktiv"], ["days"]] },
   { id: "holiday", color: "#ff9f0a", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
-  { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
-  { id: "boost", auto: true, color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
-  { id: "store", auto: true, color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
-  { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
-  { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
+  { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"], ["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
+  { id: "boost", auto: true, group: "water", color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
+  { id: "store", auto: true, group: "water", color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
+  { id: "legionella", auto: true, group: "water", color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
-  { id: "heatlock", auto: true, color: "#c2553a", main: "HeizenSperren", rows: [["switch", "HeizenSperren"]] },
-  { id: "pvcool", auto: true, color: "#3b9ad6", main: "PVKuehlung", status: "PVKuehlStatus", rows: [["switch", "PVKuehlung"], ["num", "PVKuehlSchwelle"], ["num", "PVKuehlWunsch"]] },
-  { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
-  { id: "season", auto: true, color: "#8e8e93", main: "SaisonAutomatik", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
-  { id: "coolrel", color: "#3b82d6", rows: [["switch", "GlobalKuehlungFreigabe"]] },
+  { id: "heatlock", auto: true, group: "climate", color: "#c2553a", main: "HeizenSperren", rows: [["switch", "HeizenSperren"]] },
+  { id: "pvcool", auto: true, group: "climate", color: "#3b9ad6", main: "PVKuehlung", status: "PVKuehlStatus", rows: [["switch", "PVKuehlung"], ["num", "PVKuehlSchwelle"], ["num", "PVKuehlWunsch"]] },
+  { id: "cooling", auto: true, group: "climate", color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
+  { id: "season", auto: true, group: "climate", color: "#8e8e93", main: "SaisonAutomatik", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
+  { id: "coolrel", color: "#3b82d6", rows: [["switch", "GlobalKuehlungFreigabe"], ["jump", "PVKuehlung", "pvcool"], ["jump", "Nachtkuehlung", "cooling"]] },
   { id: "night", color: "#6e6ad6", rows: [["switch", "NachtabsenkungAktiv"], ["num", "NachtabsenkungTemperatur"], ["time", "NachtabsenkungStart"], ["time", "NachtabsenkungEnde"]] },
 ];
 const AUTO_COLOR = "#1d8a7a";
@@ -440,6 +439,9 @@ button { font: inherit; color: inherit; }
 .ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; }
 .ico svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .auto { border-top: 1px solid var(--line); }
+.auto-group { margin: 18px 0 2px; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
+.auto-group:first-child { margin-top: 2px; }
+.auto-group + .auto { border-top: 0; }
 .auto-head { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; }
 .auto-l { flex: 1; min-width: 0; font-weight: 600; }
 .auto-l small { display: block; font-weight: 400; color: var(--fg-2); font-size: .8125rem; }
@@ -1620,7 +1622,7 @@ class ProxonPanel extends HTMLElement {
   _buildSettings() {
     this._settingsBuilt = true; this._settingCtl = [];
     const t = this.t, has = k => !!this.id(k);
-    const body = rows => rows.map(([kind, key]) => {
+    const body = rows => rows.map(([kind, key, arg]) => {
       const hint = (t.hint || {})[key] && fill(t.hint[key], this._shower());
       if (kind === "switch") return this._sw(`set-${key}`, this._label(key), hint);
       if (kind === "select") {
@@ -1633,6 +1635,7 @@ class ProxonPanel extends HTMLElement {
       if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
+      if (kind === "jump") return `<button class="day jump" data-open="${arg}"><span>${t.s[arg]}</span><span class="num" id="jump-${arg}"></span></button>`;
       return t.days.map((name, d) => `<button class="day sched" id="day-${d}"><span>${name}</span><span class="num" id="day-sum-${d}"></span></button>`).join("");
     }).join("");
     // the pages: one per section, the automatic functions together on one
@@ -1649,6 +1652,7 @@ class ProxonPanel extends HTMLElement {
       if (!autos.length) pages.push({ id: "auto", color: AUTO_COLOR });
       const main = sec.main && has(sec.main) ? sec.main : null;
       this._autoSecs.push({ sec, main, rows });
+      if (sec.group && sec.group !== (this._autoSecs[this._autoSecs.length - 2] || {}).sec?.group) autos.push(`<h3 class="auto-group">${t.autoGroup[sec.group]}</h3>`);
       autos.push(`<div class="auto"><div class="auto-head" role="button" tabindex="0" aria-expanded="false" id="ah-${sec.id}">${icon(sec.id, sec.color)}
           <span class="auto-l">${t.s[sec.id]}<small id="foot-${sec.id}"></small></span>
           ${main ? `<button class="switch" role="switch" id="set-${main}" aria-label="${this._label(main)}" aria-checked="false"></button>` : `<span class="tag" id="tag-${sec.id}"></span>`}
@@ -1683,6 +1687,12 @@ class ProxonPanel extends HTMLElement {
       if (kind === "button" && btn) this._confirmButton(btn, () => this.call("button", "press", { entity_id: this.id(key) }).catch(() => {}));
     }
     for (let d = 0; d < 7; d++) { const b = v.querySelector(`#day-${d}`); if (b) b.addEventListener("click", () => this._sheetDay(d, b)); }
+    v.querySelectorAll(".jump").forEach(b => b.addEventListener("click", () => {  // the cooling section: open that automation
+      this._showSection("auto", true);
+      const head = this.$(`ah-${b.dataset.open}`);
+      if (head && head.getAttribute("aria-expanded") !== "true") head.click();
+      if (head) setTimeout(() => head.scrollIntoView({ block: "center", behavior: reduceMotion.matches ? "auto" : "smooth" }), 50);
+    }));
     // an automatic function opens its limits in place (its switch only switches)
     for (const { sec } of this._autoSecs) {
       const head = this.$(`ah-${sec.id}`), more = this.$(`am-${sec.id}`);
@@ -1742,8 +1752,9 @@ class ProxonPanel extends HTMLElement {
     }
     if (id === "water") return [`${t.target} ${deg("SollWassertemperatur")}`, this.id("T300Betriebsart") ? `${t.pump} ${yn("T300Betriebsart").toLowerCase()}` : ""].filter(Boolean).join(" · ");
     if (id === "auto") {
-      const n = (this._autoSecs || []).filter(a => this._autoOn(a)).length;
-      return fill(t.nOn, { a: n, b: (this._autoSecs || []).length });
+      const on = (this._autoSecs || []).filter(a => this._autoOn(a)).map(a => t.autoShort[a.sec.id] || t.s[a.sec.id]);
+      if (!on.length) return t.autoNone;
+      return on.length > 3 ? `${on.slice(0, 2).join(", ")} ${fill(t.autoMore, { n: on.length - 2 })}` : on.join(", ");
     }
     if (id === "coolrel") {
       const mode = this.num("Betriebsart");
@@ -1836,6 +1847,9 @@ class ProxonPanel extends HTMLElement {
       const foot = v.querySelector(`#foot-${sec.id}`), st = sec.status && this.st(sec.status);
       const said = st ? (this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state) : "";
       if (foot && st) foot.textContent = sec.auto ? said : `${this.t.status}: ${said}`;
+      if (foot && !st && sec.main && this.st(sec.main)) foot.textContent = this.swOn(sec.main) ? (this.t.autoOn[sec.id] || this.t.yes) : this.t.no;
+      const jump = v.querySelector(`#jump-${sec.id}`);
+      if (jump) jump.textContent = st ? said : this.swOn(sec.main) ? this.t.yes : this.t.no;
     }
     // the value measured now, at the limits it is compared with
     for (const [limit, sensor] of Object.entries(NOW_OF)) {
