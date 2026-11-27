@@ -46,6 +46,13 @@ download) and settings. It comes in three looks, chosen under *Configure*: **Liq
 each light and dark. Password, connection and address can be changed later with *⋮ → Reconfigure*, without removing the
 integration; rooms the unit reports later appear without a restart.
 
+**Set up:** *Settings → Devices & services → Add integration → Proxon Control* → "Log in with Device ID + password" → enter
+the Device ID and password from the Proxon app → OK. Step-by-step pictures are in the German part below (*Einrichtung*).
+
+**Quality:** new features run as betas on a real Proxon unit (FWT with T300) before they become a full release; every
+change runs 330+ automated tests (including browser tests of the page) with at least 95 % coverage, plus hassfest, HACS,
+mypy, ruff and bandit.
+
 **What's new:** see [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -60,7 +67,61 @@ Anmeldung wie die App „Proxon Control“: **Device ID + Passwort**.
 > nicht erreichbar, nimmt sie automatisch den **Proxon-Server** – denselben Fernzugriff wie die Proxon-App. Damit funktioniert sie weiterhin auch von außerhalb
 > des Heimnetzes, ohne VPN und Portfreigabe. Wer möchte, stellt „Nur Heimnetz“ oder „Nur Proxon-Server“ ein.
 
-Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → Proxon Control* ein Gerät „Proxon“ mit:
+## Installation
+
+Proxon Control steht im **offiziellen HACS-Katalog**. Zwei Wege:
+
+### Weg 1: über HACS (empfohlen)
+
+[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Olf1337&repository=ha-proxon-control&category=integration)
+
+1. In Home Assistant **HACS** öffnen (ab Home Assistant 2026.11 fest eingebaut: *Einstellungen → Marketplace*) – oder einfach
+   den Knopf oben anklicken, dann öffnet sich die Integration direkt.
+2. Nach **Proxon Control** suchen und **Herunterladen** wählen.
+3. **Home Assistant neu starten** (*Einstellungen → System → ⏻ → Home Assistant neu starten*).
+
+Updates kommen danach von selbst über HACS. *Findet die Suche die Integration nicht* (ältere HACS-Version): Menü oben rechts ⋮ →
+*Benutzerdefinierte Repositories* → `https://github.com/Olf1337/ha-proxon-control`, Typ *Integration* → dann wie oben.
+
+### Weg 2: von Hand (ohne HACS)
+
+1. Unter [Releases](https://github.com/Olf1337/ha-proxon-control/releases/latest) die neueste Version als *Source code (zip)*
+   herunterladen und entpacken.
+2. Den Ordner `custom_components/proxon_control` in den Konfigurationsordner von Home Assistant kopieren (z. B. mit der Samba-
+   oder File-Editor-App), sodass er unter `/config/custom_components/proxon_control` liegt.
+3. **Home Assistant neu starten.** Updates macht man auf diesem Weg ebenfalls von Hand (Ordner ersetzen, neu starten).
+
+## Einrichtung
+
+Die Anmeldung ist dieselbe wie in der App **Proxon Control**: **Device ID und Passwort** der Anlage.
+
+**1. Integration hinzufügen:** *Einstellungen → Geräte & Dienste → Integration hinzufügen* → nach **Proxon** suchen →
+**Proxon Control** wählen.
+
+<img src="docs/setup-1-search.png" width="520" alt="Suche nach Proxon im Dialog Integration hinzufügen">
+
+**2. Anmeldeart wählen:** fast immer **„Mit Device ID + Passwort anmelden“**. Das Bridge-Add-on ist nur für Sonderfälle (siehe unten).
+
+<img src="docs/setup-2-choose.png" width="520" alt="Auswahl: mit Device ID und Passwort oder über das Bridge-Add-on">
+
+**3. Device ID und Passwort eingeben** und **OK**. Die Verbindung „Heimnetz zuerst, Proxon-Server als Ausweichweg“ passt
+für fast alle. Die IP-Adresse der Anlage nur eintragen, wenn sie nicht von selbst gefunden wird (z. B. anderes Subnetz oder
+VLAN). Auf dem Raspberry Pi gibt es nur den Heimnetz-Weg, die Auswahl entfällt dort.
+
+<img src="docs/setup-3-login.png" width="520" alt="Formular mit Device ID, Passwort, Verbindung und optionaler IP-Adresse">
+
+**4. Fertig:** Unter *Einstellungen → Geräte & Dienste → Proxon Control* stehen jetzt das Gerät „Proxon“ und jeder
+angeschlossene Raum als eigenes Gerät; in der Seitenleiste erscheint die Seite **„Proxon“** (Bilder oben).
+
+<img src="docs/setup-4-integration.png" width="640" alt="Die Integration Proxon Control mit dem Gerät Proxon und den Räumen">
+
+**Später ändern:** Strompreis, Abfrageintervall, Design der Seite, IP-Adresse und Ähnliches über das **Zahnrad**
+(*Konfigurieren*) neben dem Eintrag. Passwort, Verbindungsart oder Adresse der Bridge über *⋮ → Neu konfigurieren* – ohne die
+Integration zu löschen; die Verbindung wird vor dem Speichern getestet, Entitäten und Verlauf bleiben.
+
+## Was die Integration anlegt
+
+Nach der Einrichtung gibt es unter *Einstellungen → Geräte & Dienste → Proxon Control* ein Gerät „Proxon“ mit:
 
 | Art | Entitäten |
 |---|---|
@@ -117,6 +178,24 @@ Bento“ (oder „Proxon Glas“) möchte, lädt [`themes/proxon_control.yaml`](
 enthält, und führt danach unter *Werkzeuge → Aktionen* (vor Home Assistant 2026.8: *Entwicklerwerkzeuge*) „Frontend: Themes neu laden“ aus. Für die Seite „Proxon“ ist
 kein Theme nötig.
 
+## Qualitätssicherung
+
+* **Neue Funktionen laufen zuerst an einer echten Anlage.** Sie erscheinen als Beta und werden an einer Proxon-Anlage
+  (FWT mit Warmwasser-Wärmepumpe T300) im Alltag getestet – Raumtemperaturen, Warmwasser, Lüftung, die Seite „Proxon“ auf Handy
+  und Computer. Erst wenn sich eine Beta dort bewährt hat, wird sie zur vollen Version (1.1.0 z. B. nach drei Betas).
+* **Automatische Tests bei jeder Änderung:** über 330 Tests gegen eine nachgebildete Anlage mit dem aktuellen Home Assistant,
+  darunter Browser-Tests der Seite „Proxon“ in Handy- und Desktop-Breite; mindestens 95 % des Codes sind abgedeckt. Dazu die
+  Prüfungen von Home Assistant (hassfest) und HACS sowie Typ-, Stil- und Sicherheitsprüfungen (mypy, ruff, bandit). Ohne
+  grüne Tests wird nichts veröffentlicht.
+* **Geprüft von außen:** Die Aufnahme in den HACS-Katalog war mit einer Code-Prüfung durch das HACS-Team verbunden; die Integration
+  erfüllt die Qualitätsstufen Bronze, Silber und Gold von Home Assistant (Selbsteinschätzung in
+  [docs/quality-scale.md](docs/quality-scale.md)).
+* **Nachvollziehbar gebaut:** Das kleine Hilfsprogramm für den Proxon-Server wird nur von GitHub Actions aus dem Quelltext
+  gebaut und mit einem Herkunftsnachweis versehen (siehe unten).
+* **Was wir nicht selbst testen können:** andere Firmware-Stände, Anlagen ohne T300 und echte Störungen. Wer so eine Anlage hat
+  oder etwas Seltsames sieht: bitte ein [Issue](https://github.com/Olf1337/ha-proxon-control/issues) mit den Diagnosedaten
+  (*Proxon Control → ⋮ → Diagnosedaten herunterladen*, ohne Passwort und IP-Adresse).
+
 ## Bekannte Grenzen
 
 * Die **Uhr der Anlage** lässt sich nicht stellen – die Anlage lehnt das Schreiben übers Netz ab (die offizielle Registerliste
@@ -171,17 +250,6 @@ Die **Proxon-Bridge** (Add-on oder Docker-Container) ist nur noch für Sonderfä
 
 Welcher Weg gerade genutzt wird, zeigt das Attribut `via` des Sensors „Verbindungsweg“ (`local` oder `cloud`). Wechsel stehen im Protokoll.
 
-## 1. Integration installieren
-
-**Mit HACS:** In HACS (ab Home Assistant 2026.11 fest eingebaut: *Einstellungen → Marketplace*) nach **Proxon Control** suchen →
-installieren → Home Assistant neu starten. Proxon Control steht im HACS-Standardkatalog; ein eigenes Repository ist nicht mehr nötig.
-
-**Falls die Suche es nicht findet** (z. B. eine ältere HACS-Version): Menü oben rechts ⋮ → *Benutzerdefinierte Repositories* →
-Adresse dieses Repositories, Typ *Integration* → dann wie oben installieren.
-
-**Von Hand:** Den Ordner `custom_components/proxon_control` in den Home-Assistant-Konfigurationsordner kopieren
-(z. B. über das Samba- oder File-Editor-Add-on), sodass er unter `/config/custom_components/proxon_control` liegt. Home Assistant neu starten.
-
 ## Sonderfall: Bridge auf einem anderen Rechner
 
 Ab 0.8.0 braucht der Raspberry Pi keine Bridge mehr. Nur wenn Home Assistant auf ARM läuft **und** die Anlage nicht im selben Netz ist, kann die Verbindung
@@ -194,23 +262,11 @@ Ab 0.8.0 braucht der Raspberry Pi keine Bridge mehr. Nur wenn Home Assistant auf
 
 Ohne Zugriffsschlüssel kann jeder im Heimnetz die Anlage über die Bridge steuern – deshalb bitte immer einen setzen. Das gilt auch für das Add-on (Option „token“).
 
-## 2. Optional: Proxon-Bridge-Add-on (Alternative, nur amd64)
+## Sonderfall: Proxon-Bridge-Add-on (nur amd64)
 
 *Einstellungen → Add-ons → Add-on Store → ⋮ → Repositories* → Adresse dieses Repositories hinzufügen →
 „Proxon Bridge“ installieren → im Reiter *Konfiguration* **Device ID** und **Passwort** eintragen → starten.
 Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bietet die Werte auf Port 8765 an.
-
-## 3. Einrichten
-
-*Einstellungen → Geräte & Dienste → Integration hinzufügen → „Proxon Control“* und dann:
-
-* **„Mit Device ID + Passwort anmelden“** – Device ID und Passwort eingeben, Verbindung wählen (Standard: „Heimnetz zuerst“), optional die IP-Adresse der
-  Anlage. Auf dem Raspberry Pi entfällt die Auswahl (nur Heimnetz). Oder
-* **„Über das Proxon-Bridge-Add-on“** (nur wenn Sie das Add-on nutzen) – Adresse `homeassistant.local` (oder die IP von Home Assistant) und Port `8765`.
-
-**Später ändern:** Strompreis, Abfrageintervall, Design der Seite, IP-Adresse und Ähnliches unter *Proxon Control →
-Konfigurieren*. Passwort, Verbindungsart oder Adresse der Bridge unter *Proxon Control → ⋮ → Neu konfigurieren* – ohne die
-Integration zu löschen; die Verbindung wird vor dem Speichern getestet, Entitäten und Verlauf bleiben.
 
 ## Entfernen
 
