@@ -5,7 +5,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** security: entity names and options are escaped before they go into the page's markup (HACS
+**New in 1.1.0b2 (beta):** security (also released alone as 1.0.1): entity names and options are escaped before they go into the page's markup (HACS
 review); tile wall: a second tap closes an open room, its name opens the details.
 
 **New in 1.1.0b1 (beta):** a third look "Tile wall" (a status headline, rooms as a row of tiles in their temperature's colour, a tap opens a room with − and +, a narrow display face shipped with the integration); a CSV download in the "Energy" tab; "Reconfigure" to change password, connection and address
@@ -141,11 +141,12 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.1.0b2 (Beta)
 
 * **Sicherheit: Namen werden nie zu HTML:** Die Seite „Proxon“ setzte Namen von Entitäten (und Auswahl-Optionen) ungeprüft
   in ihr HTML. Wer eine Entität umbenennen darf, hätte so Code in die Seite jedes Nutzers bringen können. Jetzt wird jeder
-  Text aus Home Assistant vorher maskiert; ein Test prüft das mit einem präparierten Namen (aus dem HACS-Review).
+  Text aus Home Assistant vorher maskiert; ein Test prüft das mit einem präparierten Namen (aus dem HACS-Review). Für
+  alle, die keine Beta nutzen, gibt es diese Korrektur allein als 1.0.1.
 * **Kachelwand: Raum wieder schließen:** Ein zweiter Tipp auf einen geöffneten Raum schließt ihn wieder; die Details öffnet
   ein Tipp auf seinen Namen (mit „›“).
 
