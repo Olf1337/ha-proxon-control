@@ -33,8 +33,9 @@ those change. Use at your own risk. The home network protocol follows the [ha-la
 (on Home Assistant OS also some Debian system files, see below). The small helper program that runs the library on Home Assistant OS is in `helper/`, its
 source is included.
 
-**Install:** HACS → three-dot menu → *Custom repositories* → `https://github.com/Olf1337/ha-proxon-control` (type *Integration*) → install → restart Home Assistant →
-*Settings → Devices & services → Add integration → Proxon Control*.
+**Install:** In HACS (from Home Assistant 2026.11: *Settings → Marketplace*) search for **Proxon Control** → install → restart
+Home Assistant → *Settings → Devices & services → Add integration → Proxon Control*. If it doesn't show up yet: three-dot
+menu → *Custom repositories* → `https://github.com/Olf1337/ha-proxon-control` (type *Integration*), then the same steps.
 
 **Raspberry Pi / ARM: supported from 0.8.0** over the home network (Home Assistant and the unit in the same network). The Proxon server fallback needs
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
@@ -172,8 +173,11 @@ Welcher Weg gerade genutzt wird, zeigt das Attribut `via` des Sensors „Verbind
 
 ## 1. Integration installieren
 
-**Mit HACS:** HACS → oben rechts ⋮ → *Benutzerdefinierte Repositories* → Adresse dieses Repositories, Typ *Integration* → „Proxon Control“ installieren → Home Assistant neu starten.
-Ab Home Assistant 2026.11 ist HACS fest eingebaut und heißt *Einstellungen → Marketplace*; das Hinzufügen eines eigenen Repositories (Menü oben rechts, „Benutzerdefinierte Repositories“ / „Custom repositories“) läuft dort entsprechend.
+**Mit HACS:** In HACS (ab Home Assistant 2026.11 fest eingebaut: *Einstellungen → Marketplace*) nach **Proxon Control** suchen →
+installieren → Home Assistant neu starten. Proxon Control steht im HACS-Standardkatalog; ein eigenes Repository ist nicht mehr nötig.
+
+**Falls die Suche es nicht findet** (z. B. eine ältere HACS-Version): Menü oben rechts ⋮ → *Benutzerdefinierte Repositories* →
+Adresse dieses Repositories, Typ *Integration* → dann wie oben installieren.
 
 **Von Hand:** Den Ordner `custom_components/proxon_control` in den Home-Assistant-Konfigurationsordner kopieren
 (z. B. über das Samba- oder File-Editor-Add-on), sodass er unter `/config/custom_components/proxon_control` liegt. Home Assistant neu starten.
