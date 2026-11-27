@@ -5,7 +5,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
-**Not yet released:** hot water can be set as a shower supply (35–55 minutes, switch under Settings → Automations; the
+**New in 1.1.0b3 (beta):** hot water can be set as a shower supply (35–55 minutes, switch under Settings → Automations; the
 integration picks the lowest water target that holds them); the "Energy" tab compares with the period before (a mark per
 column, the difference over finished days, also in the CSV) and shows the period as a table (total, average, lowest and
 highest day); tile wall: the unit's four tiles fill their card; room targets without ",0"; the unit's picture larger on
@@ -147,7 +147,7 @@ nobody home).
 
 ## Änderungen im Detail (deutsch)
 
-### Noch nicht veröffentlicht
+### Neu in Version 1.1.0b3 (Beta)
 
 * **Warmwasser als Duschvorrat einstellen:** Unter *Einstellungen → Automatiken* gibt es den Schalter „Duschvorrat statt
   Temperatur“. Ist er an, stellen − und + auf „Zuhause“ Minuten Duschen ein (35–55 Min. bei 40 °C, 8 l pro Minute und
