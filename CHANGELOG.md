@@ -5,6 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b2 (beta):** the diagnostics read a much larger range of set points and now also the data points, raw (for
+the second try at finding the panels' key lock).
+
 **New in 1.2.0b1 (beta):** cooling on the page "Proxon": a section "Cooling" with the unit's cooling release (it cools in ECO
 comfort and summer) and a chip on "Home" while it is released; a new automation "Cooling with solar surplus" releases the
 cooling while there is enough surplus and it is warmer inside than wished (at least 20 minutes, a release set by hand is
@@ -163,6 +166,13 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b2 (Beta)
+
+* **Tastensperre, zweiter Versuch:** Der erste Vergleich (ohne / mit Tastensperre) zeigte in 930 Sollwerten nur die Uhrzeit.
+  Die Diagnosedaten lesen jetzt deutlich mehr Sollwerte (u. a. Objekt 0 bis Adresse 999, Objekt 1 bis 299, dazu die Objekte 2
+  und 8) und zusätzlich die Messwerte (`raw_datapoints`) roh aus – weiter nur lesend, ohne Raumnamen. Der Download dauert dadurch
+  etwas länger.
 
 ### Neu in Version 1.2.0b1 (Beta)
 

@@ -86,3 +86,7 @@ async def test_diagnostics_hold_the_raw_set_points(hass: HomeAssistant, device) 
     assert len(raw["values"]) == sum(n for _, n in R.SCAN_RANGES)
     assert raw["values"]["0:16"] == 3  # the operating mode, raw
     assert not any(k.startswith("6:") for k in raw["values"])  # room names are left out
+    data = diag["raw_datapoints"]
+    assert data["errors"] == [] and len(data["values"]) == sum(n for _, n in R.SCAN_DATA_RANGES)
+    g = R.BY_KEY["T7Abluft"]
+    assert data["values"][f"{g.read[0]}:{g.read[1]}"] == 2220  # extract air 22.2 °C, raw

@@ -572,27 +572,30 @@ def expected_value(key: str, value: float) -> float:
     return float(out if out is not None else value)
 
 
-# For the diagnostics: every set point of these objects, raw, to find a value by comparing two downloads (e.g. the panel's
-# key lock off and on). Object 6 (room names) is left out. Read only; one session per SCAN_PER_SESSION points.
-SCAN_RANGES = ((0, 500), (1, 100), (3, 100), (4, 50), (5, 130), (7, 50))
+# For the diagnostics: set points and data points of these objects, raw, to find a value by comparing two downloads (e.g. a
+# panel's key lock off and on). Object 6 of the set points (room names) is left out. Read only; one session per
+# SCAN_PER_SESSION chunks. An object or range the unit doesn't have only costs that session (listed as an error).
+SCAN_RANGES = ((0, 1000), (1, 300), (2, 200), (3, 200), (4, 100), (5, 200), (7, 100), (8, 100))
+SCAN_DATA_RANGES = ((0, 200), (1, 300), (2, 200), (3, 200))
 SCAN_CHUNK = 25
 SCAN_PER_SESSION = 4  # chunks per session (the unit allows only a few queries per session)
 
 
-def scan_sessions() -> list[list[list[tuple[int, int]]]]:
-    points = [(obj, a) for obj, n in SCAN_RANGES for a in range(n)]
+def scan_sessions(data: bool = False) -> list[list[list[tuple[int, int]]]]:
+    points = [(obj, a) for obj, n in (SCAN_DATA_RANGES if data else SCAN_RANGES) for a in range(n)]
     chunks = [points[i:i + SCAN_CHUNK] for i in range(0, len(points), SCAN_CHUNK)]
     return [chunks[i:i + SCAN_PER_SESSION] for i in range(0, len(chunks), SCAN_PER_SESSION)]
 
 
-def read_raw(client, chunks: list[list[tuple[int, int]]]) -> dict[str, int | None]:
-    """The raw set point values at these addresses ("object:address"), a chunk per query; None where the unit gave none."""
+def read_raw(client, chunks: list[list[tuple[int, int]]], data: bool = False) -> dict[str, int | None]:
+    """The raw values at these addresses ("object:address") - set points, or data points with data=True - a chunk per
+    query; None where the unit gave none."""
     out: dict[str, int | None] = {}
     for chunk in chunks:
-        reply = client.invoke(QUERY_SET_READ, {"list": [{"obj": o, "address": a} for o, a in chunk]})
-        data = ((reply or {}).get("response") or {}).get("data") or []
+        reply = client.invoke(QUERY_DATA_READ if data else QUERY_SET_READ, {"list": [{"obj": o, "address": a} for o, a in chunk]})
+        items = ((reply or {}).get("response") or {}).get("data") or []
         for k, (o, a) in enumerate(chunk):
-            v = data[k].get("value") if k < len(data) and isinstance(data[k], dict) else None
+            v = items[k].get("value") if k < len(items) and isinstance(items[k], dict) else None
             out[f"{o}:{a}"] = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
     return out
 

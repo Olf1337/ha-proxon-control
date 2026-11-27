@@ -30,7 +30,8 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ProxonC
         if key.endswith("name"):
             values[key] = REDACTED
     return {
-        "raw_setpoints": await _raw_setpoints(hass, coordinator),
+        "raw_setpoints": await _raw_points(hass, coordinator, data=False),
+        "raw_datapoints": await _raw_points(hass, coordinator, data=True),
         "entry": {
             "title": REDACTED,  # contains the Device ID
             "version": entry.version,
@@ -48,17 +49,17 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ProxonC
     }
 
 
-async def _raw_setpoints(hass: HomeAssistant, coordinator) -> dict[str, Any]:
-    """Every set point of the unit, raw ("object:address"), to find a setting by comparing two downloads - e.g. one with
-    the panel's key lock off and one with it on. Read only. Not over the bridge add-on."""
+async def _raw_points(hass: HomeAssistant, coordinator, data: bool) -> dict[str, Any]:
+    """The unit's set points (or data points), raw ("object:address"), to find a setting by comparing two downloads - e.g.
+    one with a panel's key lock off and one with it on. Read only. Not over the bridge add-on."""
     api = coordinator.api
     if not hasattr(api, "read_raw"):
         return {"note": "not available over the bridge add-on"}
     values: dict[str, int | None] = {}
     errors: list[str] = []
-    for chunks in scan_sessions():
+    for chunks in scan_sessions(data):
         try:
-            values.update(await hass.async_add_executor_job(api.read_raw, chunks))
+            values.update(await hass.async_add_executor_job(api.read_raw, chunks, data))
         except ProxonError as err:  # one session failed: the rest still helps
             errors.append(f"{chunks[0][0][0]}:{chunks[0][0][1]}: {err}")
     return {"values": values, "errors": errors}
