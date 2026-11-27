@@ -209,6 +209,45 @@ def decide_pv_cooling(
     return "on", PV_COOLING
 
 
+# ---------------- no electric heating ----------------
+# Like the unit's "global heating release" (which needs service access): while on, no room's electric heating element is
+# released - a release switched on at a room panel is switched off again at the next check. Switching it off restores the
+# releases that were on before.
+H_OFF = "off"
+H_LOCKED = "locked"
+
+
+@dataclass
+class HeatLockSettings:
+    on: bool = False
+
+
+@dataclass
+class HeatLockState:
+    active: bool = False
+    saved: list[int] = field(default_factory=list)  # rooms whose release was on when it started
+
+    def to_dict(self) -> dict:
+        return {"active": self.active, "saved": list(self.saved)}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> HeatLockState:
+        return cls(active=bool(d.get("active")), saved=[int(n) for n in d.get("saved") or []])
+
+
+def decide_heat_lock(s: HeatLockSettings, st: HeatLockState, released: dict[int, bool]) -> tuple[dict[int, int], str]:
+    """{room: release to write}, status. `released`: each room's release as the unit reports it."""
+    if s.on:
+        if not st.active:
+            st.active, st.saved = True, sorted(n for n, on in released.items() if on)
+        return {n: 0 for n, on in released.items() if on}, H_LOCKED
+    if st.active:
+        writes = {n: 1 for n in st.saved if released.get(n) is False}
+        st.active, st.saved = False, []
+        return writes, H_OFF
+    return {}, H_OFF
+
+
 # ---------------- hot-water boost ----------------
 MIN_RUN = timedelta(minutes=10)
 MIN_PAUSE = timedelta(minutes=10)

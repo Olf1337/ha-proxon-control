@@ -21,7 +21,7 @@ const TEXT = {
     ventilation: "Lüftung", mode: "Betriebsart", boostSub: "läuft {m} Minuten, dann zurück", waterTarget: "Solltemperatur",
     pump: "Wärmepumpe", pumpSub: "heizt das Wasser sparsam", heater: "Heizstab", heaterSub: "schneller, braucht mehr Strom",
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
-    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", keyLock: "Tastensperre", keyLockSub: "die Tasten am Raumbedienteil tun nichts",
+    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", keyLock: "Tastensperre", keyLockSub: "nur am Bedienteil umschaltbar", keyLockOn: "Tastensperre an", keyLockOff: "Tastensperre aus",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
     close: "Schließen", warmer: "Wärmer", colder: "Kälter", more: "Mehr", less: "Weniger", undo: "Rückgängig",
     unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
@@ -47,6 +47,7 @@ const TEXT = {
       DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein ({t} °C, {f} l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
       DuschvorratGrenze: "Darunter ist „Warmwasser knapp“ an – z. B. für eine Automation, die den Boost einschaltet oder eine Nachricht schickt.",
       GlobalKuehlungFreigabe: "Die Wärmepumpe kühlt nur im ECO-Komfort- und im Sommerbetrieb; in den anderen Betriebsarten bleibt die Freigabe ohne Wirkung.",
+      HeizenSperren: "Wie die globale Heizfreigabe der Anlage: Solange es an ist, heizt kein Raum elektrisch – wer am Bedienteil die Freigabe einschaltet, dem schaltet die Integration sie binnen einer Minute wieder aus. Beim Ausschalten werden die Freigaben von vorher wiederhergestellt.",
       PVKuehlSchwelle: "Gibt die Kühlung frei, solange so viel PV-Überschuss da ist und es innen (Abluft) wärmer als gewünscht ist; mindestens 20 Minuten, nach 10 Minuten ohne Überschuss wieder aus. Eine von Hand gesetzte Freigabe bleibt unberührt. Braucht den Überschuss-Sensor unter Konfigurieren.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", span: "{a} bis {b}", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
@@ -54,7 +55,7 @@ const TEXT = {
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
-      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur", coolrel: "Kühlen", pvcool: "Kühlen mit PV-Überschuss",
+      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur", coolrel: "Kühlen", pvcool: "Kühlen mit PV-Überschuss", heatlock: "Elektrisches Heizen sperren", HeizenSperren: "Elektrisches Heizen sperren",
       GlobalKuehlungFreigabe: "Kühlung freigegeben", PVKuehlung: "Kühlen mit PV an", PVKuehlSchwelle: "Überschuss ab", PVKuehlWunsch: "Wunschtemperatur innen",
       DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
@@ -78,6 +79,7 @@ const TEXT = {
       legionella: ["Legionellenschutz", "heizt das Warmwasser auf 60 °C"],
       cooling: ["Nachtkühlung", "kühlt mit Stufe {l}"],
       season: ["Sommer/Winter automatisch"],
+      heatlock: ["Elektrisch heizen gesperrt"],
       coolrel: ["Kühlung", "kühlt jetzt", "freigegeben"],
       pvcool: ["Kühlen mit PV-Überschuss"],
     }, fnOn: "eingeschaltet", coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
@@ -99,7 +101,7 @@ const TEXT = {
     ventilation: "Ventilation", mode: "Operating mode", boostSub: "runs {m} minutes, then back", waterTarget: "Target temperature",
     pump: "Heat pump", pumpSub: "heats the water efficiently", heater: "Immersion heater", heaterSub: "faster, uses more power",
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
-    releasedSub: "heats electrically when the room is too cold", keyLock: "Key lock", keyLockSub: "the room panel's keys do nothing",
+    releasedSub: "heats electrically when the room is too cold", keyLock: "Key lock", keyLockSub: "set at the room panel only", keyLockOn: "Key lock on", keyLockOff: "Key lock off",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
     close: "Close", warmer: "Warmer", colder: "Colder", more: "More", less: "Less", undo: "Undo",
     unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
@@ -125,6 +127,7 @@ const TEXT = {
       DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees ({t} °C, {f} l a minute, full tank). The integration picks the lowest water target that holds them.",
       DuschvorratGrenze: "Below this, “Hot water low” is on – e.g. for an automation that switches on the boost or sends a message.",
       GlobalKuehlungFreigabe: "The heat pump cools only in ECO comfort and summer; in the other modes the release has no effect.",
+      HeizenSperren: "Like the unit's global heating release: while on, no room heats electrically - a release switched on at a room panel is switched off again within a minute. Switching it off restores the releases from before.",
       PVKuehlSchwelle: "Releases the cooling while there is this much solar surplus and it is warmer inside (extract air) than wished; at least 20 minutes, off again after 10 minutes without surplus. A release set by hand is left alone. Needs the surplus sensor under Configure.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", span: "{a} to {b}", sure: "Sure? Tap again", empty: "no phase",
@@ -132,7 +135,7 @@ const TEXT = {
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
-      season: "Summer/winter automatic", night: "Night setback", heating: "Heating", coolrel: "Cooling", pvcool: "Cooling with solar surplus",
+      season: "Summer/winter automatic", night: "Night setback", heating: "Heating", coolrel: "Cooling", pvcool: "Cooling with solar surplus", heatlock: "No electric heating", HeizenSperren: "No electric heating",
       GlobalKuehlungFreigabe: "Cooling released", PVKuehlung: "Cooling with solar on", PVKuehlSchwelle: "Surplus from", PVKuehlWunsch: "Wish temperature inside", shower: "Shower supply instead of temperature",
       DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
@@ -156,6 +159,7 @@ const TEXT = {
       legionella: ["Legionella protection", "heating the hot water to 60 °C"],
       cooling: ["Night cooling", "cooling at level {l}"],
       season: ["Summer/winter automatically"],
+      heatlock: ["No electric heating"],
       coolrel: ["Cooling", "cooling now", "released"],
       pvcool: ["Cooling with solar surplus"],
     }, fnOn: "switched on", coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
@@ -181,6 +185,8 @@ const FUNCS = [
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
   { k: "cooling", on: ["Nachtkuehlung"], status: "NachtkuehlungStatus", sec: "cooling", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
     icon: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" },
+  { k: "heatlock", on: ["HeizenSperren"], sec: "heatlock", run: () => true, tint: "--warm",
+    icon: "M5 8h14v12H5zM9 8v12M15 8v12M3 3l18 18" },
   { k: "coolrel", on: ["GlobalKuehlungFreigabe"], sec: "coolrel", run: (st, p) => p.num("AktuellerBetrieb") === 2, tint: "--cold",
     icon: "M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7" },
   { k: "pvcool", on: ["PVKuehlung"], status: "PVKuehlStatus", sec: "pvcool", run: st => st.attributes.status === "cooling", tint: "--cold",
@@ -216,6 +222,7 @@ const ICONS = {
   legionella: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z",
   cooling: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
   season: "M12 3v18M4 7l16 10M20 7L4 17",
+  heatlock: "M5 8h14v12H5zM9 8v12M15 8v12M3 3l18 18",
   coolrel: "M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7M9 4l3 2 3-2M9 20l3-2 3 2",
   pvcool: "M7 3v2M2 8h2M3.5 4.5l1.4 1.4M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM16 10v12M11.5 13l9 6M11.5 19l9-6",
   shower: "M4 20L14 10M9 5a8 8 0 0 1 10 10zM15 17v2M18 15v2M19 19v2",
@@ -231,6 +238,7 @@ const SETTINGS = [
   { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
   { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
+  { id: "heatlock", auto: true, color: "#c2553a", main: "HeizenSperren", rows: [["switch", "HeizenSperren"]] },
   { id: "pvcool", auto: true, color: "#3b9ad6", main: "PVKuehlung", status: "PVKuehlStatus", rows: [["switch", "PVKuehlung"], ["num", "PVKuehlSchwelle"], ["num", "PVKuehlWunsch"]] },
   { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
   { id: "season", auto: true, color: "#8e8e93", main: "SaisonAutomatik", status: "SaisonStatus", rows: [["switch", "SaisonAutomatik"], ["num", "SaisonWinterUnter"], ["num", "SaisonSommerUeber"]] },
@@ -598,6 +606,9 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .saved.show { opacity: 1; }
 .elem { width: 20px; height: 20px; flex: none; }
 .elem.off { opacity: .28; }
+.room-name .icons { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.room-name .lock svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; width: 16px; height: 16px; opacity: .28; }
+.room-name .lock.on svg { opacity: 1; color: var(--fg); }
 .scrim { position: fixed; inset: 0; background: var(--scrim); opacity: 0; pointer-events: none; z-index: 20; }
 .sheet { position: fixed; left: 50%; bottom: 0; z-index: 21; width: min(560px, 100%); max-height: 86%; overflow: auto; transform: translate(-50%, 110%);
   background: var(--glass-strong); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 26px 26px 0 0; box-shadow: var(--sheet-shadow); touch-action: none; overscroll-behavior: contain;
@@ -1233,7 +1244,7 @@ class ProxonPanel extends HTMLElement {
   _roomTile(n) {  // the tile opens the room's sheet; its target changes only with − and + (a swipe just scrolls)
     const t = this.t, el = document.createElement("div");
     el.className = "card room tap"; el.setAttribute("role", "button"); el.tabIndex = 0;
-    el.innerHTML = `<span class="state"></span><div class="room-name"><span class="nm"></span><span class="icon"></span></div>
+    el.innerHTML = `<span class="state"></span><div class="room-name"><span class="nm"></span><span class="icons"><span class="lock" hidden><svg class="elem" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg></span><span class="icon"></span></span></div>
       <div class="room-temp num"></div>
       <div class="room-step"><button class="rs-btn" data-d="-1" aria-label="${t.colder}">−</button>
         <span class="rs-v"><small>${t.target}</small><b class="num tv"></b></span><button class="rs-btn" data-d="1" aria-label="${t.warmer}">+</button></div>`;
@@ -1247,6 +1258,8 @@ class ProxonPanel extends HTMLElement {
       $(".icon").innerHTML = r.element === "heating" ? `<svg class="elem" viewBox="0 0 28 37" aria-hidden="true">${FLAME}</svg>`
         : `<svg class="elem ${r.element === "off" ? "off" : ""}" viewBox="0 0 24 24" aria-hidden="true">${RADIATOR}</svg>`;
       $(".icon").title = t.element[r.element] || "";
+      const lk = this.st(`NBE${n}Tastensperre`), lock = $(".lock");  // the panel's key lock: lit while locked
+      lock.hidden = !lk; lock.classList.toggle("on", !!lk && lk.state === "on"); lock.title = lk ? (lk.state === "on" ? t.keyLockOn : t.keyLockOff) : "";
       $(".room-temp").innerHTML = r.temp === undefined || r.temp === null ? "–" : `${this.fmt(r.temp)}<small>°</small>`;
       $(".state").style.setProperty("--ring", r.available && r.temp != null ? ring(r) : "transparent");
       el.style.setProperty("--rt", tempTint(r.temp, this.hasAttribute("dark")));
@@ -1640,7 +1653,8 @@ class ProxonPanel extends HTMLElement {
           <span class="auto-l">${t.s[sec.id]}<small id="foot-${sec.id}"></small></span>
           ${main ? `<button class="switch" role="switch" id="set-${main}" aria-label="${this._label(main)}" aria-checked="false"></button>` : `<span class="tag" id="tag-${sec.id}"></span>`}
           <span class="disc" aria-hidden="true">›</span></div>
-        <div class="auto-more" id="am-${sec.id}" inert><div>${body(rows.filter(r => r[1] !== main))}</div></div></div>`);
+        <div class="auto-more" id="am-${sec.id}" inert><div>${rows.some(r => r[1] !== main) ? body(rows.filter(r => r[1] !== main))
+          : (t.hint || {})[main] ? `<p class="hint">${fill(t.hint[main], this._shower())}</p>` : ""}</div></div></div>`);
     }
     const auto = pages.find(p => p.id === "auto");
     if (auto) auto.html = `<div class="card">${autos.join("")}</div>`;
@@ -2028,14 +2042,13 @@ class ProxonPanel extends HTMLElement {
     this._openSheet(`<h3>${esc(r.name)}</h3><p class="sub" id="r-sub"></p>
       <div class="row"><span class="row-label">${t.target}<small>${fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) })}</small></span>
         <div class="stepper"><button id="rt-dn" aria-label="${t.colder}">−</button><output class="num" id="rt-out"></output><button id="rt-up" aria-label="${t.warmer}">+</button></div></div>
-      ${this._sw("s-elem", t.released, t.releasedSub)}${this.st(`NBE${n}Tastensperre`) ? this._sw("s-lock", t.keyLock, t.keyLockSub) : ""}<button class="link" id="r-more">${t.more}</button>`, from, () => {
+      ${this._sw("s-elem", t.released, t.releasedSub)}${this.st(`NBE${n}Tastensperre`) ? `<div class="row"><span class="row-label">${t.keyLock}<small>${t.keyLockSub}</small></span><b id="r-lock"></b></div>` : ""}<button class="link" id="r-more">${t.more}</button>`, from, () => {
       this.$("rt-dn").addEventListener("click", () => this._roomStep(n, -1));
       this.$("rt-up").addEventListener("click", () => this._roomStep(n, 1));
       this.$("s-elem").addEventListener("click", () => {
         const cur = this._room(n);
         this.call("climate", "set_hvac_mode", { entity_id: cur.entity, hvac_mode: cur.mode === "heat" ? "auto" : "heat" }).catch(() => {});
       });
-      if (this.$("s-lock")) this.$("s-lock").addEventListener("click", () => this._toggle(`NBE${n}Tastensperre`));
       this.$("r-more").addEventListener("click", () => { this._closeSheet(); this.moreInfo(r.entity); });
     }, () => {
       const cur = this._room(n); if (!cur) return;
@@ -2043,7 +2056,7 @@ class ProxonPanel extends HTMLElement {
       this.$("rt-out").textContent = `${this.fmt(cur.target, Number.isInteger(cur.target) ? 0 : d)} °C`;
       this.$("rt-dn").disabled = !cur.available || cur.target <= cur.min; this.$("rt-up").disabled = !cur.available || cur.target >= cur.max;
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
-      if (this.$("s-lock")) this.$("s-lock").setAttribute("aria-checked", this.swOn(`NBE${n}Tastensperre`));
+      if (this.$("r-lock")) this.$("r-lock").textContent = this.swOn(`NBE${n}Tastensperre`) ? t.yes : t.no;
     });
   }
 

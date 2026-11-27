@@ -154,8 +154,8 @@
       "valve": {
         "name": "4-Wegeventil",
         "state": {
-          "heating": "Heizen",
-          "cooling": "Kühlen"
+          "heating": "Heizbetrieb",
+          "cooling": "Kühlbetrieb"
         }
       },
       "schedule_monday": {
@@ -751,8 +751,17 @@
           }
         }
       },
-      "key_lock": {
-        "name": "Tastensperre"
+      "heating_lock": {
+        "name": "Elektrisches Heizen sperren",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Aus",
+              "locked": "Gesperrt"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -791,6 +800,9 @@
       },
       "hot_water_low": {
         "name": "Warmwasser knapp"
+      },
+      "key_lock": {
+        "name": "Tastensperre"
       }
     },
     "climate": {

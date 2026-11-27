@@ -92,17 +92,45 @@ async def test_diagnostics_hold_the_raw_set_points(hass: HomeAssistant, device) 
     assert data["values"][f"{g.read[0]}:{g.read[1]}"] == 2220  # extract air 22.2 °C, raw
 
 
-# ---------------- the room panels' key lock (found with the raw values above) ----------------
-async def test_key_lock_per_room(hass: HomeAssistant, device) -> None:
+# ---------------- the room panels' key lock (found with the raw values above), read only ----------------
+async def test_key_lock_is_shown_per_room(hass: HomeAssistant, device) -> None:
     from homeassistant.helpers import entity_registry as er
+
+    from .test_integration import make_entry
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    # the key lock switch of 1.2.0b3 (the unit refuses writing it): removed at the start
+    er.async_get(hass).async_get_or_create("switch", "proxon_control", "abc123_NBE1Tastensperre", config_entry=entry)
+    room = 1
+    g = R.BY_KEY[f"NBE{room}Tastensperre"]
+    assert g.read == (1, 62 + room) and g.write is None
+    device.raw[(True, *g.read)] = 1
+    await setup(hass, entry)
+    assert er.async_get(hass).async_get_entity_id("switch", "proxon_control", "abc123_NBE1Tastensperre") is None
+    assert hass.states.get(eid(hass, "binary_sensor", f"NBE{room}Tastensperre")).state == "on"
+
+
+# ---------------- no electric heating (instead of the unit's global heating release) ----------------
+def test_heat_lock_rules() -> None:
+    s, st = C.HeatLockSettings(on=True), C.HeatLockState()
+    assert C.decide_heat_lock(s, st, {0: True, 1: False, 2: True}) == ({0: 0, 2: 0}, C.H_LOCKED) and st.saved == [0, 2]
+    assert C.decide_heat_lock(s, st, {0: False, 1: True, 2: False}) == ({1: 0}, C.H_LOCKED)  # switched on at a panel
+    assert st.saved == [0, 2]  # what to restore stays what was on at the start
+    s.on = False
+    assert C.decide_heat_lock(s, st, {0: False, 1: False, 2: False}) == ({0: 1, 2: 1}, C.H_OFF) and not st.active
+    assert C.decide_heat_lock(s, st, {0: False}) == ({}, C.H_OFF)
+
+
+async def test_heat_lock_switches_releases(hass: HomeAssistant, device) -> None:
     await setup(hass)
-    locks = sorted(e.unique_id for e in er.async_get(hass).entities.values() if e.unique_id.endswith("Tastensperre"))
-    assert locks and all(u.startswith("abc123_NBE") for u in locks) and "abc123_NBE0Tastensperre" not in locks
-    room = int(locks[0].removeprefix("abc123_NBE").removesuffix("Tastensperre"))
-    switch = eid(hass, "switch", f"NBE{room}Tastensperre")
-    assert hass.states.get(switch).state == "off"
+    switch = eid(hass, "switch", "HeizenSperren")
+    rooms_on = [k for k, v in hass.config_entries.async_entries("proxon_control")[0].runtime_data.data.items() if k.endswith("PTC") and v]
+    assert rooms_on
     await call(hass, "switch", "turn_on", entity_id=switch)
-    w = device.writes[-1]
-    assert (w["obj"], w["address"], w["value"]) == (0, 554 + 2 * room, 1)  # room 1: 0:556, read back at 1:63 (= 0:273)
-    assert hass.states.get(switch).state == "on"
-    assert R.BY_KEY[f"NBE{room}Tastensperre"].read == (1, 62 + room)
+    await hass.async_block_till_done()
+    assert hass.states.get(switch).attributes["status"] == "locked"
+    offs = [w for w in device.writes if w["value"] == 0]
+    assert len(offs) >= len(rooms_on)
+    await call(hass, "switch", "turn_off", entity_id=switch)
+    await hass.async_block_till_done()
+    assert [w["value"] for w in device.writes[-len(rooms_on):]] == [1] * len(rooms_on)  # restored

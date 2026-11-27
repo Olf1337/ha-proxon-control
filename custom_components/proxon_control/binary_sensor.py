@@ -7,8 +7,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
-from .entity import ProxonEntity, has_shower_target
-from .registers import FAULT_POINTS, fault_key, heating_channels, t300_fault_texts
+from .entity import ProxonEntity, has_shower_target, room_device, watch_new_rooms
+from .registers import FAULT_POINTS, ROOM_COUNT, fault_key, heating_channels, room_connected, t300_fault_texts
 
 # warn when 30 days or less are left (estimated; the original's exact threshold wasn't found)
 FILTER_WARN_HOURS = 30 * 24
@@ -51,6 +51,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if has_shower_target(data):
         entities.append(ProxonHotWaterLow(coordinator))
     async_add_entities(entities)
+
+    # each room panel's key lock (in the room's device); a room connected later gets it at the next reading
+    def lock(values: dict, i: int) -> list:
+        return [ProxonKeyLock(coordinator, i)] if f"NBE{i}Tastensperre" in values else []
+
+    present = {i for i in range(1, ROOM_COUNT) if room_connected(data, i) and f"NBE{i}Tastensperre" in data}
+    async_add_entities([ProxonKeyLock(coordinator, i) for i in sorted(present)])
+    watch_new_rooms(entry, coordinator, async_add_entities, lock, present | {0})
 
 
 class ProxonHeatingElements(ProxonEntity, BinarySensorEntity):
@@ -154,3 +162,14 @@ class ProxonHotWaterLow(ProxonEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {"shower_minutes": (self.coordinator.data or {}).get("WarmwasserDuschminuten"), "limit": self.coordinator.shower_low_limit}
+
+
+class ProxonKeyLock(ProxonEntity, BinarySensorEntity):
+    """Whether the room panel's keys are locked. Only shown: the unit refuses setting it over the network (NO_ACCESS)."""
+
+    def __init__(self, coordinator, room: int) -> None:
+        super().__init__(coordinator, f"NBE{room}Tastensperre", "key_lock", device=room_device(coordinator, room))
+
+    @property
+    def is_on(self) -> bool | None:
+        return bool(self.raw_value) if self.raw_value is not None else None

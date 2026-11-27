@@ -254,9 +254,9 @@ def _room_registers(n: int) -> list[Reg]:
         Reg(f"NBE{n}OffsetTemperatur", True, (1, 2 + n), (0, 434 + 2 * n), "signed"),
         Reg(f"NBE{n}MittelTemperatur", True, (1, 22 + n), (0, 474 + 2 * n)),
         Reg(f"NBE{n}PTC", True, (1, 42 + n), (0, 514 + 2 * n), "bool"),
-        # the room panel's key lock: found by comparing raw values with the lock off and on (1.2.0b2 diagnostics); written
-        # like the other room values (object 0, 2 x address + 10)
-        Reg(f"NBE{n}Tastensperre", True, (1, 62 + n), (0, 554 + 2 * n), "bool"),
+        # the room panel's key lock: found by comparing raw values with the lock off and on (1.2.0b2 diagnostics). Read only:
+        # writing it (object 0, 2 x address + 10, like the other room values) is refused with NO_ACCESS (service level)
+        Reg(f"NBE{n}Tastensperre", True, (1, 62 + n), None, "bool"),
         Reg(f"NBE{n}Temperatur", False, (2, 17 + 3 * n), None, "div10"),
         Reg(f"NBE{n}Status", False, (2, 15 + 3 * n), None, "bool"),
         # Modbus list "NBE LEDsetpointlevel": on real units the high byte is the room's offset + 4 (the target shown on the

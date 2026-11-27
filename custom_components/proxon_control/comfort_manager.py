@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 
 from . import comfort as C
 from .const import DOMAIN
+from .registers import ROOM_COUNT as C_ROOMS
 
 _LOGGER = logging.getLogger(__name__)
 CHECK_EVERY = timedelta(minutes=1)
@@ -70,6 +71,8 @@ class ComfortManager:
         self.season.status = C.S_OFF
         self.pvcool = Feature(self, C.PVCoolSettings(), C.PVCoolState(), ("GlobalKuehlungFreigabe", "T7Abluft", "Betriebsart"))
         self.pvcool.status = C.PV_OFF
+        self.heatlock = Feature(self, C.HeatLockSettings(), C.HeatLockState(), ("NBE0PTC",))
+        self.heatlock.status = C.H_OFF
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.comfort")
         self._lock = asyncio.Lock()
         self._pending = False
@@ -82,6 +85,7 @@ class ComfortManager:
             (self.boost, C.BoostSettings, C.BoostState, "boost"),
             (self.season, C.SeasonSettings, C.SeasonState, "season"),
             (self.pvcool, C.PVCoolSettings, C.PVCoolState, "pvcool"),
+            (self.heatlock, C.HeatLockSettings, C.HeatLockState, "heatlock"),
         ):
             part = data.get(key) or {}
             s = part.get("settings") or {}
@@ -94,6 +98,7 @@ class ComfortManager:
             "boost": {"settings": vars(self.boost.settings), "state": self.boost.state.to_dict()},
             "season": {"settings": vars(self.season.settings), "state": self.season.state.to_dict()},
             "pvcool": {"settings": vars(self.pvcool.settings), "state": self.pvcool.state.to_dict()},
+            "heatlock": {"settings": vars(self.heatlock.settings), "state": self.heatlock.state.to_dict()},
         })
 
     @callback
@@ -208,8 +213,19 @@ class ComfortManager:
                     changed = True
                     await self.async_save()  # saved first: after a restart it still knows it released the cooling
                     await self._write("GlobalKuehlungFreigabe", 1 if action == "on" else 0, f"cooling with solar surplus: release {action}")
+            if self.heatlock.supported and ok:
+                room_on = {n: bool(data[f"NBE{n}PTC"]) for n in range(C_ROOMS) if isinstance(data.get(f"NBE{n}PTC"), (int, float))}
+                was = (self.heatlock.state.active, list(self.heatlock.state.saved))
+                writes, self.heatlock.status = C.decide_heat_lock(self.heatlock.settings, self.heatlock.state, room_on)
+                self.heatlock.details = {"rooms_restored_later": list(self.heatlock.state.saved)}
+                if writes or (self.heatlock.state.active, self.heatlock.state.saved) != was:
+                    changed = True
+                    await self.async_save()  # saved first: after a restart it knows which releases to restore
+                for n, v in writes.items():
+                    await self._write(f"NBE{n}PTC", v, f"no electric heating: room {n} release {'on' if v else 'off'}")
             if changed:
                 await self.async_save()
+            self.heatlock.notify()
             self.pvcool.notify()
             self.cooling.notify()
             self.boost.notify()

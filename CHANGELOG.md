@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b4 (beta):** the key lock is shown, not switched (the unit refuses setting it: NO_ACCESS) - a small lock
+in each room tile, lit while locked; a new automation "No electric heating" works like the unit's global heating release;
+the 4-way valve reads "Heating mode" / "Cooling mode".
+
 **New in 1.2.0b3 (beta):** a key-lock switch for every room panel (in the room's device and on the room's sheet of the page),
 found by comparing the raw values with the lock off and on.
 
@@ -169,6 +173,21 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b4 (Beta)
+
+* **Tastensperre nur anzeigen:** Das Setzen aus Home Assistant lehnt die Anlage ab (`NP_E_NO_ACCESS` – wie bei der Uhr braucht
+  es die Service-Berechtigung). Die Tastensperre ist deshalb jetzt eine Anzeige je Raum (Binärsensor „Tastensperre“); der
+  Schalter aus 1.2.0b3 wird beim Start entfernt. Auf der Seite „Proxon“ zeigt jede Raumkachel neben dem Heizelement ein
+  kleines **Schloss**: hell, solange das Bedienteil gesperrt ist, blass, wenn nicht. Im Blatt des Raums steht „Tastensperre:
+  An/Aus“ (umschaltbar nur am Bedienteil).
+* **Elektrisches Heizen sperren:** neue Automatik unter *Einstellungen → Automatiken* – wie die globale Heizfreigabe der Anlage
+  (die ebenfalls die Service-Berechtigung braucht): Solange sie an ist, heizt kein Raum elektrisch. Wer am Bedienteil die
+  Freigabe einschaltet, dem schaltet die Integration sie binnen einer Minute wieder aus. Beim Ausschalten werden die
+  Freigaben von vorher wiederhergestellt; auf „Zuhause“ zeigt eine Kapsel, dass gesperrt ist. (Wunsch aus dem Forum.)
+* **4-Wege-Ventil eindeutig:** zeigt „Heizbetrieb“ / „Kühlbetrieb“ statt „Heizen“ / „Kühlen“ – so ist es vom „Aktuellen
+  Betrieb“ zu unterscheiden. (Wunsch aus dem Forum.)
+* Automatiken, die nur aus ihrem Schalter bestehen, zeigen beim Aufklappen ihren Erklärtext.
 
 ### Neu in Version 1.2.0b3 (Beta)
 

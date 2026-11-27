@@ -154,8 +154,8 @@
       "valve": {
         "name": "4-way valve",
         "state": {
-          "heating": "Heating",
-          "cooling": "Cooling"
+          "heating": "Heating mode",
+          "cooling": "Cooling mode"
         }
       },
       "schedule_monday": {
@@ -751,8 +751,17 @@
           }
         }
       },
-      "key_lock": {
-        "name": "Key lock"
+      "heating_lock": {
+        "name": "No electric heating",
+        "state_attributes": {
+          "status": {
+            "name": "Status",
+            "state": {
+              "off": "Off",
+              "locked": "Locked"
+            }
+          }
+        }
       }
     },
     "binary_sensor": {
@@ -791,6 +800,9 @@
       },
       "hot_water_low": {
         "name": "Hot water low"
+      },
+      "key_lock": {
+        "name": "Key lock"
       }
     },
     "climate": {

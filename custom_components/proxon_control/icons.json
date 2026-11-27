@@ -33,6 +33,12 @@
         "state": {
           "on": "mdi:water-alert"
         }
+      },
+      "key_lock": {
+        "default": "mdi:lock-open-variant-outline",
+        "state": {
+          "on": "mdi:lock"
+        }
       }
     },
     "button": {
@@ -350,10 +356,10 @@
           "off": "mdi:solar-power-variant-outline"
         }
       },
-      "key_lock": {
-        "default": "mdi:lock",
+      "heating_lock": {
+        "default": "mdi:radiator-off",
         "state": {
-          "off": "mdi:lock-open-variant"
+          "off": "mdi:radiator"
         }
       }
     },
