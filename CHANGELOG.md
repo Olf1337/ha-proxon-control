@@ -5,6 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** security: entity names and options are escaped before they go into the page's markup (HACS
+review); tile wall: a second tap closes an open room, its name opens the details.
+
 **New in 1.1.0b1 (beta):** a third look "Tile wall" (a status headline, rooms as a row of tiles in their temperature's colour, a tap opens a room with − and +, a narrow display face shipped with the integration); a CSV download in the "Energy" tab; "Reconfigure" to change password, connection and address
 without removing the integration; rooms connected later get their entities without a restart; better contrast, the four air
 temperatures large on phones, calmer room edges and a distinct dark "Soft" look; icons from `icons.json`; bridge add-on 0.9.4.
@@ -137,6 +140,14 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **Sicherheit: Namen werden nie zu HTML:** Die Seite „Proxon“ setzte Namen von Entitäten (und Auswahl-Optionen) ungeprüft
+  in ihr HTML. Wer eine Entität umbenennen darf, hätte so Code in die Seite jedes Nutzers bringen können. Jetzt wird jeder
+  Text aus Home Assistant vorher maskiert; ein Test prüft das mit einem präparierten Namen (aus dem HACS-Review).
+* **Kachelwand: Raum wieder schließen:** Ein zweiter Tipp auf einen geöffneten Raum schließt ihn wieder; die Details öffnet
+  ein Tipp auf seinen Namen (mit „›“).
 
 ### Neu in Version 1.1.0b1 (Beta)
 

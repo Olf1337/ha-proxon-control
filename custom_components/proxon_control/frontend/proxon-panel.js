@@ -214,6 +214,10 @@ const icon = (id, color) => `<span class="ico" style="background:${color}" aria-
 
 // ---------------- springs ----------------
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+// text that comes from Home Assistant (entity names, states, options) and goes into markup: never as markup. Anyone who can
+// rename an entity could otherwise put HTML into the page of every user
+const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ESC[c]);
 let tileFontLoaded = false;
 function loadTileFont(base) {
   if (tileFontLoaded || !base) return;
@@ -664,6 +668,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 :host([tiles]) .room .state { display: none; }
 :host([tiles]) .room-temp { font-size: 3.2rem; font-weight: 700; line-height: 1; }
 :host([tiles]) .room:not(.open) .rs-btn { display: none; }
+:host([tiles]) .room.open .room-name .nm::after { content: " ›"; color: var(--accent); }
 :host([tiles]) .room:not(.open) .room-step { justify-content: flex-start; margin-top: 6px; }
 :host([tiles]) .room:not(.open) .rs-v { display: flex; gap: 6px; align-items: baseline; }
 :host([tiles]) .room:not(.open) .rs-v b { font: 600 .9375rem/1.2 var(--font); }
@@ -1175,10 +1180,14 @@ class ProxonPanel extends HTMLElement {
     [dn, up].forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); this._roomStep(n, Number(btn.dataset.d), saved); }));
     el.addEventListener("click", e => {
       if (e.target.closest(".rs-btn") || !r) return;
-      if (this.hasAttribute("tiles") && !el.classList.contains("open")) {
-        el.parentElement.querySelectorAll(".room.open").forEach(o => o.classList.remove("open"));
-        el.classList.add("open");
-        return;
+      // the tile wall: a tap opens the tile (- and +), another tap closes it again; the name of an open tile opens the details
+      if (this.hasAttribute("tiles")) {
+        if (!el.classList.contains("open")) {
+          el.parentElement.querySelectorAll(".room.open").forEach(o => o.classList.remove("open"));
+          el.classList.add("open");
+          return;
+        }
+        if (!e.target.closest(".room-name")) { el.classList.remove("open"); return; }
       }
       this._sheetRoom(n, el);
     });
@@ -1457,7 +1466,7 @@ class ProxonPanel extends HTMLElement {
   }
 
   // ---------- settings: grouped like iOS settings, every row an entity of this unit ----------
-  _label(key) { const s = this.st(key); return this.t.s[key] || (s ? (s.attributes.friendly_name || key).replace(/^Proxon\s+/, "") : key); }
+  _label(key) { const s = this.st(key); return esc(this.t.s[key] || (s ? (s.attributes.friendly_name || key).replace(/^Proxon\s+/, "") : key)); }
   _buildSettings() {
     this._settingsBuilt = true; this._settingCtl = [];
     const t = this.t, has = k => !!this.id(k);
@@ -1467,7 +1476,7 @@ class ProxonPanel extends HTMLElement {
       if (kind === "select") {
         const st = this.st(key), opts = st ? st.attributes.options || [] : [];
         const label = (o, i) => key === "LegionellenTag" ? t.daysShort[i] : (this._hass.formatEntityState ? this._hass.formatEntityState(st, o) : o);
-        return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${o}">${label(o, i)}</button>`).join("")}</div></div>`;
+        return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${esc(o)}">${esc(label(o, i))}</button>`).join("")}</div></div>`;
       }
       if (kind === "num") return `<div class="row stepped"><span class="row-label">${this._label(key)}${NOW_OF[key] ? `<small class="now-val num" id="nowv-${key}" hidden></small>` : ""}</span>
         <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div><small class="row-sub">${hint ? `${hint}<br>` : ""}<span class="num" id="rng-${key}"></span></small></div>`;
@@ -1703,7 +1712,7 @@ class ProxonPanel extends HTMLElement {
       return `<div class="phase"><span class="row-label">${fill(t.phase, { n: p + 1 })}</span>
         <div class="phase-times"><input class="tin num" type="time" step="60" id="ph-${p}-start" aria-label="${fill(t.phase, { n: p + 1 })} ${t.from}">
           <span>–</span><input class="tin num" type="time" step="60" id="ph-${p}-end" aria-label="${fill(t.phase, { n: p + 1 })} ${t.to}"></div>
-        ${sel ? `<div class="seg" id="ph-${p}-lvl">${opts.map(o => `<button data-o="${o}">${this._hass.formatEntityState ? this._hass.formatEntityState(sel, o) : o}</button>`).join("")}</div>` : ""}</div>`;
+        ${sel ? `<div class="seg" id="ph-${p}-lvl">${opts.map(o => `<button data-o="${esc(o)}">${esc(this._hass.formatEntityState ? this._hass.formatEntityState(sel, o) : o)}</button>`).join("")}</div>` : ""}</div>`;
     };
     const copy = d === 0 ? ["ZeitprogrammMoDiFr", "ZeitprogrammMoAlle"].filter(k => this.id(k)) : [];
     this._openSheet(`<h3>${t.days[d]}</h3><p class="sub" id="day-sub"></p>${[0, 1, 2].map(phase).join("")}
@@ -1817,7 +1826,7 @@ class ProxonPanel extends HTMLElement {
       ${hasLevel ? `<div class="row-label">${t.level}</div><div class="seg level-seg num" id="level" role="group" aria-label="${t.level}">
         ${[1, 2, 3, 4].map(n => `<button data-n="${n}" aria-label="${t.level} ${n}">${n}</button>`).join("")}</div>
         <p class="level-note" id="level-note" hidden>${t.levelAuto}</p>` : ""}
-      ${sel ? `<div class="row"><span class="row-label">${t.mode}</span><div class="seg" id="mode">${opts.map(o => `<button data-o="${o}">${label(o)}</button>`).join("")}</div></div>` : ""}
+      ${sel ? `<div class="row"><span class="row-label">${t.mode}</span><div class="seg" id="mode">${opts.map(o => `<button data-o="${esc(o)}">${esc(label(o))}</button>`).join("")}</div></div>` : ""}
       ${this.id("Intensivlueftung") ? this._sw("s-boost", t.boost, this.num("IntensivlueftungsDauer") ? fill(t.boostSub, { m: this.fmt(this.num("IntensivlueftungsDauer"), 0) }) : "") : ""}
       <button class="link" id="v-more">${t.more}</button>`, from, () => {
       this.$("v-more").addEventListener("click", () => this._sheetAll("unit", from));
@@ -1870,7 +1879,7 @@ class ProxonPanel extends HTMLElement {
   }
   _sheetRoom(n, from) {
     const t = this.t, r = this._room(n), d = r.step < 1 ? 1 : 0;
-    this._openSheet(`<h3>${r.name}</h3><p class="sub" id="r-sub"></p>
+    this._openSheet(`<h3>${esc(r.name)}</h3><p class="sub" id="r-sub"></p>
       <div class="row"><span class="row-label">${t.target}<small>${fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) })}</small></span>
         <div class="stepper"><button id="rt-dn" aria-label="${t.colder}">−</button><output class="num" id="rt-out"></output><button id="rt-up" aria-label="${t.warmer}">+</button></div></div>
       ${this._sw("s-elem", t.released, t.releasedSub)}<button class="link" id="r-more">${t.more}</button>`, from, () => {
@@ -1909,7 +1918,7 @@ class ProxonPanel extends HTMLElement {
     const device = (this._config || {}).device_id;
     this._openSheet(`<h3>${kind === "water" ? t.water : t.unit}</h3><p class="sub">${t.more}</p>
       ${groups.map(([g, list]) => `<div class="label" style="margin-top:14px">${t.groups[g]}</div>
-        ${list.map(k => `<button class="day" data-e="${ents[k]}"><span>${name(k)}</span><span class="num" data-v="${ents[k]}"></span></button>`).join("")}`).join("")}
+        ${list.map(k => `<button class="day" data-e="${esc(ents[k])}"><span>${esc(name(k))}</span><span class="num" data-v="${esc(ents[k])}"></span></button>`).join("")}`).join("")}
       ${device ? `<button class="link" id="all-device">${t.device}</button>` : ""}`, from, () => {
       this.shadowRoot.querySelectorAll("#sheet-body [data-e]").forEach(b => b.addEventListener("click", () => this.moreInfo(b.dataset.e)));
       const dev = this.$("all-device");
