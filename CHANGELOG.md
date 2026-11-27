@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** home page: the hot-water card has no empty strip below its target next to the taller ventilation
+card (Glass, Soft), the unit's picture sits in the middle of a taller card, and "40 min" no longer pushes the + out of a
+narrow card.
+
 **New in 1.1.0:** contains everything from 1.1.0b1 to 1.1.0b3 (below): a third look "Tile wall", hot water as a shower
 supply, the "Energy" tab compared with the period before and as a table, CSV download, "Reconfigure", new rooms without a
 restart, icons for every entity (Gold), and the escaping fix from 1.0.1. New since 1.1.0b3: the shower supply counts with
@@ -153,6 +157,14 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **Zuhause ohne leere Flächen:** Neben der höheren Lüftungskarte füllt die Warmwasser-Karte ihre Höhe (Glass, Soft) – Speicher
+  und Werte in der Mitte, der Sollwert unten statt eines leeren Streifens darunter. Umgekehrt sitzt das Anlagenbild mittig, wenn
+  die Warmwasser-Karte höher ist.
+* **Duschvorrat-Stepper passt:** „40 Min.“ braucht mehr Platz als „47°“; in einer schmalen Karte rutscht der Stepper jetzt unter
+  die Beschriftung, statt das „+“ aus der Karte zu schieben.
 
 ### Neu in Version 1.1.0
 

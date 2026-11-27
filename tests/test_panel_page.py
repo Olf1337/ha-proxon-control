@@ -93,6 +93,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert r["glass_again"] is False
         csv = r["energy_csv_cmp"]
         assert csv[0].endswith(";Summe (kWh);Vorwoche (kWh)") and csv[1].endswith(";10,000;5,000") and csv[2].endswith(";4,000;5,000"), csv
+        assert r["water_gap"] < 40, f"{width}: empty strip below the hot-water target ({r['water_gap']} px)"
         assert r["targets"] and not any(x.endswith(",0°") for x in r["targets"]), r["targets"]
         assert r["diagram_box"] == ("48 28 624 304" if width == "phone" else "0 0 720 360"), r["diagram_box"]
         to = r["tiles_opts"]

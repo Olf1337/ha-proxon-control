@@ -496,6 +496,11 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 .zone { font: 600 11px var(--font); letter-spacing: .08em; text-transform: uppercase; fill: var(--fg-3); }
 #water { container-type: inline-size; }
 .a-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin-top: 12px; }
+/* next to the taller ventilation card the hot water fills its height: the tank and its numbers in the middle, the target
+   at the bottom (no empty strip below it) */
+@media (min-width: 821px) { #water:not([hidden]) { display: flex; flex-direction: column; } #water .a-body { flex: 1; } #water .water-set { margin-top: auto; } }
+/* and the other way round: next to a taller hot-water card the unit's picture sits in the middle of its card */
+@media (min-width: 821px) { :host(:not([tiles])) .top > .card:first-child, :host(:not([tiles])) .unit-tap { display: flex; flex-direction: column; } :host(:not([tiles])) .unit-tap { flex: 1; } :host(:not([tiles])) .unit-tap svg.diagram { margin-block: auto; } }
 .tankA { position: relative; width: 132px; height: 290px; }
 .tankA svg { width: 100%; height: 100%; overflow: visible; }
 .sensor { position: absolute; left: 100%; display: flex; align-items: center; gap: 8px; white-space: nowrap; transform: translateY(-50%);
@@ -522,6 +527,7 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
   background: color-mix(in srgb, var(--water-hot) 14%, transparent); font-size: .8125rem; font-weight: 600; }
 .water-set { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .9375rem; color: var(--fg-2); }
 .w-set-l { display: flex; align-items: center; gap: 10px; }
+#water .water-set { flex-wrap: wrap; row-gap: 8px; } #water .water-set .stepper { margin-left: auto; }  /* "40 Min." needs more room than "47°" */
 .w-set-l .saved { position: static; }
 .card.tap { cursor: pointer; transition: transform 120ms ease-out; -webkit-user-select: none; user-select: none; }
 .card.tap:active:not(:has(button:active)) { transform: scale(.985); }

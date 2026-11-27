@@ -287,6 +287,9 @@ def check(page, data: dict) -> dict:
               .slice(0, 5).map(e => `${{e.tagName}}.${{e.className}}#${{e.id}}`),  // what sticks out, for the message
           }};
         }}""")
+    # next to the taller ventilation card the hot-water card has no empty strip below its target (wide screens)
+    r["water_gap"] = js(f"""() => {{ const w = {root}.getElementById('water'), set = {root}.getElementById('w-set-wrap');
+      return Math.round(w.getBoundingClientRect().bottom - set.getBoundingClientRect().bottom); }}""")
     # a room's target: a decimal only where there is one; the unit's picture cropped to the drawing on a phone
     r["targets"] = js(f"() => [...{root}.querySelectorAll('.rooms .tv')].map(x => x.textContent)")
     r["diagram_box"] = js(f"() => {root}.querySelector('svg.diagram').getAttribute('viewBox')")
