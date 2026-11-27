@@ -8,6 +8,17 @@ Control and monitor a **Proxon** fresh-air heat/ventilation unit from Home Assis
 hot water as a water heater, **hot water as a store for solar surplus and cheap electricity**, **summer night cooling**, a **hot-water boost** with the immersion heater, an **animated dashboard** (unit, hot water, house), the weekly ventilation schedule (view and edit), operating mode, CO₂/humidity limits and all readings. You log in with the same **Device ID and password** as in the
 Proxon Control phone app. Every change is read back from the unit, and the polling interval is adjustable (5–3600 s). A diagnostics download helps with support.
 
+<p align="center">
+  <img src="docs/panel-tiles.png" width="49%" alt="Page Proxon, look Tile wall (dark) / Seite Proxon, Design Kachelwand (dunkel)">
+  <img src="docs/panel-glass.png" width="49%" alt="Page Proxon, look Liquid Glass (light) / Seite Proxon, Design Liquid Glass (hell)">
+</p>
+<p align="center">
+  <img src="docs/panel-tiles-phone.png" width="24%" alt="Tile wall on a phone / Kachelwand auf dem Handy">
+  <img src="docs/panel-soft-phone.png" width="24%" alt="Soft on a phone / Soft auf dem Handy">
+  <img src="docs/panel-energy.png" width="49%" alt="Energy tab with costs and CSV download / Tab Energie mit Kosten und CSV-Download">
+</p>
+<p align="center"><sub>Screenshots from a test installation with a simulated unit. / Aufnahmen aus einer Testinstallation mit nachgebildeter Anlage.</sub></p>
+
 **Home network first, cloud as fallback (new in 0.8.0).** Home Assistant talks to the unit directly in your home network (UDP port 5570, plain Python,
 fast, keeps working when the internet is down) and falls back to Proxon's remote-access server when the unit can't be reached there. You can also choose
 *home network only* or *Proxon server only*. A certificate is fetched once from the Proxon portal with your Device ID and password; after that the home
@@ -28,6 +39,11 @@ source is included.
 **Raspberry Pi / ARM: supported from 0.8.0** over the home network (Home Assistant and the unit in the same network). The Proxon server fallback needs
 Nabto's library, which only exists for Linux x86-64 (including Home Assistant OS on Intel/AMD) and macOS on Apple chips. The Proxon Bridge is no longer
 needed on a Raspberry Pi; it stays for special cases (e.g. Home Assistant in a different network than the unit, on ARM).
+
+**The page "Proxon"** in the sidebar shows the unit, hot water and every room, with tabs for energy (costs, forecast, CSV
+download) and settings. It comes in three looks, chosen under *Configure*: **Liquid Glass**, **Soft** and **Tile wall**,
+each light and dark. Password, connection and address can be changed later with *⋮ → Reconfigure*, without removing the
+integration; rooms the unit reports later appear without a restart.
 
 **What's new:** see [CHANGELOG.md](CHANGELOG.md).
 
@@ -59,12 +75,12 @@ Danach gibt es in Home Assistant unter *Einstellungen → Geräte & Dienste → 
 | Urlaubsmodus | Schalter: Lüftung Stufe 1, Wohnzimmer 18 °C, übrige Räume −3 °C, Wärmeelemente aus, Warmwasser aus – beim Ausschalten werden die vorherigen Werte wiederhergestellt. Dazu ein Urlaubsplan mit Abreise und Rückkehr, der ihn selbst ein- und rechtzeitig vor der Rückkehr ausschaltet |
 | Diagnose | Antwortzeit der Anlage, Verbindungsweg (Heimnetz / direkt über das Internet / über Vermittlungsserver; im Heimnetz exakt, über den Proxon-Server geschätzt), Uhr der Anlage und ihre Abweichung, Firmware (auch des Warmwasser-Moduls), Betriebsstunden, letzter Schreibfehler, Temperaturen, Druck und Ventile des Kältekreises |
 
-**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub). **Qualität:** Bronze und Silber der
+**Was neu ist:** in [CHANGELOG.md](CHANGELOG.md) (und in den Release-Hinweisen auf GitHub). **Qualität:** Bronze, Silber und Gold der
 Qualitätsstufen von Home Assistant, Selbsteinschätzung in [docs/quality-scale.md](docs/quality-scale.md).
 
 ## Die Seite „Proxon“
 
-In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look und für Handy, Tablet und Computer:
+In der Seitenleiste erscheint die Seite **„Proxon“** – in einem von drei Designs (Bilder ganz oben) und für Handy, Tablet und Computer:
 
 * **Zuhause:** die Anlage im Schnitt (Frisch-, Zu-, Ab- und Fortluft mit Temperaturen, Lüfter mit Drehzahl, Wärmepumpe), der Warmwasserspeicher
   (warmes Wasser in Litern, Duschminuten, Temperaturen) und jeder Raum als Kachel. Eingeschaltete Funktionen (Urlaub, Legionellenschutz,
@@ -75,7 +91,8 @@ In der Seitenleiste erscheint die Seite **„Proxon“**, im Liquid-Glass-Look u
   Jahr, Schnitt pro Monat) –, die Leistung jetzt und die Laufzeiten von heute. Für die Kosten unter *Konfigurieren* einen
   Strompreis eintragen. Warmwasser ist **geschätzt** (die Anlage misst es nicht):
   Laufzeit von Wärmepumpe und Heizstab × ihre Leistung laut Datenblatt T300 (430 W und 1500 W, unter *Konfigurieren*
-  änderbar, z. B. für einen BOOST-Heizstab).
+  änderbar, z. B. für einen BOOST-Heizstab). Der Knopf mit dem Pfeil lädt den gezeigten Zeitraum als **CSV-Datei**
+  herunter (eine Zeile je Tag bzw. Monat; auf Deutsch mit „;“ und Dezimalkomma, damit Excel und Numbers Zahlen erkennen).
 * **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der
   gewählte Bereich; auf dem Handy erst die Liste, dann der Bereich.
 * **Sollwerte nur mit − und +** (gedrückt halten wiederholt): Wischen beim Scrollen verstellt nichts.
@@ -107,7 +124,8 @@ kein Theme nötig.
 
 Die Werte werden im eingestellten Intervall (Standard alle 10 Sekunden) gelesen. Es werden nur die Räume angelegt, die die Anlage als angeschlossen meldet
 (wie die Raumliste der Proxon-App), und die Raumnamen stammen aus der Anlage. Welche Räume die Anlage meldet, steht beim ersten Abruf im
-Home-Assistant-Protokoll („Proxon rooms: …“).
+Home-Assistant-Protokoll („Proxon rooms: …“). Meldet die Anlage später einen weiteren Raum, bekommt er beim nächsten Abruf
+sein Thermostat und seine Sensoren – ohne Neustart.
 
 Raumtemperaturen: Das Wohnzimmer wird in hundertstel Grad gespeichert und lässt sich deshalb in 0,5-°C-Schritten einstellen. Die anderen Räume zeigen – wie in der
 Proxon-App – ihren eigenen Grundwert plus ihren Versatz; die Anlage speichert den Versatz nur in ganzen Grad, deshalb gehen dort nur ganze Grad.
@@ -179,6 +197,10 @@ Im Protokoll des Add-ons sollte „logged in to …“ erscheinen. Das Add-on bi
 * **„Mit Device ID + Passwort anmelden“** – Device ID und Passwort eingeben, Verbindung wählen (Standard: „Heimnetz zuerst“), optional die IP-Adresse der
   Anlage. Auf dem Raspberry Pi entfällt die Auswahl (nur Heimnetz). Oder
 * **„Über das Proxon-Bridge-Add-on“** (nur wenn Sie das Add-on nutzen) – Adresse `homeassistant.local` (oder die IP von Home Assistant) und Port `8765`.
+
+**Später ändern:** Strompreis, Abfrageintervall, Design der Seite, IP-Adresse und Ähnliches unter *Proxon Control →
+Konfigurieren*. Passwort, Verbindungsart oder Adresse der Bridge unter *Proxon Control → ⋮ → Neu konfigurieren* – ohne die
+Integration zu löschen; die Verbindung wird vor dem Speichern getestet, Entitäten und Verlauf bleiben.
 
 ## Entfernen
 
