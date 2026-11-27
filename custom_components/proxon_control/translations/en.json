@@ -750,6 +750,9 @@
             }
           }
         }
+      },
+      "key_lock": {
+        "name": "Key lock"
       }
     },
     "binary_sensor": {

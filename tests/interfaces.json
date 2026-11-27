@@ -182,6 +182,8 @@
   "switch.LegionellenGeplant",
   "switch.LegionellenSonne",
   "switch.Legionellenfunktion",
+  "switch.NBE1Tastensperre",
+  "switch.NBE4Tastensperre",
   "switch.NachtabsenkungAktiv",
   "switch.Nachtkuehlung",
   "switch.PVKuehlung",

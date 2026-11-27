@@ -21,7 +21,7 @@ const TEXT = {
     ventilation: "Lüftung", mode: "Betriebsart", boostSub: "läuft {m} Minuten, dann zurück", waterTarget: "Solltemperatur",
     pump: "Wärmepumpe", pumpSub: "heizt das Wasser sparsam", heater: "Heizstab", heaterSub: "schneller, braucht mehr Strom",
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
-    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist",
+    releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist", keyLock: "Tastensperre", keyLockSub: "die Tasten am Raumbedienteil tun nichts",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
     close: "Schließen", warmer: "Wärmer", colder: "Kälter", more: "Mehr", less: "Weniger", undo: "Rückgängig",
     unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
@@ -99,7 +99,7 @@ const TEXT = {
     ventilation: "Ventilation", mode: "Operating mode", boostSub: "runs {m} minutes, then back", waterTarget: "Target temperature",
     pump: "Heat pump", pumpSub: "heats the water efficiently", heater: "Immersion heater", heaterSub: "faster, uses more power",
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
-    releasedSub: "heats electrically when the room is too cold",
+    releasedSub: "heats electrically when the room is too cold", keyLock: "Key lock", keyLockSub: "the room panel's keys do nothing",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
     close: "Close", warmer: "Warmer", colder: "Colder", more: "More", less: "Less", undo: "Undo",
     unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
@@ -2028,13 +2028,14 @@ class ProxonPanel extends HTMLElement {
     this._openSheet(`<h3>${esc(r.name)}</h3><p class="sub" id="r-sub"></p>
       <div class="row"><span class="row-label">${t.target}<small>${fill(t.range, { a: this.fmt(r.min, 0), b: this.fmt(r.max, 0), s: this.fmt(r.step, d) })}</small></span>
         <div class="stepper"><button id="rt-dn" aria-label="${t.colder}">−</button><output class="num" id="rt-out"></output><button id="rt-up" aria-label="${t.warmer}">+</button></div></div>
-      ${this._sw("s-elem", t.released, t.releasedSub)}<button class="link" id="r-more">${t.more}</button>`, from, () => {
+      ${this._sw("s-elem", t.released, t.releasedSub)}${this.st(`NBE${n}Tastensperre`) ? this._sw("s-lock", t.keyLock, t.keyLockSub) : ""}<button class="link" id="r-more">${t.more}</button>`, from, () => {
       this.$("rt-dn").addEventListener("click", () => this._roomStep(n, -1));
       this.$("rt-up").addEventListener("click", () => this._roomStep(n, 1));
       this.$("s-elem").addEventListener("click", () => {
         const cur = this._room(n);
         this.call("climate", "set_hvac_mode", { entity_id: cur.entity, hvac_mode: cur.mode === "heat" ? "auto" : "heat" }).catch(() => {});
       });
+      if (this.$("s-lock")) this.$("s-lock").addEventListener("click", () => this._toggle(`NBE${n}Tastensperre`));
       this.$("r-more").addEventListener("click", () => { this._closeSheet(); this.moreInfo(r.entity); });
     }, () => {
       const cur = this._room(n); if (!cur) return;
@@ -2042,6 +2043,7 @@ class ProxonPanel extends HTMLElement {
       this.$("rt-out").textContent = `${this.fmt(cur.target, Number.isInteger(cur.target) ? 0 : d)} °C`;
       this.$("rt-dn").disabled = !cur.available || cur.target <= cur.min; this.$("rt-up").disabled = !cur.available || cur.target >= cur.max;
       this.$("s-elem").setAttribute("aria-checked", cur.mode === "heat");
+      if (this.$("s-lock")) this.$("s-lock").setAttribute("aria-checked", this.swOn(`NBE${n}Tastensperre`));
     });
   }
 

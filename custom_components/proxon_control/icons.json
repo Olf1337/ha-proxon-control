@@ -349,6 +349,12 @@
         "state": {
           "off": "mdi:solar-power-variant-outline"
         }
+      },
+      "key_lock": {
+        "default": "mdi:lock",
+        "state": {
+          "off": "mdi:lock-open-variant"
+        }
       }
     },
     "time": {

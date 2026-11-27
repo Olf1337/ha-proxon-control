@@ -298,6 +298,14 @@ def check(page, data: dict) -> dict:
         r["cool_chip"] = js(f"() => [...{root}.querySelectorAll('.fchip, .fn')].map(x => x.textContent.replace(/\\s+/g, ' ').trim()).filter(x => x.includes('Kühlung'))")
         js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: 'off' } }; window.panel.hass = { ...h }; }""", cool)
         page.wait_for_timeout(200)
+    # a room's sheet: its panel's key lock, a tap sends it
+    lock_room = next((k[3:-12] for k in data["config"]["entities"] if k.startswith("NBE") and k.endswith("Tastensperre")), None)
+    if lock_room:
+        js(f"() => {{ window.calls = []; window.panel._sheetRoom({lock_room}, null); {root}.getElementById('s-lock').click(); }}")
+        page.wait_for_timeout(300)
+        r["key_lock"] = [c for c in js("() => window.calls") if c[1] == "turn_on"]
+        js("() => window.panel._closeSheet()")
+        r["key_lock_id"] = data["config"]["entities"][f"NBE{lock_room}Tastensperre"]
     # a room's target: a decimal only where there is one; the unit's picture cropped to the drawing on a phone
     r["targets"] = js(f"() => [...{root}.querySelectorAll('.rooms .tv')].map(x => x.textContent)")
     r["diagram_box"] = js(f"() => {root}.querySelector('svg.diagram').getAttribute('viewBox')")

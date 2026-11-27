@@ -5,6 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b3 (beta):** a key-lock switch for every room panel (in the room's device and on the room's sheet of the page),
+found by comparing the raw values with the lock off and on.
+
 **New in 1.2.0b2 (beta):** the diagnostics read a much larger range of set points and now also the data points, raw (for
 the second try at finding the panels' key lock).
 
@@ -166,6 +169,15 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b3 (Beta)
+
+* **Tastensperre je Raum:** Jedes Raumbedienteil hat jetzt den Schalter **„Tastensperre“** – im Gerät des Raums in Home
+  Assistant und im Blatt des Raums auf der Seite „Proxon“ (Tipp auf den Raum). Gefunden mit den Rohwerten aus 1.2.0b2: Beim
+  Sperren der Bedienteile „Kind 1“ und „Diele“ sprangen genau zwei Werte von 0 auf 1 (Sollwert-Objekt 1, Adresse 62 + Raum),
+  und im Status des Bedienteils kam ein Bit dazu. Geschrieben wird wie die anderen Raumwerte; ob die Anlage das Setzen aus
+  Home Assistant annimmt, zeigt der erste Test an der echten Anlage (sonst kommt eine Meldung, und nichts ändert sich).
+  Die Sperre des Hauptbedienteils ist ein anderer Wert und bleibt vorerst nur lesbar („Bedienpanel gesperrt“).
 
 ### Neu in Version 1.2.0b2 (Beta)
 

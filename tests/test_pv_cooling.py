@@ -90,3 +90,19 @@ async def test_diagnostics_hold_the_raw_set_points(hass: HomeAssistant, device) 
     assert data["errors"] == [] and len(data["values"]) == sum(n for _, n in R.SCAN_DATA_RANGES)
     g = R.BY_KEY["T7Abluft"]
     assert data["values"][f"{g.read[0]}:{g.read[1]}"] == 2220  # extract air 22.2 °C, raw
+
+
+# ---------------- the room panels' key lock (found with the raw values above) ----------------
+async def test_key_lock_per_room(hass: HomeAssistant, device) -> None:
+    from homeassistant.helpers import entity_registry as er
+    await setup(hass)
+    locks = sorted(e.unique_id for e in er.async_get(hass).entities.values() if e.unique_id.endswith("Tastensperre"))
+    assert locks and all(u.startswith("abc123_NBE") for u in locks) and "abc123_NBE0Tastensperre" not in locks
+    room = int(locks[0].removeprefix("abc123_NBE").removesuffix("Tastensperre"))
+    switch = eid(hass, "switch", f"NBE{room}Tastensperre")
+    assert hass.states.get(switch).state == "off"
+    await call(hass, "switch", "turn_on", entity_id=switch)
+    w = device.writes[-1]
+    assert (w["obj"], w["address"], w["value"]) == (0, 554 + 2 * room, 1)  # room 1: 0:556, read back at 1:63 (= 0:273)
+    assert hass.states.get(switch).state == "on"
+    assert R.BY_KEY[f"NBE{room}Tastensperre"].read == (1, 62 + room)

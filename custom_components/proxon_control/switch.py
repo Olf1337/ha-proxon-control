@@ -13,7 +13,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
-from .entity import ProxonEnergyEntity, ProxonEntity, has_shower_target, house_rooms, room_name
+from .entity import ProxonEnergyEntity, ProxonEntity, has_shower_target, house_rooms, room_device, room_name, watch_new_rooms
+from .registers import ROOM_COUNT, room_connected
 
 SWITCHES: list[tuple[str, str, int | None]] = [
     ("Intensivlueftung", "boost", None),
@@ -62,6 +63,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
                      ProxonEnergySwitch(coordinator, "plan_on", "LegionellenGeplant", "legionella_planned",
                                         coordinator.energy.legionella)]
     async_add_entities(entities)
+
+    # each room panel's key lock (in the room's device); a room connected later gets it at the next reading
+    def lock(values: dict, i: int) -> list:
+        return [ProxonKeyLock(coordinator, i)] if f"NBE{i}Tastensperre" in values else []
+
+    present = {i for i in range(1, ROOM_COUNT) if room_connected(data, i) and f"NBE{i}Tastensperre" in data}
+    async_add_entities([ProxonKeyLock(coordinator, i) for i in sorted(present)])
+    watch_new_rooms(entry, coordinator, async_add_entities, lock, present | {0})
 
 
 class ProxonSwitch(ProxonEntity, SwitchEntity):
@@ -219,3 +228,22 @@ class ProxonShowerModeSwitch(ProxonEntity, SwitchEntity, RestoreEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         self._attr_is_on = False
         self.async_write_ha_state()
+
+
+class ProxonKeyLock(ProxonEntity, SwitchEntity):
+    """The room panel's key lock: on, its keys do nothing (e.g. in a child's room). Read back from the unit like the rest."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator, room: int) -> None:
+        super().__init__(coordinator, f"NBE{room}Tastensperre", "key_lock", device=room_device(coordinator, room))
+
+    @property
+    def is_on(self) -> bool | None:
+        return bool(self.raw_value) if self.raw_value is not None else None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self.coordinator.async_write(self._key, 1)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self.coordinator.async_write(self._key, 0)
