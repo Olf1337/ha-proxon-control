@@ -14,7 +14,7 @@ const TEXT = {
     hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
     compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
-    litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei 40 °C", bottom: "Unten", target: "Soll", charge: "Ladezustand",
+    litersSub: "warmes Wasser im Speicher", showerSub: "Duschen bei 40 °C", bottom: "Unten", target: "Soll", showerTarget: "Duschvorrat", charge: "Ladezustand",
     floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
     allOff: "Wärmeelemente aller Räume aus", allOnDone: "Wärmeelemente aller Räume an",
     element: { off: "Heizpanel aus", ready: "Heizpanel bereit", heating: "Heizpanel heizt" },
@@ -23,13 +23,14 @@ const TEXT = {
     now: "Jetzt", range: "{a} bis {b} °C in {s}-°C-Schritten", released: "Heizpanel freigegeben",
     releasedSub: "heizt elektrisch zu, wenn der Raum zu kalt ist",
     more: "Alle Werte", device: "Gerät in Home Assistant öffnen", groups: { temp: "Temperaturen", meas: "Messwerte", state: "Zustände", set: "Einstellungen" },
-    close: "Schließen", warmer: "Wärmer", colder: "Kälter", undo: "Rückgängig",
+    close: "Schließen", warmer: "Wärmer", colder: "Kälter", more: "Mehr", less: "Weniger", undo: "Rückgängig",
     unavailable: "nicht erreichbar", nowLabel: "Jetzt", switchingOn: "wird eingeschaltet …", switchingOff: "wird ausgeschaltet …",
     holidayNeedsPlan: "Bitte zuerst Abreise und Rückkehr eintragen, dann lässt sich der Urlaubsmodus einschalten.",
     holidayReturnPast: "Die Rückkehr liegt in der Vergangenheit. Bitte eine neue Rückkehr eintragen.",
     holidayOrder: "Die Rückkehr liegt vor der Abreise. Bitte die Daten prüfen.", home: "Zuhause", energy: "Energie", settings: "Einstellungen", status: "Status",
     e: { usage: "Verbrauch", today: "Heute", week: "Diese Woche", runtime: "Laufzeit heute", per: { week: "Woche", month: "Monat", year: "Jahr" },
-      earlier: "Früher", later: "Später", csv: "Als CSV herunterladen", csvDate: "Datum", csvMonth: "Monat", csvTotal: "Summe", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
+      earlier: "Früher", later: "Später", cmp: "Mit dem Zeitraum davor vergleichen", vs: "{v} gegenüber {p}", prevName: { week: "Vorwoche", month: "Vormonat", year: "Vorjahr" },
+      table: "Werte als Tabelle", tSum: "Summe", tAvgDay: "Ø Tag", tAvgMonth: "Ø Monat", tMin: "Min.", tMax: "Max.", tTotal: "Gesamt", csv: "Als CSV herunterladen", csvDate: "Datum", csvMonth: "Monat", csvTotal: "Summe", failed: "Die Statistik von Home Assistant ist gerade nicht erreichbar. Gleich noch einmal versuchen.", cost: "Kosten", running: "Bisher", expected: "Voraussichtlich", fc: "{p} (Hochrechnung)",
       avgMonth: "Im Schnitt pro Monat", ofWater: "davon Warmwasser {v}",
       noPrice: "Für die Kosten unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren einen Strompreis eintragen (fest oder als Sensor).", none: "Für diesen Zeitraum gibt es noch keine Werte. Home Assistant speichert sie erst, seit es die Energie-Zähler gibt.", yesterday: "gestern {v}", forecast: "Hochrechnung {v}",
       comp: "Kompressor", vent: "Lüftung & Elektronik", water: "Warmwasser (geschätzt)", pump: "Warmwasser-Wärmepumpe", heater: "Heizstab",
@@ -43,13 +44,15 @@ const TEXT = {
       GrenzwertFeuchte: "Darunter lüftet die Anlage im ECO-Komfortbetrieb schwächer, damit die Luft nicht zu trocken wird.",
       LegionellenGeplant: "Heizt jede Woche am gewählten Tag zur gewählten Uhrzeit auf 60 °C, mit oder ohne Sonne.",
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
+      DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein (40 °C, 8 l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
     },
     copyWeekdays: "Montag → Dienstag bis Freitag", copyAll: "Montag → alle Tage", span: "{a} bis {b}", sure: "Wirklich? Nochmal tippen", empty: "keine Phase",
     failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
       store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
-      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen",
+      season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur",
+      DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
       ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
       UrlaubVorlauf: "Vor der Rückkehr aufwärmen", UrlaubsplanLoeschen: "Urlaubsplan löschen", SollWassertemperatur: "Solltemperatur",
@@ -83,7 +86,7 @@ const TEXT = {
     hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
     compressor: "Compressor", compOff: "off", humidity: "Humidity",
     water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
-    litersSub: "of warm water in the tank", showerSub: "of showering at 40 °C", bottom: "Bottom", target: "Target", charge: "Charge",
+    litersSub: "of warm water in the tank", showerSub: "of showering at 40 °C", bottom: "Bottom", target: "Target", showerTarget: "Shower supply", charge: "Charge",
     floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
     allOff: "Heating elements of all rooms off", allOnDone: "Heating elements of all rooms on",
     element: { off: "Heating panel off", ready: "Heating panel ready", heating: "Heating panel heating" },
@@ -92,13 +95,14 @@ const TEXT = {
     now: "Now", range: "{a} to {b} °C in {s} °C steps", released: "Heating panel enabled",
     releasedSub: "heats electrically when the room is too cold",
     more: "All values", device: "Open the device in Home Assistant", groups: { temp: "Temperatures", meas: "Readings", state: "States", set: "Settings" },
-    close: "Close", warmer: "Warmer", colder: "Colder", undo: "Undo",
+    close: "Close", warmer: "Warmer", colder: "Colder", more: "More", less: "Less", undo: "Undo",
     unavailable: "unavailable", nowLabel: "Now", switchingOn: "switching on …", switchingOff: "switching off …",
     holidayNeedsPlan: "Please enter departure and return first, then holiday mode can be switched on.",
     holidayReturnPast: "The return is in the past. Please enter a new return.",
     holidayOrder: "The return is before the departure. Please check the dates.", home: "Home", energy: "Energy", settings: "Settings", status: "Status",
     e: { usage: "Consumption", today: "Today", week: "This week", runtime: "Running time today", per: { week: "Week", month: "Month", year: "Year" },
-      earlier: "Earlier", later: "Later", csv: "Download as CSV", csvDate: "Date", csvMonth: "Month", csvTotal: "Total", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
+      earlier: "Earlier", later: "Later", cmp: "Compare with the period before", vs: "{v} compared with {p}", prevName: { week: "the week before", month: "the month before", year: "the year before" },
+      table: "Values as a table", tSum: "Total", tAvgDay: "Ø day", tAvgMonth: "Ø month", tMin: "Min", tMax: "Max", tTotal: "Total", csv: "Download as CSV", csvDate: "Date", csvMonth: "Month", csvTotal: "Total", failed: "Home Assistant's statistics can't be reached right now. Try again in a moment.", cost: "Cost", running: "So far", expected: "Expected", fc: "{p} (forecast)",
       avgMonth: "On average per month", ofWater: "of which hot water {v}",
       noPrice: "For the cost, enter an electricity price under Settings → Devices & services → Proxon Control → Configure (fixed or as a sensor).", none: "There are no values for this period yet. Home Assistant keeps them only since the energy counters exist.", yesterday: "yesterday {v}", forecast: "Forecast {v}",
       comp: "Compressor", vent: "Ventilation & electronics", water: "Hot water (estimated)", pump: "Hot-water heat pump", heater: "Immersion heater",
@@ -112,13 +116,15 @@ const TEXT = {
       GrenzwertFeuchte: "Below it the unit ventilates less in ECO comfort mode, so the air doesn't get too dry.",
       LegionellenGeplant: "Heats to 60 °C every week on the chosen day at the chosen time, sun or not.",
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
+      DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees (40 °C, 8 l a minute, full tank). The integration picks the lowest water target that holds them.",
     },
     copyWeekdays: "Monday → Tuesday to Friday", copyAll: "Monday → every day", span: "{a} to {b}", sure: "Sure? Tap again", empty: "no phase",
     failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
       store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
-      season: "Summer/winter automatic", night: "Night setback", heating: "Heating",
+      season: "Summer/winter automatic", night: "Night setback", heating: "Heating", shower: "Shower supply instead of temperature",
+      DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
       ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
       UrlaubVorlauf: "Warm up before the return", UrlaubsplanLoeschen: "Clear holiday plan", SollWassertemperatur: "Target temperature",
@@ -194,6 +200,7 @@ const ICONS = {
   legionella: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z",
   cooling: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
   season: "M12 3v18M4 7l16 10M20 7L4 17",
+  shower: "M4 20L14 10M9 5a8 8 0 0 1 10 10zM15 17v2M18 15v2M19 19v2",
   night: "M3 17h18M7 13a5 5 0 0 1 10 0M12 4v2",
 };
 const SETTINGS = [
@@ -203,6 +210,7 @@ const SETTINGS = [
   { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"]] },
   { id: "boost", auto: true, color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
   { id: "store", auto: true, color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
+  { id: "shower", auto: true, color: "#2f8fd0", main: "DuschvorratModus", rows: [["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"]] },
   { id: "legionella", auto: true, color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
     ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
   { id: "cooling", auto: true, color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
@@ -344,6 +352,18 @@ button { font: inherit; color: inherit; }
 .e-col span:last-child { border-radius: 4px 4px 0 0; }
 .e-col.sel { background: color-mix(in srgb, var(--fg) 7%, transparent); }
 .e-col.future { opacity: .35; }
+.e-col { position: relative; }
+.e-pm { position: absolute; left: -3px; right: -3px; height: 0; border-top: 2px solid var(--fg); opacity: .5; pointer-events: none; }
+:host .e-nav button[aria-pressed="true"] { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.e-table summary { cursor: pointer; font-size: .875rem; color: var(--fg-2); width: max-content; }
+.e-table .e-tw { overflow-x: auto; }
+.e-tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; margin-top: 8px; }
+.e-tbl th, .e-tbl td { padding: 7px 6px; text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
+.e-tbl th { font-weight: 600; color: var(--fg-2); border-top: 0; }
+.e-tbl th:first-child, .e-tbl td:first-child { text-align: left; padding-left: 0; }
+.e-tbl td i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; }
+.e-tbl small { display: block; color: var(--fg-3); font-size: .6875rem; }
+.e-tbl tr.sum td { font-weight: 650; }
 .e-xl { display: flex; justify-content: space-between; gap: var(--gap, 4px); margin-left: 34px; font-size: .6875rem; color: var(--fg-3); }
 .e-xl span { flex: 1 1 0; min-width: 0; max-width: 44px; text-align: center; white-space: nowrap; overflow: visible; }
 .e-detail { min-height: 1.4em; font-size: .875rem; color: var(--fg-2); }
@@ -837,7 +857,7 @@ class ProxonPanel extends HTMLElement {
                 <div class="fact"><span class="huge num" id="w-temp">–</span><span>${t.middle}<span id="w-charge-wrap"> · ${t.charge} <b class="num" id="w-charge">–</b></span></span></div>
               </div>
             </div>
-            <div class="water-set" id="w-set-wrap"><span class="w-set-l">${t.target}<span class="saved" id="w-saved">${t.sent}</span></span>
+            <div class="water-set" id="w-set-wrap"><span class="w-set-l"><span id="w-set-t">${t.target}</span><span class="saved" id="w-saved">${t.sent}</span></span>
               <div class="stepper"><button id="w-dn" aria-label="${t.colder}">−</button><output class="num" id="w-target">–</output><button id="w-up" aria-label="${t.warmer}">+</button></div></div>
           </div>
         </section>
@@ -860,8 +880,8 @@ class ProxonPanel extends HTMLElement {
     const water = this.$("water");
     water.addEventListener("click", e => { if (!e.target.closest(".stepper")) this._sheetWater(water); });
     water.addEventListener("keydown", e => { if (e.target === water && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this._sheetWater(water); } });
-    this._wStep = this._stepper(this.$("w-dn"), this.$("w-up"), this.$("w-target"), "SollWassertemperatur", {
-      fmt: v => `${this.fmt(v, 0)}°`,
+    this._wStep = this._stepper(this.$("w-dn"), this.$("w-up"), this.$("w-target"), () => this._showerMode() ? "DuschvorratSoll" : "SollWassertemperatur", {
+      fmt: v => this._showerMode() ? `${this.fmt(v, 0)} ${this.t.min}` : `${this.fmt(v, 0)}°`,
       done: () => { const s = this.$("w-saved"); s.classList.add("show"); setTimeout(() => s.classList.remove("show"), 1400); },
     });
     this._fill = new Spring(0, () => {});  // the level of the tank; its surface is drawn with the air (one loop)
@@ -969,6 +989,9 @@ class ProxonPanel extends HTMLElement {
       this.$("w-bottom").textContent = deg("WarmwasserUntenTemperatur");
       const wn = this.st("SollWassertemperatur");
       this.$("w-set-wrap").hidden = !wn;
+      const byShower = this._showerMode();
+      this.$("w-set-t").textContent = byShower ? t.showerTarget : t.target;
+      this.$("w-dn").setAttribute("aria-label", byShower ? t.less : t.colder); this.$("w-up").setAttribute("aria-label", byShower ? t.more : t.warmer);
       this._wStep.sync();
       const ch = this.num("WarmwasserLadezustand");
       this.$("w-charge-wrap").hidden = ch === null; this.$("w-charge").textContent = `${this.fmt(ch, 0)} %`;
@@ -1219,15 +1242,17 @@ class ProxonPanel extends HTMLElement {
   // the running month live from the sensors. Back and forth through weeks, months and years. ----------
   _buildEnergy() {
     this._energyBuilt = true; this._ePer = "week"; this._eOff = 0; this._eSel = null; this._eStats = {};
+    this._eCmp = false; try { this._eCmp = localStorage.getItem("proxon-e-cmp") === "1"; } catch (_) { /* no storage */ }
     const t = this.t, e = t.e;
     this.$("v-energy").innerHTML = `<section class="card e-card">
         <div class="e-head"><div style="display:grid;gap:4px"><span class="label" id="e-title"></span><div class="e-big num" id="e-total"></div><div class="sub num" id="e-sub"></div></div>
           <div style="display:grid;gap:8px;justify-items:end"><div class="seg" id="e-per">${["week", "month", "year"].map(p => `<button data-p="${p}">${e.per[p]}</button>`).join("")}</div>
-            <div class="e-nav"><button id="e-csv" aria-label="${e.csv}" title="${e.csv}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button><button id="e-prev" aria-label="${e.earlier}">‹</button><button id="e-next" aria-label="${e.later}">›</button></div></div></div>
+            <div class="e-nav"><button id="e-cmp" aria-pressed="false" aria-label="${e.cmp}" title="${e.cmp}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-8M12 20V9M18 20v-5"/><path d="M3 6h18" stroke-dasharray="2 3"/></svg></button><button id="e-csv" aria-label="${e.csv}" title="${e.csv}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button><button id="e-prev" aria-label="${e.earlier}">‹</button><button id="e-next" aria-label="${e.later}">›</button></div></div></div>
         <div class="e-chart" id="e-chart" role="img"><div id="e-gridl"></div><div class="e-cols" id="e-cols"></div></div>
         <div class="e-xl" id="e-xl"></div>
         <div class="e-detail num" id="e-detail"></div>
-        <div class="e-key" id="e-key"></div><p class="hint" id="e-empty" hidden>${e.none}</p><p class="hint" id="e-failed" hidden>${e.failed}</p></section>
+        <div class="e-key" id="e-key"></div>
+        <details class="e-table" id="e-table-wrap"><summary>${e.table}</summary><div class="e-tw" id="e-table"></div></details><p class="hint" id="e-empty" hidden>${e.none}</p><p class="hint" id="e-failed" hidden>${e.failed}</p></section>
       <section class="card e-card" id="e-cost"><span class="label">${e.cost}</span>
         <div class="e-cost-grid"><div><span class="sub">${e.running}</span><div id="e-cost-run"></div></div>
           <div id="e-cost-fc-wrap"><span class="sub">${e.expected}</span><div id="e-cost-fc"></div></div></div>
@@ -1240,6 +1265,10 @@ class ProxonPanel extends HTMLElement {
     }));
     this.$("e-prev").addEventListener("click", () => { this._eOff -= 1; this._eSel = null; this._updateEnergy(); });
     this.$("e-csv").addEventListener("click", () => this._eCsv());
+    this.$("e-cmp").addEventListener("click", () => {
+      this._eCmp = !this._eCmp; try { localStorage.setItem("proxon-e-cmp", this._eCmp ? "1" : "0"); } catch (_) { /* no storage */ }
+      this._updateEnergy();
+    });
     this.$("e-next").addEventListener("click", () => { this._eOff = Math.min(0, this._eOff + 1); this._eSel = null; this._updateEnergy(); });
     this.$("e-cols").addEventListener("click", ev => { const c = ev.target.closest(".e-col"); if (c) { this._eSel = +c.dataset.i; this._updateEnergy(); } });
   }
@@ -1320,12 +1349,28 @@ class ProxonPanel extends HTMLElement {
     this.shadowRoot.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  // the shown period as numbers: per part and in all the total, the average, the lowest and the highest day (month). Only
+  // finished columns count for the last three: a day that has only begun would always be the lowest
+  _eTable(P, parts, cols, totals, hide) {
+    const e = this.t.e, wrap = this.$("e-table-wrap"); wrap.hidden = hide; if (hide) return;
+    const done = cols.filter(c => !c.future && !c.live);
+    const when = d => P.name(d, P.per === "week" ? { weekday: "short" } : P.gran === "month" ? { month: "short" } : { day: "numeric", month: "numeric" });
+    const cell = (v, d) => `<td class="num">${v === null ? "–" : this._kwh(v)}${d ? `<small>${when(d)}</small>` : ""}</td>`;
+    const row = (name, color, sum, val, cls = "") => {
+      if (!done.length) return `<tr class="${cls}"><td>${color ? `<i style="background:var(${color})"></i>` : ""}${name}</td>${cell(sum)}${cell(null)}${cell(null)}${cell(null)}</tr>`;
+      const vs = done.map(c => [val(c), c.d]), lo = vs.reduce((a, b) => (b[0] < a[0] ? b : a)), hi = vs.reduce((a, b) => (b[0] > a[0] ? b : a));
+      return `<tr class="${cls}"><td>${color ? `<i style="background:var(${color})"></i>` : ""}${name}</td>${cell(sum)}${cell(vs.reduce((a, b) => a + b[0], 0) / vs.length)}${cell(lo[0], lo[1])}${cell(hi[0], hi[1])}</tr>`;
+    };
+    this.$("e-table").innerHTML = `<table class="e-tbl"><thead><tr><th></th><th>${e.tSum}</th><th>${P.gran === "month" ? e.tAvgMonth : e.tAvgDay}</th><th>${e.tMin}</th><th>${e.tMax}</th></tr></thead><tbody>${
+      parts.map((p, j) => row(e[p.k], p.color, totals[j], c => c.values[j])).join("")}${
+      row(e.tTotal, null, totals.reduce((a, b) => a + b, 0), c => c.total, "sum")}</tbody></table>`;
+  }
   _eKey(parts, values, unit = "kWh", fmt = v => this._kwh(v)) {
     return parts.map((p, i) => `<span><i style="background:var(${p.color})"></i>${this.t.e[p.k]} <b class="num">${fmt(values[i])} ${unit}</b></span>`).join("");
   }
   // the period shown: its start and end (moments), its columns (calendar days or months, as UTC dates) and how they are named
-  _ePeriod() {
-    const today = this._civil(new Date()).day, per = this._ePer, off = this._eOff, lang = this._hass.language || undefined;
+  _ePeriod(off = this._eOff) {
+    const today = this._civil(new Date()).day, per = this._ePer, lang = this._hass.language || undefined;
     const Y = today.getUTCFullYear(), M = today.getUTCMonth(), D = today.getUTCDate(), wd = (today.getUTCDay() + 6) % 7;
     const cd = (y, m, d) => new Date(Date.UTC(y, m, d)), name = (d, o) => d.toLocaleDateString(lang, { ...o, timeZone: "UTC" });
     let from, to, cols = [], label, title;
@@ -1432,24 +1477,44 @@ class ProxonPanel extends HTMLElement {
       const f = this._eForecast(P.per === "month" ? "Monat" : "Jahr");
       if (f) fcText = fill(e.forecast, { v: `${this._kwh(f.kwh)} kWh` }) + (f.cost !== null ? ` · ${this._money(f.cost)}` : "");
     }
-    this.$("e-sub").textContent = empty ? "" : [this._money(cost), fcText].filter(Boolean).join(" · ");
+    // the period before, column by column (same weekday / day of the month / month), to compare with: only finished
+    // columns count for the difference, so a day that has only begun doesn't make this period look cheaper
+    this.$("e-cmp").setAttribute("aria-pressed", this._eCmp);
+    let prev = null, vs = "";
+    if (this._eCmp && !empty && !failed) {
+      const Q = this._ePeriod(this._eOff - 1), ps = this._eFetch(`${Q.per}${Q.start.getTime()}`, Q.start, Q.end, Q.gran);
+      if (ps && !ps.failed && parts.some(p => p.keys.some(k => (ps.rows[k] || []).length))) {
+        prev = Q.cols.map(d => parts.reduce((a, p) => a + p.keys.reduce((x, k) => x + (ps.rows[k] || []).filter(r => sameBucket(dayOf(r), d)).reduce((y, r) => y + r.change, 0), 0), 0));
+        const done = cols.map((c, i) => (!c.future && !c.live && i < prev.length ? i : -1)).filter(i => i >= 0);
+        const a = done.reduce((x, i) => x + cols[i].total, 0), b = done.reduce((x, i) => x + prev[i], 0);
+        if (done.length && b > 0.05) {
+          const pct = Math.round((a - b) / b * 100);
+          vs = fill(e.vs, { v: `${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${this.fmt(Math.abs(pct), 0)} %`, p: e.prevName[P.per] });
+        }
+      }
+    }
+    this.$("e-sub").textContent = empty ? "" : [this._money(cost), fcText, vs].filter(Boolean).join(" · ");
     // the chart: a scale that ends on a round number, three lines
-    const top = Math.max(...cols.map(c => c.total), 0);
+    const top = Math.max(...cols.map(c => c.total), ...(prev || []), 0);
     const step = top > 0 ? (() => { const raw = top / 2, mag = 10 ** Math.floor(Math.log10(raw)); return [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw); })() : 1;
     const max = step * 2;
     this.$("e-gridl").innerHTML = empty ? "" : [0, 1, 2].map(i => `<div class="e-grid-l" style="bottom:${(i / 2 * 100).toFixed(1)}%"><span>${this.fmt(step * i, Number.isInteger(step) ? 0 : 1)}</span></div>`).join("");
     const sel = this._eSel ?? cols.findIndex(c => c.live);
     this.$("e-chart").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
     this.$("e-xl").style.setProperty("--gap", cols.length > 12 ? "2px" : "6px");
-    this.$("e-cols").innerHTML = empty ? "" : cols.map((c, i) => `<button class="e-col${i === sel ? " sel" : ""}${c.future ? " future" : ""}" data-i="${i}" aria-label="${P.name(c.d, P.gran === "month" ? { month: "long", year: "numeric" } : { day: "numeric", month: "numeric", year: "numeric" })}: ${this._kwh(c.total)} kWh">${
+    const pv = i => (prev && i < prev.length && prev[i] > 0 ? prev[i] : null);
+    this.$("e-cols").innerHTML = empty ? "" : cols.map((c, i) => `<button class="e-col${i === sel ? " sel" : ""}${c.future ? " future" : ""}" data-i="${i}" aria-label="${P.name(c.d, P.gran === "month" ? { month: "long", year: "numeric" } : { day: "numeric", month: "numeric", year: "numeric" })}: ${this._kwh(c.total)} kWh${
+      pv(i) !== null ? ` (${e.prevName[P.per]} ${this._kwh(pv(i))} kWh)` : ""}">${pv(i) !== null ? `<i class="e-pm" style="bottom:${(pv(i) / max * 100).toFixed(2)}%"></i>` : ""}${
       parts.map((p, j) => (c.values[j] > 0 ? `<span style="height:${(c.values[j] / max * 100).toFixed(2)}%;background:var(${p.color})"></span>` : "")).join("")}</button>`).join("");
     this.$("e-xl").innerHTML = empty ? "" : cols.map(c => `<span>${P.label(c.d)}</span>`).join("");
     this.$("e-chart").setAttribute("aria-label", `${P.title}: ${this._kwh(sum)} kWh`);
     const s = cols[sel];
     this.$("e-detail").innerHTML = !empty && s ? `${s.live ? (P.gran === "month" ? P.name(s.d, { month: "long" }) : e.today)
       : P.name(s.d, P.gran === "month" ? { month: "long" } : { weekday: "short", day: "numeric", month: "numeric" })}: <b>${this._kwh(s.total)} kWh</b>${
-      s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}` : "";
+      s.total > 0 ? " · " + parts.map((p, j) => `${e[p.k].replace(/ \(.*\)$/, "")} ${this._kwh(s.values[j])}`).join(" · ") : ""}${
+      pv(sel) !== null ? ` · ${e.prevName[P.per]} ${this._kwh(pv(sel))}` : ""}` : "";
     this.$("e-key").innerHTML = empty ? "" : this._eKey(parts, totals);
+    this._eTable(P, parts, cols, totals, empty || failed);
     this._eLast = { P, parts, cols, empty }; this.$("e-csv").disabled = empty || failed;
     this._updateCosts(parts);
     // now
@@ -1601,16 +1666,19 @@ class ProxonPanel extends HTMLElement {
     }
     return "";
   }
+  _showerMode() { return this.swOn("DuschvorratModus") && !!this.st("DuschvorratSoll"); }
   _autoOn({ main, rows }) { return main ? this.swOn(main) : rows.some(([kind, key]) => kind === "switch" && this.swOn(key)); }
   _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }
   // − and +: a tap moves the value on screen at once; taps in a row are sent once, 0.6 s after the last. Until the unit
   // reports the new value (at most 8 s) the sent one stays on screen. factor: steps per tap (5 for long ranges).
-  _stepper(dn, up, out, key, { factor = 1, fmt, done } = {}) {
-    let want = null, sent = null, timer = 0;
-    const attrs = () => (this.st(key) || {}).attributes || {};
+  _stepper(dn, up, out, which, { factor = 1, fmt, done } = {}) {
+    let want = null, sent = null, timer = 0, was = null;
+    const key = () => typeof which === "function" ? which() : which;  // the hot-water card switches between two entities
+    const attrs = () => (this.st(key()) || {}).attributes || {};
     const value = () => {
-      if (sent && (this.num(key) === sent.v || Date.now() - sent.at > 8000)) sent = null;
-      return want ?? (sent ? sent.v : this.num(key));
+      if (was !== key()) { was = key(); want = null; sent = null; }
+      if (sent && (this.num(key()) === sent.v || Date.now() - sent.at > 8000)) sent = null;
+      return want ?? (sent ? sent.v : this.num(key()));
     };
     const show = () => {
       const v = value(), a = attrs();
@@ -1624,9 +1692,9 @@ class ProxonPanel extends HTMLElement {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const v = want; want = null;
-        if (v === this.num(key)) { show(); return; }
+        if (v === this.num(key())) { show(); return; }
         sent = { v, at: Date.now() }; show();
-        this.call("number", "set_value", { entity_id: this.id(key), value: v }).then(() => done && done(), () => { sent = null; show(); });
+        this.call("number", "set_value", { entity_id: this.id(key()), value: v }).then(() => done && done(), () => { sent = null; show(); });
       }, 600);
     };
     let hold = 0, held = false;

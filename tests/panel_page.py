@@ -179,6 +179,21 @@ def check(page, data: dict) -> dict:
       URL.createObjectURL = make; HTMLAnchorElement.prototype.click = click;
       return {{ name, text: blob ? await blob.text() : null }};
     }}""")
+    # compared with the week before: a mark per column, the difference over finished days; the period as a table
+    r["energy_cmp"] = js(f"""() => {{
+      const E = window.panel._config.entities, shown = window.panel._ePeriod().start.getTime();
+      window.wsAnswer = msg => {{ const s = new Date(msg.start_time).getTime(), mine = s === shown, day = 86400e3;
+        return {{ [E.EnergieKompressor]: [{{ start: s + 3600e3, change: mine ? 10 : 5 }}, {{ start: s + day + 3600e3, change: mine ? 4 : 5 }}] }}; }};
+      window.panel._eStats = {{}}; {root}.getElementById('e-cmp').click();
+      return null;
+    }}""")
+    page.wait_for_timeout(400)
+    r["energy_cmp"] = js(f"""() => ({{ pressed: {root}.getElementById('e-cmp').getAttribute('aria-pressed'), sub: {root}.getElementById('e-sub').textContent,
+      marks: {root}.querySelectorAll('.e-pm').length, head: [...{root}.querySelectorAll('.e-tbl th')].map(x => x.textContent),
+      total: [...{root}.querySelectorAll('.e-tbl tr.sum td')].map(x => [...x.childNodes].map(n => n.textContent).join(' ').trim()) }})""")
+    js(f"() => {{ {root}.getElementById('e-cmp').click(); }}")
+    page.wait_for_timeout(200)
+    r["energy_cmp_off"] = js(f"() => [{root}.querySelectorAll('.e-pm').length, {root}.getElementById('e-sub').textContent.includes('Vorwoche')]")
     # a failed query: said so, not "no values", and earlier periods stay reachable; tried again later
     js("() => { window.wsAnswer = () => { throw new Error('recorder down'); }; window.panel._eStats = {}; window.panel._updateEnergy(); }")
     page.wait_for_timeout(300)
@@ -256,6 +271,23 @@ def check(page, data: dict) -> dict:
               .slice(0, 5).map(e => `${{e.tagName}}.${{e.className}}#${{e.id}}`),  // what sticks out, for the message
           }};
         }}""")
+    # the hot water as a shower supply (switch in the automations): the card's label, value and − / + follow it
+    E = data["config"]["entities"]
+    if E.get("DuschvorratModus"):
+        flip = """([e, on]) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: on } }; window.panel.hass = { ...h }; }"""
+        card = f"() => [{root}.getElementById('w-set-t').textContent, {root}.getElementById('w-target').textContent, {root}.getElementById('w-up').getAttribute('aria-label')]"
+        js("() => { window.calls = []; }")
+        js(flip, [E["DuschvorratModus"], "on"])
+        page.wait_for_timeout(200)
+        r["shower_card"] = js(card)
+        js(f"() => {root}.getElementById('w-up').click()")
+        page.wait_for_timeout(900)
+        r["shower_calls"] = [c for c in js("() => window.calls") if c[1] == "set_value"]
+        js(flip, [E["DuschvorratModus"], "off"])
+        page.wait_for_timeout(200)
+        r["temp_card"] = js(card)
+        r["shower_ids"] = [E["DuschvorratSoll"]]
+
     # names, options and states come from Home Assistant: anyone who can rename an entity must not get markup into the page
     r["escaped"] = js(f"""() => {{
       const bad = '<img src=x onerror="window.__xss=1">', h = window.hassFake, E = window.panel._config.entities;

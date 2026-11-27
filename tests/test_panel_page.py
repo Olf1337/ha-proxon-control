@@ -91,6 +91,13 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         soft = r["soft"]
         assert soft["on"] and soft["backdrop"] == "none" and soft["card"] in ("none", "") and soft["overflow"] <= 0, f"{width}: soft {soft}"
         assert r["glass_again"] is False
+        cmp = r["energy_cmp"]
+        assert cmp["pressed"] == "true" and "+40 % gegenüber Vorwoche" in cmp["sub"] and cmp["marks"] == 2, cmp
+        assert cmp["head"] == ["", "Summe", "Ø Tag", "Min.", "Max."] and cmp["total"] == ["Gesamt", "14,0", "2,00", "0,00 Mi", "10,0 Mo"], cmp
+        assert r["energy_cmp_off"] == [0, False], r["energy_cmp_off"]
+        assert r["shower_card"] == ["Duschvorrat", "0 Min.", "Mehr"], f"{width}: {r['shower_card']}"
+        assert r["shower_calls"] == [["number", "set_value", {"entity_id": r["shower_ids"][0], "value": 35}]], r["shower_calls"]
+        assert r["temp_card"] == ["Soll", "34°", "Wärmer"], f"{width}: {r['temp_card']}"
         esc = r["escaped"]
         assert esc["found"] == [0, 0, 0] and esc["img"] == 0 and esc["xss"] == 0, f"{width}: markup from an entity name ran {esc}"
         tl = r["tiles"]

@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**Not yet released:** hot water can be set as a shower supply (35–55 minutes, switch under Settings → Automations; the
+integration picks the lowest water target that holds them); the "Energy" tab compares with the period before (a mark per
+column, the difference over finished days) and shows the period as a table (total, average, lowest and highest day).
+
 **New in 1.1.0b2 (beta):** security (also released alone as 1.0.1): entity names and options are escaped before they go into the page's markup (HACS
 review); tile wall: a second tap closes an open room, its name opens the details.
 
@@ -140,6 +144,19 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Noch nicht veröffentlicht
+
+* **Warmwasser als Duschvorrat einstellen:** Unter *Einstellungen → Automatiken* gibt es den Schalter „Duschvorrat statt
+  Temperatur“. Ist er an, stellen − und + auf „Zuhause“ Minuten Duschen ein (35–55 Min. bei 40 °C, 8 l pro Minute und
+  vollem Speicher) statt Grad. Die Integration wählt dafür die niedrigste Solltemperatur, die reicht (41–54 °C), und
+  schreibt sie an die Anlage. Neu dazu die Entitäten „Duschvorrat (Soll)“ und „Warmwasser als Duschvorrat einstellen“.
+  (Idee aus dem Forum: 41 °C reichen manchen Haushalten, der Duschvorrat sagt aber mehr als die Temperatur.)
+* **Energie: Vergleich mit dem Zeitraum davor:** Der neue Knopf neben dem CSV-Download zeigt in jeder Säule mit einem Strich,
+  wie viel derselbe Tag der Vorwoche (Tag des Vormonats, Monat des Vorjahrs) brauchte, und oben die Veränderung, z. B.
+  „+12 % gegenüber Vorwoche“. Gerechnet wird nur über abgeschlossene Tage, damit der angebrochene Tag nicht täuscht.
+* **Energie: Werte als Tabelle:** Aufklappbar unter dem Diagramm je Teil und gesamt: Summe, Durchschnitt, niedrigster und
+  höchster Tag (Monat) mit Datum.
 
 ### Neu in Version 1.1.0b2 (Beta)
 

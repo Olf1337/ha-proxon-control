@@ -583,6 +583,9 @@
       },
       "holiday_lead": {
         "name": "Holiday plan: warm up before the return"
+      },
+      "shower_target": {
+        "name": "Shower supply target"
       }
     },
     "switch": {
@@ -704,6 +707,9 @@
       },
       "legionella_planned": {
         "name": "Plan legionella protection"
+      },
+      "shower_mode": {
+        "name": "Set hot water as shower supply"
       }
     },
     "binary_sensor": {

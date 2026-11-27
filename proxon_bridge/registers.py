@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import math
 import time
 
 QUERY_SET_READ = "setpointReadListValue"
@@ -465,6 +466,24 @@ def shower_minutes(values: dict) -> float | None:
         return None
     liters = sum(TANK_LITERS / 2 * (t - COLD_WATER) / (SHOWER_TEMP - COLD_WATER) for t in (mid, bottom) if t > SHOWER_TEMP)
     return float(int(liters / SHOWER_LITERS_PER_MINUTE) // 5 * 5)
+
+
+SHOWER_TARGET_RANGE = (35, 55)  # minutes a full tank can hold: just above 40 °C ... at 55 °C, the highest water target
+WATER_TARGET_MAX = 55
+
+
+def shower_minutes_at(target: float) -> float:
+    """The shower reserve of a full tank at this target temperature (both halves at the target)."""
+    return shower_minutes({"WarmwasserIstTemperatur": target, "WarmwasserUntenTemperatur": target}) or 0.0
+
+
+def target_for_shower_minutes(minutes: float) -> float:
+    """The lowest whole-degree water target whose full tank holds at least these shower minutes (41-55 °C)."""
+    need = minutes * SHOWER_LITERS_PER_MINUTE / TANK_LITERS * (SHOWER_TEMP - COLD_WATER) + COLD_WATER
+    target = min(WATER_TARGET_MAX, max(int(SHOWER_TEMP) + 1, math.ceil(need)))
+    while target < WATER_TARGET_MAX and shower_minutes_at(target) < minutes:
+        target += 1
+    return float(target)
 
 MIN_RECOVERY_SPREAD = 5.0  # K between extract and outdoor air needed for a meaningful efficiency
 

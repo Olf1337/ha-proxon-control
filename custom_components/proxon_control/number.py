@@ -11,8 +11,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ProxonConfigEntry
 from .const import DOMAIN, PPM
-from .entity import ProxonEnergyEntity, ProxonEntity
-from .registers import MODE_COMFORT
+from .entity import ProxonEnergyEntity, ProxonEntity, has_shower_target
+from .registers import MODE_COMFORT, SHOWER_TARGET_RANGE, shower_minutes_at, target_for_shower_minutes
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -72,6 +72,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
         entities += [ProxonEnergyNumber(coordinator, d, comfort.boost) for d in BOOST_NUMBERS]
     if comfort.season.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.season) for d in SEASON_NUMBERS]
+    if has_shower_target(data):
+        entities.append(ProxonShowerTargetNumber(coordinator))
     entities.append(ProxonHolidayLeadNumber(coordinator))
     async_add_entities(entities)
 
@@ -203,3 +205,32 @@ class ProxonHolidayLeadNumber(ProxonEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self.coordinator.holiday.async_set_plan(lead_h=value)
+
+
+class ProxonShowerTargetNumber(ProxonEntity, NumberEntity):
+    """The hot-water target said as a shower reserve (minutes at 40 °C, 8 l/min, full tank). Not a value of its own: it is
+    worked out from the water target, and setting it writes the lowest water target that holds that many minutes."""
+
+    _attr_native_min_value, _attr_native_max_value = SHOWER_TARGET_RANGE
+    _attr_native_step = 5
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator, "DuschvorratSoll", "shower_target")
+
+    @property
+    def raw_value(self) -> float | None:
+        target = (self.coordinator.data or {}).get("SollWassertemperatur")
+        return shower_minutes_at(float(target)) if isinstance(target, (int, float)) else None
+
+    @property
+    def native_value(self) -> float | None:
+        return self.raw_value
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"water_target": (self.coordinator.data or {}).get("SollWassertemperatur")}
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.async_write("SollWassertemperatur", target_for_shower_minutes(value))

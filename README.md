@@ -93,6 +93,11 @@ In der Seitenleiste erscheint die Seite **„Proxon“** – in einem von drei D
   Laufzeit von Wärmepumpe und Heizstab × ihre Leistung laut Datenblatt T300 (430 W und 1500 W, unter *Konfigurieren*
   änderbar, z. B. für einen BOOST-Heizstab). Der Knopf mit dem Pfeil lädt den gezeigten Zeitraum als **CSV-Datei**
   herunter (eine Zeile je Tag bzw. Monat; auf Deutsch mit „;“ und Dezimalkomma, damit Excel und Numbers Zahlen erkennen).
+  Der Knopf daneben vergleicht mit dem Zeitraum davor (ein Strich je Säule, oben die Veränderung in Prozent); darunter gibt
+  es den Zeitraum aufklappbar als Tabelle mit Summe, Durchschnitt, niedrigstem und höchstem Tag.
+* **Warmwasser als Duschvorrat:** Wer lieber in Minuten Duschen als in Grad denkt, schaltet unter *Einstellungen →
+  Automatiken* „Duschvorrat statt Temperatur“ ein. Dann stellen − und + auf „Zuhause“ 35–55 Minuten ein (40 °C, 8 l pro
+  Minute, voller Speicher); die Integration wählt die niedrigste Solltemperatur, die dafür reicht.
 * **Einstellungen:** links die Bereiche (Lüftung, Wochenprogramm, Urlaub, Warmwasser, Automatiken, Nachtabsenkung) mit Kurzinfo, rechts der
   gewählte Bereich; auf dem Handy erst die Liste, dann der Bereich.
 * **Sollwerte nur mit − und +** (gedrückt halten wiederholt): Wischen beim Scrollen verstellt nichts.

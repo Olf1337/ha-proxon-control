@@ -87,6 +87,9 @@
       },
       "store_temperature": {
         "default": "mdi:water-boiler"
+      },
+      "shower_target": {
+        "default": "mdi:shower-head"
       }
     },
     "select": {
@@ -316,6 +319,12 @@
       },
       "water_heat_pump": {
         "default": "mdi:water-boiler"
+      },
+      "shower_mode": {
+        "default": "mdi:shower",
+        "state": {
+          "off": "mdi:thermometer-water"
+        }
       }
     },
     "time": {

@@ -583,6 +583,9 @@
       },
       "holiday_lead": {
         "name": "Urlaubsplan: vor der Rückkehr aufwärmen"
+      },
+      "shower_target": {
+        "name": "Duschvorrat (Soll)"
       }
     },
     "switch": {
@@ -704,6 +707,9 @@
       },
       "legionella_planned": {
         "name": "Legionellenschutz planen"
+      },
+      "shower_mode": {
+        "name": "Warmwasser als Duschvorrat einstellen"
       }
     },
     "binary_sensor": {

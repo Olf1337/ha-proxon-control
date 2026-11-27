@@ -173,3 +173,8 @@ def watch_new_rooms(
             add(new)
 
     entry.async_on_unload(coordinator.async_add_listener(check))
+
+
+def has_shower_target(data: dict) -> bool:
+    """A hot-water module whose target can be set (the T300)."""
+    return "SollWassertemperatur" in data and "WarmwasserIstTemperatur" in data
