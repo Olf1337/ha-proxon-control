@@ -222,6 +222,21 @@ def check(page, data: dict) -> dict:
               .slice(0, 5).map(e => `${{e.tagName}}.${{e.className}}#${{e.id}}`),  // what sticks out, for the message
           }};
         }}""")
+    # names, options and states come from Home Assistant: anyone who can rename an entity must not get markup into the page
+    r["escaped"] = js(f"""() => {{
+      const bad = '<img src=x onerror="window.__xss=1">', h = window.hassFake, E = window.panel._config.entities;
+      const sel = E.Betriebsart;
+      h.states = Object.fromEntries(Object.entries(h.states).map(([e, st]) => [e, {{ ...st, attributes: {{ ...st.attributes, friendly_name: bad + st.attributes.friendly_name,
+        ...(e === sel ? {{ options: [...st.attributes.options, bad] }} : {{}}) }} }}]));
+      window.panel.hass = {{ ...h }};
+      const found = [];
+      window.panel._sheetRoom(0, null); found.push({root}.querySelectorAll('#sheet-body img').length); window.panel._closeSheet();
+      window.panel._sheetAll('unit', null); found.push({root}.querySelectorAll('#sheet-body img').length); window.panel._closeSheet();
+      window.panel._sheetVentilation(null); found.push({root}.querySelectorAll('#sheet-body img').length); window.panel._closeSheet();
+      return {{ found, img: {root}.querySelectorAll('img').length }};
+    }}""")
+    page.wait_for_timeout(300)
+    r["escaped"]["xss"] = js("() => window.__xss || 0")
     return r
 
 

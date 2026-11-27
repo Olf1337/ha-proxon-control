@@ -83,6 +83,8 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         soft = r["soft"]
         assert soft["on"] and soft["backdrop"] == "none" and soft["card"] in ("none", "") and soft["overflow"] <= 0, f"{width}: soft {soft}"
         assert r["glass_again"] is False
+        esc = r["escaped"]
+        assert esc["found"] == [0, 0, 0] and esc["img"] == 0 and esc["xss"] == 0, f"{width}: markup from an entity name ran {esc}"
         for sec, s in r["settings"].items():
             assert s["shown"] and s["rows"], f"{width}/{sec}: the section is empty"
             assert s["overflow"] <= 0 and s["rows_out"] == 0, f"{width}/{sec}: runs out sideways: {s}"
