@@ -957,6 +957,9 @@
     },
     "room_base_missing": {
       "message": "This room's own base value is missing from the last reading of the unit, so its target can't be set right now. Try again in a moment."
+    },
+    "pv_cooling_needs_sensor": {
+      "message": "Cooling with solar surplus needs the sensor for the surplus (feed-in). Choose it under Settings → Devices & services → Proxon Control → Configure, then the function can be switched on."
     }
   },
   "options": {

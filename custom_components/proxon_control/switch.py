@@ -7,12 +7,13 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from . import ProxonConfigEntry
+from .const import CONF_SURPLUS_SENSOR, DOMAIN
 from .entity import ProxonEnergyEntity, ProxonEntity, has_shower_target, house_rooms, room_name
 
 SWITCHES: list[tuple[str, str, int | None]] = [
@@ -141,6 +142,9 @@ class ProxonEnergySwitch(ProxonEnergyEntity, SwitchEntity):
         return {"status": self.manager.status} if self.is_on else {}
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        # like hot water with solar surplus: without a surplus sensor it would never cool, so it is refused with a hint
+        if self._key == "PVKuehlung" and not self.coordinator.entry.options.get(CONF_SURPLUS_SENSOR):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="pv_cooling_needs_sensor")
         await self.manager.async_set(**{self._setting: True})
 
     async def async_turn_off(self, **kwargs: Any) -> None:

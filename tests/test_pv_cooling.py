@@ -134,3 +134,14 @@ async def test_heat_lock_switches_releases(hass: HomeAssistant, device) -> None:
     await call(hass, "switch", "turn_off", entity_id=switch)
     await hass.async_block_till_done()
     assert [w["value"] for w in device.writes[-len(rooms_on):]] == [1] * len(rooms_on)  # restored
+
+
+async def test_cooling_with_surplus_needs_the_sensor(hass: HomeAssistant, device) -> None:
+    """Like hot water with solar surplus: without a surplus sensor it can't be switched on (a hint instead)."""
+    from homeassistant.exceptions import ServiceValidationError
+    import pytest
+    await setup(hass)
+    with pytest.raises(ServiceValidationError) as err:
+        await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PVKuehlung"))
+    assert err.value.translation_key == "pv_cooling_needs_sensor"
+    assert hass.states.get(eid(hass, "switch", "PVKuehlung")).state == "off"

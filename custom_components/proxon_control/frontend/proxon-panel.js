@@ -46,6 +46,7 @@ const TEXT = {
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
       DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein ({t} °C, {f} l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
       DuschvorratGrenze: "Darunter ist „Warmwasser knapp“ an – z. B. für eine Automation, die den Boost einschaltet oder eine Nachricht schickt.",
+      PreisSchwelle: "Heizt bis zur Temperatur, die bei „Warmwasser mit PV-Überschuss“ unter „Speichern bis“ steht.",
       GlobalKuehlungFreigabe: "Die Wärmepumpe kühlt nur im ECO-Komfort- und im Sommerbetrieb; in den anderen Betriebsarten bleibt die Freigabe ohne Wirkung.",
       HeizenSperren: "Wie die globale Heizfreigabe der Anlage: Solange es an ist, heizt kein Raum elektrisch – wer am Bedienteil die Freigabe einschaltet, dem schaltet die Integration sie binnen einer Minute wieder aus. Beim Ausschalten werden die Freigaben von vorher wiederhergestellt.",
       PVKuehlSchwelle: "Gibt die Kühlung frei, solange so viel PV-Überschuss da ist und es innen (Abluft) wärmer als gewünscht ist; mindestens 20 Minuten, nach 10 Minuten ohne Überschuss wieder aus. Eine von Hand gesetzte Freigabe bleibt unberührt. Braucht den Überschuss-Sensor unter Konfigurieren.",
@@ -54,7 +55,7 @@ const TEXT = {
     failed: "Das hat nicht geklappt ({a}).", yes: "An", no: "Aus", noPlan: "Kein Plan", planned: "Geplant: {a} – {b}", onUntil: "An · bis {d}", nOn: "{a} von {b} an", sections: "Bereiche",
     s: {
       auto: "Automatiken", vent: "Lüftung", schedule: "Wochenprogramm Lüftung", holiday: "Urlaub", water: "Warmwasser", boost: "Warmwasser-Boost",
-      store: "PV-Überschuss und günstiger Strom", legionella: "Legionellenschutz", cooling: "Sommer-Nachtkühlung",
+      solar: "Warmwasser mit PV-Überschuss", price: "Warmwasser mit günstigem Strom", legsun: "Legionellenschutz mit Sonne", legplan: "Legionellenschutz geplant", cooling: "Sommer-Nachtkühlung",
       season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur", coolrel: "Kühlen", pvcool: "Kühlen mit PV-Überschuss", heatlock: "Elektrisches Heizen sperren", HeizenSperren: "Elektrisches Heizen sperren",
       GlobalKuehlungFreigabe: "Kühlung freigegeben", PVKuehlung: "Kühlen mit PV an", PVKuehlSchwelle: "Überschuss ab", PVKuehlWunsch: "Wunschtemperatur innen",
       DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter",
@@ -82,7 +83,7 @@ const TEXT = {
       heatlock: ["Elektrisch heizen gesperrt"],
       coolrel: ["Kühlung", "kühlt jetzt", "freigegeben"],
       pvcool: ["Kühlen mit PV-Überschuss"],
-    }, fnOn: "eingeschaltet", autoGroup: { water: "Warmwasser", climate: "Heizen & Kühlen" }, autoShort: { boost: "Boost", store: "PV/Strom", legionella: "Legionellen", heatlock: "Heizen gesperrt", pvcool: "PV-Kühlen", cooling: "Nachtkühlung", season: "Sommer/Winter" }, autoNone: "keine an", autoMore: "und {n} weitere", autoOn: { heatlock: "Gesperrt – kein Raum heizt elektrisch" }, coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
+    }, fnOn: "eingeschaltet", autoGroup: { water: "Warmwasser", climate: "Heizen & Kühlen" }, autoShort: { boost: "Boost", solar: "PV-Warmwasser", price: "Günstiger Strom", legsun: "Legionellen (Sonne)", legplan: "Legionellen (geplant)", heatlock: "Heizen gesperrt", pvcool: "PV-Kühlen", cooling: "Nachtkühlung", season: "Sommer/Winter" }, autoNone: "keine an", autoMore: "und {n} weitere", autoOn: { heatlock: "Gesperrt – kein Raum heizt elektrisch" }, coolOnly: "kühlt nur im ECO-Komfort / Sommer", fnPlanned: "geplant ab {d}", fnNext: "{s} · nächster Lauf {d}",
     chip: { holiday: "Urlaub", season: "Sommer/Winter", heat: "heizt auf {t}°", boost: "heizt bis {t}°", cool: "kühlt, Stufe {l}", hot: "heizt auf 60°", from: "ab {d}", until: "bis {d}" },
   },
   en: {
@@ -126,6 +127,7 @@ const TEXT = {
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
       DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees ({t} °C, {f} l a minute, full tank). The integration picks the lowest water target that holds them.",
       DuschvorratGrenze: "Below this, “Hot water low” is on – e.g. for an automation that switches on the boost or sends a message.",
+      PreisSchwelle: "Heats up to the temperature set as “Store up to” under “Hot water with solar surplus”.",
       GlobalKuehlungFreigabe: "The heat pump cools only in ECO comfort and summer; in the other modes the release has no effect.",
       HeizenSperren: "Like the unit's global heating release: while on, no room heats electrically - a release switched on at a room panel is switched off again within a minute. Switching it off restores the releases from before.",
       PVKuehlSchwelle: "Releases the cooling while there is this much solar surplus and it is warmer inside (extract air) than wished; at least 20 minutes, off again after 10 minutes without surplus. A release set by hand is left alone. Needs the surplus sensor under Configure.",
@@ -134,7 +136,7 @@ const TEXT = {
     failed: "That did not work ({a}).", yes: "On", no: "Off", noPlan: "No plan", planned: "Planned: {a} – {b}", onUntil: "On · until {d}", nOn: "{a} of {b} on", sections: "Sections",
     s: {
       auto: "Automations", vent: "Ventilation", schedule: "Weekly ventilation schedule", holiday: "Holiday", water: "Hot water", boost: "Hot-water boost",
-      store: "Solar surplus and cheap power", legionella: "Legionella protection", cooling: "Summer night cooling",
+      solar: "Hot water with solar surplus", price: "Hot water with cheap power", legsun: "Legionella protection with solar", legplan: "Legionella protection planned", cooling: "Summer night cooling",
       season: "Summer/winter automatic", night: "Night setback", heating: "Heating", coolrel: "Cooling", pvcool: "Cooling with solar surplus", heatlock: "No electric heating", HeizenSperren: "No electric heating",
       GlobalKuehlungFreigabe: "Cooling released", PVKuehlung: "Cooling with solar on", PVKuehlSchwelle: "Surplus from", PVKuehlWunsch: "Wish temperature inside", shower: "Shower supply instead of temperature",
       DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below",
@@ -162,7 +164,7 @@ const TEXT = {
       heatlock: ["No electric heating"],
       coolrel: ["Cooling", "cooling now", "released"],
       pvcool: ["Cooling with solar surplus"],
-    }, fnOn: "switched on", autoGroup: { water: "Hot water", climate: "Heating & cooling" }, autoShort: { boost: "Boost", store: "Solar/price", legionella: "Legionella", heatlock: "No electric heating", pvcool: "Solar cooling", cooling: "Night cooling", season: "Summer/winter" }, autoNone: "none on", autoMore: "and {n} more", autoOn: { heatlock: "Locked - no room heats electrically" }, coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
+    }, fnOn: "switched on", autoGroup: { water: "Hot water", climate: "Heating & cooling" }, autoShort: { boost: "Boost", solar: "Solar hot water", price: "Cheap power", legsun: "Legionella (solar)", legplan: "Legionella (planned)", heatlock: "No electric heating", pvcool: "Solar cooling", cooling: "Night cooling", season: "Summer/winter" }, autoNone: "none on", autoMore: "and {n} more", autoOn: { heatlock: "Locked - no room heats electrically" }, coolOnly: "cools only in ECO comfort / summer", fnPlanned: "planned from {d}", fnNext: "{s} · next run {d}",
     chip: { holiday: "Holiday", season: "Summer/winter", heat: "heating to {t}°", boost: "heating up to {t}°", cool: "cooling, level {l}", hot: "heating to 60°", from: "from {d}", until: "until {d}" },
   },
 };
@@ -174,13 +176,13 @@ const fill = (s, v) => s.replace(/\{(\w)\}/g, (_, k) => (v[k] ?? ""));
 const FUNCS = [
   { k: "holiday", on: ["Urlaubsmodus"], sec: "holiday", run: st => st.state === "on", tint: "--fresh",
     icon: "M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 7h16v12H4zM9 7v12M15 7v12" },
-  { k: "solar", on: ["SolarWarmwasser"], status: "Energiemanager", sec: "store", run: st => st.attributes.status === "heating_solar", tint: "--supply", temp: "SpeicherTemperatur",
+  { k: "solar", on: ["SolarWarmwasser"], status: "Energiemanager", sec: "solar", run: st => st.attributes.status === "heating_solar", tint: "--supply", temp: "SpeicherTemperatur",
     icon: "M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" },
-  { k: "price", on: ["PreisWarmwasser"], status: "Energiemanager", sec: "store", run: st => st.attributes.status === "heating_price", tint: "--fine", temp: "SpeicherTemperatur",
+  { k: "price", on: ["PreisWarmwasser"], status: "Energiemanager", sec: "price", run: st => st.attributes.status === "heating_price", tint: "--fine", temp: "SpeicherTemperatur",
     icon: "M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.7 7 7.6c0 4.8 10 2.6 10 7.8 0 2-2.2 3.1-5 3.1s-5-1.2-5-3.1" },
   { k: "boostww", on: ["WarmwasserBoost"], status: "BoostStatus", sec: "boost", run: st => st.attributes.status === "heating", tint: "--warm", temp: "BoostGrenze",
     icon: "M13 2L4 14h7l-1 8 9-12h-7z" },
-  { k: "legionella", on: ["LegionellenSonne", "LegionellenGeplant"], status: "LegionellenStatus", sec: "legionella",
+  { k: "legionella", on: ["LegionellenSonne", "LegionellenGeplant"], status: "LegionellenStatus", sec: "legsun",
     run: (st, p) => String((p.st("LegionellenStatus") || {}).state || "").startsWith("heating"), tint: "--water-hot",
     icon: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM10 14a2 2 0 0 0 2 2" },
   { k: "cooling", on: ["Nachtkuehlung"], status: "NachtkuehlungStatus", sec: "cooling", run: st => ["cooling", "heat_protection"].includes(st.attributes.status), tint: "--cold",
@@ -218,8 +220,10 @@ const ICONS = {
   water: "M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z",
   auto: "M13 2L4 14h7l-1 8 9-12h-7z",
   boost: "M13 2L4 14h7l-1 8 9-12h-7z",
-  store: "M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z",
-  legionella: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z",
+  solar: "M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z",
+  price: "M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.7 7 7.6c0 4.8 10 2.6 10 7.8 0 2-2.2 3.1-5 3.1s-5-1.2-5-3.1",
+  legsun: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM12 9v4M10 11h4",
+  legplan: "M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM9 11h6M9 14h4",
   cooling: "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
   season: "M12 3v18M4 7l16 10M20 7L4 17",
   heatlock: "M5 8h14v12H5zM9 8v12M15 8v12M3 3l18 18",
@@ -234,9 +238,10 @@ const SETTINGS = [
   { id: "holiday", color: "#ff9f0a", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
   { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"], ["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
   { id: "boost", auto: true, group: "water", color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
-  { id: "store", auto: true, group: "water", color: "#e5a000", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"], ["num", "SpeicherTemperatur"]] },
-  { id: "legionella", auto: true, group: "water", color: "#c26d7e", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"],
-    ["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
+  { id: "solar", auto: true, group: "water", color: "#e5a000", main: "SolarWarmwasser", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["num", "SpeicherTemperatur"]] },
+  { id: "price", auto: true, group: "water", color: "#1f9d6c", main: "PreisWarmwasser", status: "Energiemanager", rows: [["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"]] },
+  { id: "legsun", auto: true, group: "water", color: "#c26d7e", main: "LegionellenSonne", status: "LegionellenStatus", rows: [["switch", "LegionellenSonne"], ["time", "LegionellenZeit"]] },
+  { id: "legplan", auto: true, group: "water", color: "#a8566a", main: "LegionellenGeplant", status: "LegionellenStatus", rows: [["switch", "LegionellenGeplant"], ["select", "LegionellenTag"], ["time", "LegionellenPlanZeit"]] },
   { id: "heatlock", auto: true, group: "climate", color: "#c2553a", main: "HeizenSperren", rows: [["switch", "HeizenSperren"]] },
   { id: "pvcool", auto: true, group: "climate", color: "#3b9ad6", main: "PVKuehlung", status: "PVKuehlStatus", rows: [["switch", "PVKuehlung"], ["num", "PVKuehlSchwelle"], ["num", "PVKuehlWunsch"]] },
   { id: "cooling", auto: true, group: "climate", color: "#5aa0e6", main: "Nachtkuehlung", status: "NachtkuehlungStatus", rows: [["switch", "Nachtkuehlung"], ["num", "KuehlWunsch"], ["num", "KuehlStufe"]] },
@@ -439,8 +444,8 @@ button { font: inherit; color: inherit; }
 .ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; }
 .ico svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .auto { border-top: 1px solid var(--line); }
-.auto-group { margin: 18px 0 2px; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-2); }
-.auto-group:first-child { margin-top: 2px; }
+.auto-group { margin: 26px 0 4px; font-size: .875rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-2); }
+.auto-group:first-child { margin-top: 10px; }
 .auto-group + .auto { border-top: 0; }
 .auto-head { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; }
 .auto-l { flex: 1; min-width: 0; font-weight: 600; }
@@ -1846,7 +1851,7 @@ class ProxonPanel extends HTMLElement {
       }
       const foot = v.querySelector(`#foot-${sec.id}`), st = sec.status && this.st(sec.status);
       const said = st ? (this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state) : "";
-      if (foot && st) foot.textContent = sec.auto ? said : `${this.t.status}: ${said}`;
+      if (foot && st) foot.textContent = sec.auto && sec.main && !this.swOn(sec.main) ? this.t.no : sec.auto ? said : `${this.t.status}: ${said}`;
       if (foot && !st && sec.main && this.st(sec.main)) foot.textContent = this.swOn(sec.main) ? (this.t.autoOn[sec.id] || this.t.yes) : this.t.no;
       const jump = v.querySelector(`#jump-${sec.id}`);
       if (jump) jump.textContent = st ? said : this.swOn(sec.main) ? this.t.yes : this.t.no;

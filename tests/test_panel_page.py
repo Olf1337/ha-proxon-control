@@ -99,9 +99,10 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert kl["shown"] >= 1 and kl["lit"] == 1 and kl["line"] == "An" and not kl["switch"], kl
         av = r["auto_view"]
         assert av["groups"] == ["Warmwasser", "Heizen & Kühlen"] and av["showerInWater"] and not av["showerInAuto"], av
-        assert av["autos"].index("legionella") < av["autos"].index("heatlock") and "shower" not in av["autos"], av
+        assert av["autos"][:5] == ["boost", "solar", "price", "legsun", "legplan"] and av["autos"].index("legplan") < av["autos"].index("heatlock") and "shower" not in av["autos"], av
         assert av["jump"] and av["opened"] == "true" and av["page"], av
         assert "von" not in av["summary"] and av["summary"], av
+        assert av["tags"] == 0 and av["switches"] == len(av["autos"]), av
         assert r["targets"] and not any(x.endswith(",0°") for x in r["targets"]), r["targets"]
         assert r["diagram_box"] == ("48 28 624 304" if width == "phone" else "0 0 720 360"), r["diagram_box"]
         to = r["tiles_opts"]

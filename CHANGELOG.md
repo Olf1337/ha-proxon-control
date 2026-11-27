@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b6 (beta):** every automation has its own switch and status line (solar / cheap power and legionella with
+solar / planned are separate rows now); cooling with solar surplus can't be switched on without a surplus sensor, like hot
+water with solar surplus; larger group headings.
+
 **New in 1.2.0b5 (beta):** the settings, tidied up: the automations in two groups (hot water / heating & cooling), each with a
 status line; the shower supply moved to "Hot water"; the cooling section lists the cooling automations with their status and
 opens them; the list says which automations are on.
@@ -177,6 +181,15 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b6 (Beta)
+
+* **Automatiken einheitlich:** Jede Automatik hat jetzt einen eigenen Schalter und eine Statuszeile (aus: „Aus“).
+  „PV-Überschuss und günstiger Strom“ ist geteilt in **„Warmwasser mit PV-Überschuss“** und **„Warmwasser mit günstigem
+  Strom“**, der Legionellenschutz in **„mit Sonne“** und **„geplant“** – statt einer „an/aus“-Markierung für zwei Funktionen.
+* **Ohne Überschuss-Sensor gleich:** „Kühlen mit PV-Überschuss“ lässt sich ohne Überschuss-Sensor nicht mehr einschalten und
+  zeigt denselben Hinweis wie „Warmwasser mit PV-Überschuss“ (wo der Sensor gewählt wird).
+* **Überschriften:** „Warmwasser“ und „Heizen & Kühlen“ größer und mit mehr Abstand zum Rand.
 
 ### Neu in Version 1.2.0b5 (Beta)
 

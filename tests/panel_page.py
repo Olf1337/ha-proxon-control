@@ -318,9 +318,10 @@ def check(page, data: dict) -> dict:
       const autos = [...{root}.querySelectorAll('#page-auto .auto-head')].map(h => h.id.slice(3));
       const showerInWater = !!q('#page-water #set-DuschvorratModus'), showerInAuto = !!q('#page-auto #set-DuschvorratModus');
       const summary = {root}.getElementById('navsum-auto').textContent;
+      const tags = [...{root}.querySelectorAll('#page-auto .auto-head .tag')].length, switches = [...{root}.querySelectorAll('#page-auto .auto-head .switch')].length;
       p._showSection('coolrel', false); const jump = q('#page-coolrel .jump[data-open="pvcool"]'); if (jump) jump.click();
       const opened = q('#ah-pvcool') ? q('#ah-pvcool').getAttribute('aria-expanded') : null, page = !q('#page-auto').hidden;
-      return {{ groups, autos, showerInWater, showerInAuto, summary, jump: !!jump, opened, page }}; }}""")
+      return {{ groups, autos, showerInWater, showerInAuto, summary, jump: !!jump, opened, page, tags, switches }}; }}""")
     js(f"() => {root}.getElementById('tab-home').click()")
     page.wait_for_timeout(200)
 

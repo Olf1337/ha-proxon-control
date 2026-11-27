@@ -957,6 +957,9 @@
     },
     "room_base_missing": {
       "message": "Der Grundwert dieses Raums fehlt in der letzten Antwort der Anlage, deshalb lässt sich sein Sollwert gerade nicht setzen. Bitte gleich noch einmal versuchen."
+    },
+    "pv_cooling_needs_sensor": {
+      "message": "Für „Kühlen mit PV-Überschuss“ fehlt der Sensor für den Überschuss (Einspeisung). Wähle ihn unter Einstellungen → Geräte & Dienste → Proxon Control → Konfigurieren, dann lässt sich die Funktion einschalten."
     }
   },
   "options": {
