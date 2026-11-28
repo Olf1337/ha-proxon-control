@@ -600,6 +600,12 @@
       "shower_target": {
         "name": "Duschvorrat (Soll)"
       },
+      "shower_temperature": {
+        "name": "Duschtemperatur"
+      },
+      "shower_flow": {
+        "name": "Durchfluss der Dusche"
+      },
       "shower_low_limit": {
         "name": "Duschvorrat: Hinweis unter"
       },

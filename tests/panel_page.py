@@ -253,16 +253,19 @@ def check(page, data: dict) -> dict:
         font: [...document.querySelectorAll('style')].some(x => x.textContent.includes('/proxon_control_static/fonts/antonio-latin.woff2')),
         overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }};
     }}""")
-    # the tile wall's options: all rooms in a grid, large tiles, a blue accent; the shower counted as set under Configure
+    # the tile wall's options: all rooms in a grid, large tiles, a blue accent; the shower temperature from its entity
     r["tiles_opts"] = js(f"""() => {{
-      window.panel._config.tiles = {{ layout: 'grid', size: 'large', accent: 'blue' }}; window.panel._config.shower = {{ temp: 38, flow: 6 }};
-      window.panel.hass = {{ ...window.hassFake }};
+      window.panel._config.tiles = {{ layout: 'grid', size: 'large', accent: 'blue' }};
+      const h = window.hassFake, te = window.panel._config.entities.DuschTemperatur;  // the shower temperature, as set on the page
+      window.showerWas = h.states[te]; h.states = {{ ...h.states, [te]: {{ ...h.states[te], state: '38' }} }};
+      window.panel.hass = {{ ...h }};
       const rooms = {root}.querySelector('.rooms'), cs = getComputedStyle(window.panel);
       return {{ display: getComputedStyle(rooms).display, width: cs.getPropertyValue('--tile-w').trim(), accent: cs.getPropertyValue('--accent').trim(),
         shower: {root}.getElementById('w-shower-wrap').textContent,
         overflow: Math.max(document.documentElement.scrollWidth, window.panel.scrollWidth) - innerWidth }};
     }}""")
-    js("() => { window.panel._config.tiles = null; window.panel._config.shower = null; window.panel._config.look = 'glass'; window.panel.hass = { ...window.hassFake }; }")
+    js("""() => { const h = window.hassFake, te = window.panel._config.entities.DuschTemperatur; h.states = { ...h.states, [te]: window.showerWas };
+      window.panel._config.tiles = null; window.panel._config.look = 'glass'; window.panel.hass = { ...h }; }""")
     page.wait_for_timeout(200)
 
     # settings: every section; the list stays in its column, nothing runs out sideways
@@ -337,6 +340,7 @@ def check(page, data: dict) -> dict:
     # the settings: automations in two groups, the shower supply in "Hot water", the cooling section jumps to its automations
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(300)
+    r["shower_rows"] = js(f"() => ['DuschTemperatur', 'DuschDurchfluss'].map(k => !!{root}.querySelector('#sec-water #out-' + k) || !!{root}.getElementById('out-' + k))")
     r["auto_view"] = js(f"""() => {{ const p = window.panel, q = s => {root}.querySelector(s);
       const groups = [...{root}.querySelectorAll('#page-auto .auto-group')].map(h => h.textContent);
       const autos = [...{root}.querySelectorAll('#page-auto .auto-head')].map(h => h.id.slice(3));

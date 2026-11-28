@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberEntityDescription, NumberMode, RestoreNumber
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature, UnitOfTime
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature, UnitOfTime, UnitOfVolumeFlowRate
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -75,7 +75,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ProxonConfigEntry, async
     if comfort.pvcool.supported:
         entities += [ProxonEnergyNumber(coordinator, d, comfort.pvcool) for d in PV_COOL_NUMBERS]
     if has_shower_target(data):
-        entities += [ProxonShowerTargetNumber(coordinator), ProxonShowerLowLimit(coordinator)]
+        entities += [ProxonShowerTargetNumber(coordinator), ProxonShowerLowLimit(coordinator),
+                     ProxonShowerHabit(coordinator, 0), ProxonShowerHabit(coordinator, 1)]
     entities.append(ProxonHolidayLeadNumber(coordinator))
     async_add_entities(entities)
 
@@ -287,3 +288,31 @@ class ProxonShowerLowLimit(ProxonEntity, RestoreNumber):
     async def async_set_native_value(self, value: float) -> None:
         self.coordinator.shower_low_limit = float(value)
         self.coordinator.async_update_listeners()  # "hot water low" follows at once
+
+
+class ProxonShowerHabit(ProxonEntity, NumberEntity):
+    """How this household showers: the temperature at the shower head (0) or the flow of the shower head (1). The shower
+    supply, its target and "hot water low" count with it; kept in the integration's options (also set under Configure)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_step = 0.5
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, coordinator, which: int) -> None:
+        super().__init__(coordinator, ("DuschTemperatur", "DuschDurchfluss")[which], ("shower_temperature", "shower_flow")[which])
+        self._which = which
+        self._attr_native_min_value, self._attr_native_max_value = ((37, 42), (5, 12))[which]
+        self._attr_native_unit_of_measurement = (UnitOfTemperature.CELSIUS, UnitOfVolumeFlowRate.LITERS_PER_MINUTE)[which]
+        if which == 0:
+            self._attr_device_class = NumberDeviceClass.TEMPERATURE
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.shower[self._which]
+
+    async def async_set_native_value(self, value: float) -> None:
+        self.coordinator.set_shower(**{("temp", "flow")[self._which]: value})

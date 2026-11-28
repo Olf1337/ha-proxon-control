@@ -161,3 +161,23 @@ async def test_shower_supply_says_its_hot_litres(hass: HomeAssistant, device) ->
     data = entry.runtime_data.data
     st = hass.states.get(eid(hass, "sensor", "WarmwasserDuschminuten"))
     assert st.attributes["hot_liters"] == R.hot_liters(data, entry.runtime_data.shower[0]) is not None
+
+
+async def test_shower_temperature_and_flow_as_entities(hass: HomeAssistant, device) -> None:
+    """How the household showers can be set on the page too (number entities), not only under Configure."""
+    entry = await setup(hass)
+    coord = entry.runtime_data
+    temp, flow = eid(hass, "number", "DuschTemperatur"), eid(hass, "number", "DuschDurchfluss")
+    assert float(hass.states.get(temp).state) == 40.0 and float(hass.states.get(flow).state) == 8.0
+    await call(hass, "number", "set_value", entity_id=temp, value=42)
+    await call(hass, "number", "set_value", entity_id=flow, value=6)
+    await hass.async_block_till_done()
+    assert entry.options["shower_temperature"] == 42.0 and entry.options["shower_flow"] == 6.0
+    assert coord.shower == (42.0, 6.0) and entry.state.value == "loaded"  # no reload
+    minutes = float(hass.states.get(eid(hass, "sensor", "WarmwasserDuschminuten")).state)
+    assert minutes == R.shower_minutes(coord.data, 42.0, 6.0)
+    st = hass.states.get(eid(hass, "number", "DuschvorratSoll"))  # the target's range follows at once
+    assert (st.attributes["min"], st.attributes["max"]) == R.shower_target_range(42.0, 6.0)
+    await call(hass, "number", "set_value", entity_id=temp, value=40)
+    await call(hass, "number", "set_value", entity_id=flow, value=8)
+    assert "shower_temperature" not in entry.options and "shower_flow" not in entry.options  # the usual: nothing kept

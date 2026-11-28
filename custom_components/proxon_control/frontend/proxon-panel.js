@@ -46,6 +46,8 @@ const TEXT = {
       LegionellenSonne: "Heizt einmal pro Woche auf 60 °C, bevorzugt mit Solarüberschuss.",
       DuschvorratSoll: "Auf „Zuhause“ stellen − und + dann Minuten Duschen statt Grad ein ({t} °C, {f} l pro Minute, voller Speicher). Die Integration wählt dafür die niedrigste Solltemperatur, die reicht.",
       DuschvorratGrenze: "Darunter ist „Warmwasser knapp“ an – z. B. für eine Automation, die den Boost einschaltet oder eine Nachricht schickt.",
+      DuschTemperatur: "So warm, wie hier geduscht wird. Duschvorrat, Liter und „Warmwasser knapp“ rechnen damit.",
+      DuschDurchfluss: "Wie viel Wasser der Duschkopf gibt – ein Sparduschkopf etwa 6 l/min, ein normaler 8, eine Regendusche 10–12.",
       PreisSchwelle: "Heizt bis zur Temperatur, die bei „Warmwasser mit PV-Überschuss“ unter „Speichern bis“ steht.",
       GlobalKuehlungFreigabe: "Die Wärmepumpe kühlt nur im ECO-Komfort- und im Sommerbetrieb; in den anderen Betriebsarten bleibt die Freigabe ohne Wirkung.",
       HeizenSperren: "Wie die globale Heizfreigabe der Anlage: Solange es an ist, heizt kein Raum elektrisch – wer am Bedienteil die Freigabe einschaltet, dem schaltet die Integration sie binnen einer Minute wieder aus. Beim Ausschalten werden die Freigaben von vorher wiederhergestellt.",
@@ -58,7 +60,7 @@ const TEXT = {
       solar: "Warmwasser mit PV-Überschuss", price: "Warmwasser mit günstigem Strom", legsun: "Legionellenschutz mit Sonne", legplan: "Legionellenschutz geplant", cooling: "Sommer-Nachtkühlung",
       season: "Sommer/Winter automatisch", night: "Nachtabsenkung", heating: "Heizen", shower: "Duschvorrat statt Temperatur", coolrel: "Kühlen", pvcool: "Kühlen mit PV-Überschuss", heatlock: "Elektrisches Heizen sperren", HeizenSperren: "Elektrisches Heizen sperren",
       GlobalKuehlungFreigabe: "Kühlung freigegeben", PVKuehlung: "Kühlen mit PV an", PVKuehlSchwelle: "Überschuss ab", PVKuehlWunsch: "Wunschtemperatur innen",
-      DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter",
+      DuschvorratModus: "Warmwasser als Duschvorrat einstellen", DuschvorratSoll: "Duschvorrat (Soll)", DuschvorratGrenze: "Hinweis „Warmwasser knapp“ unter", DuschTemperatur: "Duschtemperatur", DuschDurchfluss: "Durchfluss der Dusche",
       IntensivlueftungsDauer: "Dauer der Intensivlüftung", GrenzwertCO2: "Grenzwert CO₂", GrenzwertFeuchte: "Grenzwert Feuchte",
       ZeitprogrammAktiv: "Wochenprogramm an", Urlaubsmodus: "Urlaubsmodus", UrlaubAb: "Abreise", UrlaubBis: "Rückkehr",
       UrlaubVorlauf: "Vor der Rückkehr aufwärmen", UrlaubsplanLoeschen: "Urlaubsplan löschen", SollWassertemperatur: "Solltemperatur",
@@ -127,6 +129,8 @@ const TEXT = {
       LegionellenSonne: "Heats to 60 °C once a week, preferably with solar surplus.",
       DuschvorratSoll: "On “Home”, − and + then set minutes of showering instead of degrees ({t} °C, {f} l a minute, full tank). The integration picks the lowest water target that holds them.",
       DuschvorratGrenze: "Below this, “Hot water low” is on – e.g. for an automation that switches on the boost or sends a message.",
+      DuschTemperatur: "As warm as showers are taken here. Shower supply, litres and “Hot water low” count with it.",
+      DuschDurchfluss: "How much water the shower head gives - a saving head about 6 l/min, an ordinary one 8, a rain shower 10–12.",
       PreisSchwelle: "Heats up to the temperature set as “Store up to” under “Hot water with solar surplus”.",
       GlobalKuehlungFreigabe: "The heat pump cools only in ECO comfort and summer; in the other modes the release has no effect.",
       HeizenSperren: "Like the unit's global heating release: while on, no room heats electrically - a release switched on at a room panel is switched off again within a minute. Switching it off restores the releases from before.",
@@ -139,7 +143,7 @@ const TEXT = {
       solar: "Hot water with solar surplus", price: "Hot water with cheap power", legsun: "Legionella protection with solar", legplan: "Legionella protection planned", cooling: "Summer night cooling",
       season: "Summer/winter automatic", night: "Night setback", heating: "Heating", coolrel: "Cooling", pvcool: "Cooling with solar surplus", heatlock: "No electric heating", HeizenSperren: "No electric heating",
       GlobalKuehlungFreigabe: "Cooling released", PVKuehlung: "Cooling with solar on", PVKuehlSchwelle: "Surplus from", PVKuehlWunsch: "Wish temperature inside", shower: "Shower supply instead of temperature",
-      DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below",
+      DuschvorratModus: "Set hot water as shower supply", DuschvorratSoll: "Shower supply target", DuschvorratGrenze: "“Hot water low” below", DuschTemperatur: "Shower temperature", DuschDurchfluss: "Shower flow",
       IntensivlueftungsDauer: "Boost duration", GrenzwertCO2: "CO₂ limit", GrenzwertFeuchte: "Humidity limit",
       ZeitprogrammAktiv: "Weekly schedule on", Urlaubsmodus: "Holiday mode", UrlaubAb: "Departure", UrlaubBis: "Return",
       UrlaubVorlauf: "Warm up before the return", UrlaubsplanLoeschen: "Clear holiday plan", SollWassertemperatur: "Target temperature",
@@ -236,7 +240,7 @@ const SETTINGS = [
   { id: "vent", color: "#3b8fd9", rows: [["num", "IntensivlueftungsDauer"], ["num", "GrenzwertCO2"], ["num", "GrenzwertFeuchte"]] },
   { id: "schedule", color: "#5856d6", rows: [["switch", "ZeitprogrammAktiv"], ["days"]] },
   { id: "holiday", color: "#ff9f0a", rows: [["switch", "Urlaubsmodus"], ["datetime", "UrlaubAb"], ["datetime", "UrlaubBis"], ["num", "UrlaubVorlauf"], ["button", "UrlaubsplanLoeschen"]] },
-  { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"], ["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"]] },
+  { id: "water", color: "#f07a3a", rows: [["num", "SollWassertemperatur"], ["switch", "T300Betriebsart"], ["switch", "E-Heizstab"], ["num", "Soll-E-Heizstab-Temperatur"], ["switch", "Legionellenfunktion"], ["switch", "DuschvorratModus"], ["num", "DuschvorratSoll"], ["num", "DuschvorratGrenze"], ["num", "DuschTemperatur"], ["num", "DuschDurchfluss"]] },
   { id: "boost", auto: true, group: "water", color: "#e9772f", main: "WarmwasserBoost", status: "BoostStatus", rows: [["switch", "WarmwasserBoost"], ["num", "BoostGrenze"]] },
   { id: "solar", auto: true, group: "water", color: "#e5a000", main: "SolarWarmwasser", status: "Energiemanager", rows: [["switch", "SolarWarmwasser"], ["num", "SolarSchwelle"], ["num", "SpeicherTemperatur"]] },
   { id: "price", auto: true, group: "water", color: "#1f9d6c", main: "PreisWarmwasser", status: "Energiemanager", rows: [["switch", "PreisWarmwasser"], ["num", "PreisSchwelle"]] },
@@ -1314,8 +1318,8 @@ class ProxonPanel extends HTMLElement {
   }
 
   _unit(key, d = 0) {  // "46 °C", "1.500 W", "30 min": the number entity's own unit
-    const u = ((this.st(key) || {}).attributes || {}).unit_of_measurement || "";
-    return v => `${this.fmt(v, d)}${u ? (u === "°C" || u === "%" ? (u === "%" ? " %" : "°") : ` ${u}`) : ""}`;
+    const u = (((this.st(key) || {}).attributes || {}).unit_of_measurement || "").replace("L/min", "l/min");
+    return v => `${this.fmt(v, Number.isInteger(v) ? 0 : d)}${u ? (u === "°C" || u === "%" ? (u === "%" ? " %" : "°") : ` ${u}`) : ""}`;  // 40° and 8 l/min, 40,5°
   }
 
   // ---------- energy: stacked columns per day (week, month) or month (year), from Home Assistant's statistics; today and
@@ -1778,7 +1782,10 @@ class ProxonPanel extends HTMLElement {
     return "";
   }
   // how a shower is counted here (options): for the texts next to the shower supply
-  _shower() { const s = (this._config || {}).shower || {}, f = v => this.fmt(v, Number.isInteger(v) ? 0 : 1); return { t: f(s.temp ?? 40), f: f(s.flow ?? 8) }; }
+  _shower() {  // how this household showers: the live number entities, else the page's configuration (older versions)
+    const s = (this._config || {}).shower || {}, f = v => this.fmt(v, Number.isInteger(v) ? 0 : 1);
+    return { t: f(this.num("DuschTemperatur") ?? s.temp ?? 40), f: f(this.num("DuschDurchfluss") ?? s.flow ?? 8) };
+  }
   _showerMode() { return this.swOn("DuschvorratModus") && !!this.st("DuschvorratSoll"); }
   _autoOn({ main, rows }) { return main ? this.swOn(main) : rows.some(([kind, key]) => kind === "switch" && this.swOn(key)); }
   _isLong(key) { const a = (this.st(key) || {}).attributes || {}; return (a.max - a.min) / (Number(a.step) || 1) > 200; }

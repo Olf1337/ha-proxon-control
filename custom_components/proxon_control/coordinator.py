@@ -84,6 +84,25 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def async_load_runtime(self) -> None:
         self.runtime.load(await self._runtime_store.async_load() or {})
 
+    def set_shower(self, temp: float | None = None, flow: float | None = None) -> None:
+        """Change how this household showers (from its number entities): kept in the options (as the options dialog keeps
+        it, only when it differs from the usual), and the shower supply recomputed at once - no reload needed."""
+        self.shower = (float(temp) if temp is not None else self.shower[0], float(flow) if flow is not None else self.shower[1])
+        entry = self.config_entry
+        options = dict(entry.options) if entry else {}
+        for key, value, usual in ((CONF_SHOWER_TEMP, self.shower[0], DEFAULT_SHOWER_TEMP), (CONF_SHOWER_FLOW, self.shower[1], DEFAULT_SHOWER_FLOW)):
+            if value == usual:
+                options.pop(key, None)
+            else:
+                options[key] = value
+        if entry and options != dict(entry.options):
+            self.hass.config_entries.async_update_entry(entry, options=options)
+        data = dict(self.data or {})
+        if (minutes := shower_minutes(data, *self.shower)) is not None:
+            data["WarmwasserDuschminuten"] = minutes
+            data["WarmwasserHeissLiter"] = hot_liters(data, self.shower[0])
+        self.async_set_updated_data(data)
+
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data: dict[str, Any] = await self.hass.async_add_executor_job(self.api.read)

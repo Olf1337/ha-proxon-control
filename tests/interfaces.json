@@ -26,6 +26,8 @@
   "datetime.UrlaubBis",
   "fan.Lueftung",
   "number.BoostGrenze",
+  "number.DuschDurchfluss",
+  "number.DuschTemperatur",
   "number.DuschvorratGrenze",
   "number.DuschvorratSoll",
   "number.GrenzwertCO2",

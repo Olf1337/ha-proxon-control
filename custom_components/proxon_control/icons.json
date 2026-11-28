@@ -115,6 +115,12 @@
       "shower_target": {
         "default": "mdi:shower-head"
       },
+      "shower_temperature": {
+        "default": "mdi:shower-head"
+      },
+      "shower_flow": {
+        "default": "mdi:water-pump"
+      },
       "shower_low_limit": {
         "default": "mdi:water-alert-outline"
       },

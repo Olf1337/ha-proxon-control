@@ -98,6 +98,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert r["relay"] == ["Wärmepumpe läuft", "Heizstab heizt", None], r["relay"]
         hl = r["hot_liters"]
         assert hl[0][0] == "≈ 75 l" and hl[0][1] == "warm genug zum Duschen" and hl[1][1] == "warmes Wasser im Speicher", hl
+        assert r["shower_rows"] == [True, True], r["shower_rows"]
         kl = r["key_lock"]
         assert kl["shown"] >= 1 and kl["lit"] == 1 and kl["line"] == "An" and not kl["switch"], kl
         av = r["auto_view"]

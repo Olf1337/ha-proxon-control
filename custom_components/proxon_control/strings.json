@@ -600,6 +600,12 @@
       "shower_target": {
         "name": "Shower supply target"
       },
+      "shower_temperature": {
+        "name": "Shower temperature"
+      },
+      "shower_flow": {
+        "name": "Shower flow"
+      },
       "shower_low_limit": {
         "name": "Shower supply: warn below"
       },
