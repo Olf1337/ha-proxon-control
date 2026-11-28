@@ -341,6 +341,14 @@ def check(page, data: dict) -> dict:
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(300)
     r["shower_rows"] = js(f"() => ['DuschTemperatur', 'DuschDurchfluss'].map(k => !!{root}.querySelector('#sec-water #out-' + k) || !!{root}.getElementById('out-' + k))")
+    # the shower supply's hint and range follow a changed shower at once (before: as built)
+    r["shower_follow"] = js(f"""() => {{ const h = window.hassFake, e = window.panel._config.entities, te = e.DuschTemperatur, so = e.DuschvorratSoll;
+      const was = [h.states[te], h.states[so]];
+      h.states = {{ ...h.states, [te]: {{ ...h.states[te], state: '42' }}, [so]: {{ ...h.states[so], attributes: {{ ...h.states[so].attributes, min: 30, max: 50 }} }} }};
+      window.panel.hass = {{ ...h }};
+      const out = [{root}.getElementById('hint-DuschvorratSoll').textContent, {root}.getElementById('rng-DuschvorratSoll').textContent];
+      h.states = {{ ...h.states, [te]: was[0], [so]: was[1] }}; window.panel.hass = {{ ...h }};
+      return out; }}""")
     r["auto_view"] = js(f"""() => {{ const p = window.panel, q = s => {root}.querySelector(s);
       const groups = [...{root}.querySelectorAll('#page-auto .auto-group')].map(h => h.textContent);
       const autos = [...{root}.querySelectorAll('#page-auto .auto-head')].map(h => h.id.slice(3));

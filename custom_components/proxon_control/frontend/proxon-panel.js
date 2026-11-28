@@ -1645,7 +1645,7 @@ class ProxonPanel extends HTMLElement {
         return `<div class="row"><span class="row-label">${this._label(key)}</span><div class="seg" id="sel-${key}">${opts.map((o, i) => `<button data-o="${esc(o)}">${esc(label(o, i))}</button>`).join("")}</div></div>`;
       }
       if (kind === "num") return `<div class="row stepped"><span class="row-label">${this._label(key)}${NOW_OF[key] ? `<small class="now-val num" id="nowv-${key}" hidden></small>` : ""}</span>
-        <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div><small class="row-sub">${hint ? `${hint}<br>` : ""}<span class="num" id="rng-${key}"></span></small></div>`;
+        <div class="stepper"><button id="dn-${key}" aria-label="−">−</button><output class="num" id="out-${key}"></output><button id="up-${key}" aria-label="+">+</button></div><small class="row-sub">${hint ? `<span id="hint-${key}">${hint}</span><br>` : ""}<span class="num" id="rng-${key}"></span></small></div>`;
       if (kind === "time") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="time" step="60" id="time-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "datetime") return `<div class="row"><span class="row-label">${this._label(key)}</span><input class="tin num" type="datetime-local" id="dt-${key}" aria-label="${this._label(key)}"></div>`;
       if (kind === "button") return `<button class="textbtn warn" id="btn-${key}">${this._label(key)}</button>`;
@@ -1848,6 +1848,12 @@ class ProxonPanel extends HTMLElement {
       for (const [kind, key] of sec.rows) {
         const st = this.st(key);
         if (kind === "switch" && st) this._swDraw(`set-${key}`, key);
+        if (kind === "num" && st) {  // range and hint follow the entity (the shower supply's range moves with the shower)
+          const rng = v.querySelector(`#rng-${CSS.escape(key)}`), hint = v.querySelector(`#hint-${CSS.escape(key)}`), a = st.attributes;
+          const fmt = this._unit(key, Number(a.step) < 1 ? 1 : 0);
+          if (rng) rng.textContent = fill(this.t.span, { a: fmt(Number(a.min)), b: fmt(Number(a.max)) });
+          if (hint) hint.textContent = fill(this.t.hint[key], this._shower());
+        }
         if (kind === "select") v.querySelectorAll(`#sel-${CSS.escape(key)} button`).forEach(b => b.setAttribute("aria-pressed", !!st && b.dataset.o === st.state));
         if (kind === "time") {
           const i = v.querySelector(`#time-${CSS.escape(key)}`);

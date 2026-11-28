@@ -99,6 +99,8 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         hl = r["hot_liters"]
         assert hl[0][0] == "≈ 75 l" and hl[0][1] == "warm genug zum Duschen" and hl[1][1] == "warmes Wasser im Speicher", hl
         assert r["shower_rows"] == [True, True], r["shower_rows"]
+        sf = r["shower_follow"]
+        assert "42 °C" in sf[0] and sf[1] == "30 min bis 50 min", sf
         kl = r["key_lock"]
         assert kl["shown"] >= 1 and kl["lit"] == 1 and kl["line"] == "An" and not kl["switch"], kl
         av = r["auto_view"]

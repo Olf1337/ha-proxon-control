@@ -10,7 +10,7 @@ from .test_integration import call, eid, setup
 
 
 def test_shower_minutes_of_a_full_tank() -> None:
-    assert R.shower_minutes_at(37) == 0.0  # too cold for the shower
+    assert R.shower_minutes_at(35) == 0.0  # too cold for the shower (4 K below it)
     assert R.shower_minutes_at(40) == 35.0  # as warm as the shower: 300 l as they are
     assert R.shower_minutes_at(41) == 35.0
     assert R.shower_minutes_at(55) == 55.0
@@ -148,8 +148,13 @@ def test_a_tank_still_charging_has_water_at_the_top() -> None:
     # 1.2.2: a mixed tank just below the shower is not empty (was 0 l / 0 min); 3 K below it is
     mixed = {"WarmwasserIstTemperatur": 41.7, "WarmwasserUntenTemperatur": 41.6, "SollWassertemperatur": 45.0}
     assert R.hot_liters(mixed, 42) == 300.0 and R.shower_minutes(mixed, 42, 8) == 35.0
-    cold = {"WarmwasserIstTemperatur": 39.0, "WarmwasserUntenTemperatur": 38.9, "SollWassertemperatur": 45.0}
+    cold = {"WarmwasserIstTemperatur": 37.9, "WarmwasserUntenTemperatur": 37.8, "SollWassertemperatur": 45.0}
     assert R.hot_liters(cold, 42) == 0.0 and R.shower_minutes(cold, 42, 8) == 0.0
+    # in between it fades out instead of jumping from 300 l to nothing
+    fading = {"WarmwasserIstTemperatur": 39.0, "WarmwasserUntenTemperatur": 39.0, "SollWassertemperatur": 45.0}
+    assert R.hot_liters(fading, 42) == 150.0 and R.shower_minutes(fading, 42, 8) == 15.0
+    steps = [R.hot_liters({**fading, "WarmwasserIstTemperatur": x / 10, "WarmwasserUntenTemperatur": x / 10}, 42) for x in range(370, 430)]
+    assert steps == sorted(steps) and max(b - a for a, b in zip(steps, steps[1:])) <= 20
     # a tank at one temperature throughout: the same as before
     assert R.hot_liters({"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 50.0}) == 300.0
     assert R.shower_minutes_at(41) == 35.0
@@ -181,3 +186,8 @@ async def test_shower_temperature_and_flow_as_entities(hass: HomeAssistant, devi
     await call(hass, "number", "set_value", entity_id=temp, value=40)
     await call(hass, "number", "set_value", entity_id=flow, value=8)
     assert "shower_temperature" not in entry.options and "shower_flow" not in entry.options  # the usual: nothing kept
+    # before any reading: the setting is kept, but no reading is made up
+    data, coord.data = coord.data, None
+    coord.set_shower(temp=41)
+    assert coord.data is None and coord.shower == (41.0, 8.0) and entry.options["shower_temperature"] == 41.0
+    coord.data = data

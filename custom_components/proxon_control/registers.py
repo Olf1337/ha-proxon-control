@@ -475,23 +475,29 @@ def tank_layers(values: dict) -> list[tuple[float, float]] | None:
     return [(TANK_LITERS / 4, top), (TANK_LITERS / 4, float(mid)), (TANK_LITERS / 2, float(bottom))]
 
 
-SHOWER_TOLERANCE = 2.0  # K: water this little below the shower still counts (a shower slightly cooler, not a cold one)
+SHOWER_TOLERANCE = 2.0  # K: water this little below the shower still counts in full (a slightly cooler shower, not a cold
+# one); the next SHOWER_TOLERANCE below that it fades out, so the supply never jumps from a full tank to nothing
+
+
+def _warm_enough(temp: float, shower: float) -> float:
+    """How much of a layer counts as shower water (0-1): all of it down to SHOWER_TOLERANCE below the shower, then less."""
+    return min(1.0, max(0.0, (temp - (shower - 2 * SHOWER_TOLERANCE)) / SHOWER_TOLERANCE))
 
 
 def _usable(volume: float, temp: float, shower: float) -> float:
     """Litres of shower water a layer gives: warmer water mixed down with cold, water just below the shower as it is."""
     if temp > shower:
         return volume * (temp - COLD_WATER) / (shower - COLD_WATER)
-    return volume if temp >= shower - SHOWER_TOLERANCE else 0.0
+    return volume * _warm_enough(temp, shower)
 
 
 def hot_liters(values: dict, shower: float = SHOWER_TEMP) -> float | None:
-    """How many litres of the tank are warm enough to shower with (at most SHOWER_TOLERANCE below the shower), in steps of
-    5 litres (an estimate, see tank_layers)."""
+    """How many litres of the tank are warm enough to shower with (see SHOWER_TOLERANCE), in steps of 5 litres (an
+    estimate, see tank_layers)."""
     layers = tank_layers(values)
     if layers is None:
         return None
-    return float(int(sum(v for v, t in layers if t >= shower - SHOWER_TOLERANCE)) // 5 * 5)
+    return float(int(sum(v * _warm_enough(t, shower) for v, t in layers)) // 5 * 5)
 
 
 def shower_minutes(values: dict, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float | None:

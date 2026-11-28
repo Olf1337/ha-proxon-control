@@ -7,7 +7,7 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 **New in 1.2.2:** a tank mixed just below the shower temperature (e.g. 41.7 °C for a shower at 42 °C) no longer shows
 "0 l / 0 min": water up to 2 K below the shower counts as it is (a slightly cooler shower); the card says "warm enough to
-shower". Shower temperature and flow are now also set on the page (Settings → Hot water) and as number entities, not
+shower" (in the 2 K below that it fades out instead of jumping). Shower temperature and flow are now also set on the page (Settings → Hot water) and as number entities, not
 only under Configure.
 
 **New in 1.2.1:** the hot-water card no longer contradicts itself ("250 l warm water" next to "0 min showering"): the
@@ -207,10 +207,12 @@ nobody home).
 * **Kein „0 l / 0 Min.“ mehr bei fast warmem Speicher:** Ist der Speicher gleichmäßig knapp unter der Duschtemperatur
   (z. B. 41,7 °C bei Duschen mit 42 °C, während die Wärmepumpe lädt), zeigte 1.2.1 „≈ 0 l“ und „0 Min.“. Jetzt zählt
   Wasser bis 2 Grad unter der Duschtemperatur so, wie es ist – die Dusche ist dann etwas kühler, aber nicht kalt. Im
-  Beispiel sind es „≈ 300 l warm genug zum Duschen“ und 35 Minuten. Erst darunter fällt es weg.
+  Beispiel sind es „≈ 300 l warm genug zum Duschen“ und 35 Minuten. In den 2 Grad darunter zählt es allmählich weniger,
+  statt von „voll“ auf „nichts“ zu springen.
 * **Duschtemperatur und Durchfluss auf der Seite:** Beide lassen sich jetzt unter *Einstellungen → Warmwasser* mit – und
   + einstellen (und als Entitäten „Duschtemperatur“ und „Durchfluss der Dusche“), nicht mehr nur unter *Konfigurieren*.
   Duschvorrat, Liter und „Warmwasser knapp“ rechnen sofort damit, ohne Neuladen; *Konfigurieren* zeigt denselben Wert.
+  Auch Hinweis und Bereich beim „Duschvorrat (Soll)“ passen sich gleich an (vorher erst nach Neuladen der Seite).
 
 ### Neu in Version 1.2.1
 

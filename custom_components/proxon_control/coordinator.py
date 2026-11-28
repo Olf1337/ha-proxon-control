@@ -97,11 +97,15 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 options[key] = value
         if entry and options != dict(entry.options):
             self.hass.config_entries.async_update_entry(entry, options=options)
-        data = dict(self.data or {})
+        if self.data is None:  # no reading yet (or the first failed): nothing to recompute, don't pretend a reading
+            self.async_update_listeners()
+            return
+        data = dict(self.data)
         if (minutes := shower_minutes(data, *self.shower)) is not None:
             data["WarmwasserDuschminuten"] = minutes
             data["WarmwasserHeissLiter"] = hot_liters(data, self.shower[0])
-        self.async_set_updated_data(data)
+        self.data = data  # not async_set_updated_data: that would also move the next reading
+        self.async_update_listeners()
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
