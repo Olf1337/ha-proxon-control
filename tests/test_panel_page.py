@@ -96,6 +96,10 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert r["water_gap"] < 40, f"{width}: empty strip below the hot-water target ({r['water_gap']} px)"
         assert r["cool_chip"] and "freigegeben" in r["cool_chip"][0], r["cool_chip"]
         assert r["relay"] == ["Wärmepumpe läuft", "Heizstab heizt", None], r["relay"]
+        rc = r["relay_class"]
+        assert "tap" in rc[0] and "heater" not in rc[0] and "heater" in rc[1], rc
+        tap = r["relay_tap"]
+        assert tap[0].startswith("heute ") and (" h" in tap[0] or " min" in tap[0]) and not tap[1] and tap[2] == "Wärmepumpe läuft", tap
         hl = r["hot_liters"]
         assert hl[0][0] == "≈ 75 l" and hl[0][1] == "warm genug zum Duschen" and hl[1][1] == "warmes Wasser im Speicher", hl
         assert r["shower_rows"] == [True, True], r["shower_rows"]

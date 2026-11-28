@@ -70,6 +70,11 @@ async def test_create_dashboard_action(hass: HomeAssistant, device) -> None:
     assert all(v["theme"] == "Proxon Bento" for v in views)  # the bento look (normal look until the theme is installed)
     # no pictures any more (removed in 1.0): no picture cards, no tab for the drawn house
     assert not [c for v in views for c in cards(v) if "image_entity" in c]
+    # ---- hot water: what heats right now, and how the household showers (1.2.2) ----
+    water_ids = {c.get("entity") for c in cards(water)}
+    want = {eid(hass, "binary_sensor", "T300RelaisKompressor"), eid(hass, "binary_sensor", "T300RelaisHeizstab"),
+            eid(hass, "number", "DuschTemperatur"), eid(hass, "number", "DuschDurchfluss")}
+    assert want <= water_ids, want - water_ids
     # ---- home ----
     wide = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(min-width: 1024px)"}]]
     narrow = [s for s in home["sections"] if s["visibility"] == [{"condition": "screen", "media_query": "(max-width: 1023px)"}]]

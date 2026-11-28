@@ -319,11 +319,25 @@ def check(page, data: dict) -> dict:
         set_state = """([e, v]) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: v } }; window.panel.hass = { ...h }; }"""
         said = f"() => {root}.getElementById('w-working').hidden ? null : {root}.getElementById('w-who').textContent"
         r["relay"] = []
+        chip = f"() => {root}.getElementById('w-working').className"
+        r["relay_class"] = []
         for pump, heater in (("on", "off"), ("off", "on"), ("off", "off")):
             js(set_state, [relays["T300RelaisKompressor"], pump])
             js(set_state, [relays["T300RelaisHeizstab"], heater])
             page.wait_for_timeout(150)
             r["relay"].append(js(said))
+            r["relay_class"].append(js(chip))
+        # a tap on the running chip: today's running time instead of the sheet; a second tap back
+        js(set_state, [relays["T300RelaisKompressor"], "on"])
+        page.wait_for_timeout(150)
+        js(f"() => {root}.getElementById('w-who').click()")
+        page.wait_for_timeout(100)
+        r["relay_tap"] = [js(said), js(f"() => !{root}.getElementById('sheet').hidden")]
+        js(f"() => {root}.getElementById('w-who').click()")
+        page.wait_for_timeout(100)
+        r["relay_tap"].append(js(said))
+        js(set_state, [relays["T300RelaisKompressor"], "off"])
+        page.wait_for_timeout(100)
 
     # the hot-water card: the litres warmer than the shower (from the shower supply's attribute), else from the charge
     sm = data["config"]["entities"].get("WarmwasserDuschminuten")

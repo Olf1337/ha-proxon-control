@@ -8,7 +8,8 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 **New in 1.2.2:** a tank mixed just below the shower temperature (e.g. 41.7 °C for a shower at 42 °C) no longer shows
 "0 l / 0 min": water up to 2 K below the shower counts as it is (a slightly cooler shower); the card says "warm enough to
 shower" (in the 2 K below that it fades out instead of jumping). Shower temperature and flow are now also set on the page (Settings → Hot water) and as number entities, not
-only under Configure.
+only under Configure. A tap on the hot-water card's running chip shows today's running time and starts; the immersion
+heater's chip is red; the ready-made dashboard shows the running relays and the shower settings too.
 
 **New in 1.2.1:** the hot-water card no longer contradicts itself ("250 l warm water" next to "0 min showering"): the
 tank is estimated in layers (the top warmer than the middle, at most the target), so the shower supply doesn't drop to 0
@@ -213,6 +214,12 @@ nobody home).
   + einstellen (und als Entitäten „Duschtemperatur“ und „Durchfluss der Dusche“), nicht mehr nur unter *Konfigurieren*.
   Duschvorrat, Liter und „Warmwasser knapp“ rechnen sofort damit, ohne Neuladen; *Konfigurieren* zeigt denselben Wert.
   Auch Hinweis und Bereich beim „Duschvorrat (Soll)“ passen sich gleich an (vorher erst nach Neuladen der Seite).
+* **Laufzeit beim Antippen:** Ein Tipp auf „Wärmepumpe läuft“ oder „Heizstab heizt“ oben auf der Warmwasser-Karte zeigt
+  ein paar Sekunden lang Laufzeit und Starts von heute, z. B. „heute 25 min · 2 Starts“ (noch ein Tipp: zurück).
+* **Heizstab in Rot:** „Heizstab heizt“ ist rot hinterlegt statt orange – so sieht man sofort, dass gerade der teurere
+  Heizstab läuft und nicht die sparsame Wärmepumpe.
+* **Fertiges Dashboard ergänzt:** Der Reiter „Warmwasser“ zeigt jetzt auch „Wärmepumpe jetzt“ und „Heizstab jetzt“, unter
+  den Einstellungen Duschtemperatur und Durchfluss – dieselben Infos wie auf der Seite „Proxon“.
 
 ### Neu in Version 1.2.1
 

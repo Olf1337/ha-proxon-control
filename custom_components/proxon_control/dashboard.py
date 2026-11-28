@@ -66,6 +66,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "ZeitprogrammMoDiFr": "Montag → Dienstag bis Freitag", "ZeitprogrammMoAlle": "Montag → alle Tage",
             "WarmwasserIstTemperatur": "Warmwasser Mitte", "WarmwasserUntenTemperatur": "Warmwasser unten", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Wärmepumpe Warmwasser", "E-Heizstab": "Heizstab freigegeben",
+            "T300RelaisKompressor": "Wärmepumpe jetzt", "T300RelaisHeizstab": "Heizstab jetzt", "DuschTemperatur": "Duschtemperatur", "DuschDurchfluss": "Durchfluss der Dusche",
             "WarmwasserDuschminuten": "Duschvorrat", "LegionellenSonne": "Legionellenschutz mit Sonne", "LegionellenStatus": "Status", "LegionellenZeit": "Ohne Sonne um",
             "LegionellenGeplant": "Legionellenschutz planen", "LegionellenTag": "Tag",
             "LegionellenPlanZeit": "Uhrzeit",
@@ -121,6 +122,7 @@ TEXT: dict[str, dict[str, Any]] = {
             "ZeitprogrammMoDiFr": "Monday → Tuesday to Friday", "ZeitprogrammMoAlle": "Monday → all days",
             "WarmwasserIstTemperatur": "Hot water middle", "WarmwasserUntenTemperatur": "Hot water bottom", "FilterRestStunden": "Filter",
             "T300Betriebsart": "Hot-water heat pump", "E-Heizstab": "Immersion heater released",
+            "T300RelaisKompressor": "Heat pump now", "T300RelaisHeizstab": "Immersion heater now", "DuschTemperatur": "Shower temperature", "DuschDurchfluss": "Shower flow",
             "WarmwasserDuschminuten": "Shower supply", "LegionellenSonne": "Legionella protection with solar", "LegionellenStatus": "Status", "LegionellenZeit": "Without sun at",
             "LegionellenGeplant": "Plan legionella protection", "LegionellenTag": "Day",
             "LegionellenPlanZeit": "Time",
@@ -308,11 +310,13 @@ def build(hass: HomeAssistant, entry: ConfigEntry) -> dict:
             {"type": "target-temperature"},
         ]),
         *tile("WarmwasserLadezustand", HALF), *tile("WarmwasserDuschminuten", HALF),
+        *tile("T300RelaisKompressor", HALF), *tile("T300RelaisHeizstab", HALF),  # what heats the water right now
         *([heading(t["last_day"], "subtitle"), {"type": "history-graph", "entities": curve, "hours_to_show": 24, "grid_options": FULL}]
           if curve else []),
     ]
     water_settings = [heading(t["settings"]), *number("SollWassertemperatur"), *tile("T300Betriebsart", FULL), *tile("E-Heizstab", FULL),
-                      *number("Soll-E-Heizstab-Temperatur"), *tile("Legionellenfunktion", FULL)]
+                      *number("Soll-E-Heizstab-Temperatur"), *tile("Legionellenfunktion", FULL),
+                      *number("DuschTemperatur"), *number("DuschDurchfluss")]
     # the automatic functions for hot water: only what they are doing; tapping opens them in the optimisation tab
     water_auto = [c for key in ("Energiemanager", "BoostStatus", "LegionellenStatus")
                   for c in tile(key, FULL, name=t["auto_names"][key], tap_action=go("proxon-optimize"))]

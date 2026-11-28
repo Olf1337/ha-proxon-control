@@ -9,7 +9,7 @@ const TEXT = {
     title: "Zuhause", outside: "Außen", op: "Betrieb", ok: "Alles in Ordnung", fault: "Störung", filter: "Filter bald wechseln",
     heroOk: "Alles läuft.", heroFault: "Störung.", heroFilter: "Filter wechseln.", heroLevel: "Stufe {n}", heroOut: "außen {v}",
     unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", leftSoon: "endet gleich", level: "Stufe", levelBoost: "4 (Intensiv)",
-    tapUnit: "antippen zum Einstellen", pumpRuns: "Wärmepumpe läuft", heaterRuns: "Heizstab heizt", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
+    tapUnit: "antippen zum Einstellen", pumpRuns: "Wärmepumpe läuft", heaterRuns: "Heizstab heizt", runToday: "heute {h}{s}", runTap: "Antippen: Laufzeit heute", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
     hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
     compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
@@ -92,7 +92,7 @@ const TEXT = {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
     heroOk: "All good.", heroFault: "Fault.", heroFilter: "Change the filter.", heroLevel: "level {n}", heroOut: "outside {v}",
     unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", leftSoon: "ending now", level: "Level", levelBoost: "4 (boost)",
-    tapUnit: "tap to adjust", pumpRuns: "Heat pump running", heaterRuns: "Heater heating", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
+    tapUnit: "tap to adjust", pumpRuns: "Heat pump running", heaterRuns: "Heater heating", runToday: "today {h}{s}", runTap: "Tap: running time today", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
     hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
     compressor: "Compressor", compOff: "off", humidity: "Humidity",
@@ -208,6 +208,9 @@ const ENERGY_PARTS = [
   { k: "vent", keys: ["EnergieLueftung"], power: ["LeistungLueftung"], color: "--e-vent" },
   { k: "water", keys: ["EnergieWarmwasserWP", "EnergieHeizstab"], power: ["LeistungWarmwasserWP", "LeistungHeizstab"], color: "--e-water" },
 ];
+// a relay of the hot-water module: its running hours and starts today
+const RELAY_RUNTIME = { T300RelaisKompressor: ["WarmwasserKompressorLaufzeitHeute", "WarmwasserKompressorStartsHeute"],
+  T300RelaisHeizstab: ["HeizstabLaufzeitHeute", "HeizstabStartsHeute"] };
 const RUNTIMES = [["comp", "KompressorLaufzeitHeute", "KompressorStartsHeute"], ["pump", "WarmwasserKompressorLaufzeitHeute", "WarmwasserKompressorStartsHeute"],
   ["heater", "HeizstabLaufzeitHeute", "HeizstabStartsHeute"]];
 
@@ -560,6 +563,8 @@ svg.diagram { display: block; width: 100%; max-width: 760px; margin: 6px auto 0;
 }
 @container (max-width: 300px) { .a-body { grid-template-columns: 1fr; justify-items: center; } .a-facts { justify-items: center; text-align: center; } }
 .card-head .working { margin-top: 0; }
+.working.tap { cursor: pointer; }
+.working.heater { background: color-mix(in srgb, var(--danger) 22%, transparent); }
 .working { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
   background: color-mix(in srgb, var(--water-hot) 14%, transparent); font-size: .8125rem; font-weight: 600; }
 .water-set { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .9375rem; color: var(--fg-2); }
@@ -945,7 +950,14 @@ class ProxonPanel extends HTMLElement {
     this.$("unit").addEventListener("click", e => this._sheetVentilation(e.currentTarget));
     // the card opens the sheet; the target changes only with − and + (a swipe over the card while scrolling changed it)
     const water = this.$("water");
-    water.addEventListener("click", e => { if (!e.target.closest(".stepper")) this._sheetWater(water); });
+    water.addEventListener("click", e => {
+      if (e.target.closest("#w-working") && this._wRelay) {  // the running chip: today's running time instead of the sheet
+        this._wDetail = this._wDetail > Date.now() ? 0 : Date.now() + 5000; this._updateFunctions();
+        clearTimeout(this._wDetailT); this._wDetailT = setTimeout(() => this._updateFunctions(), 5100);
+        return;
+      }
+      if (!e.target.closest(".stepper")) this._sheetWater(water);
+    });
     water.addEventListener("keydown", e => { if (e.target === water && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this._sheetWater(water); } });
     this._wStep = this._stepper(this.$("w-dn"), this.$("w-up"), this.$("w-target"), () => this._showerMode() ? "DuschvorratSoll" : "SollWassertemperatur", {
       fmt: v => this._showerMode() ? `${this.fmt(v, 0)} ${this.t.min}` : `${this.fmt(v, 0)}°`,
@@ -1135,7 +1147,17 @@ class ProxonPanel extends HTMLElement {
     }
     const relay = ["T300RelaisHeizstab", "T300RelaisKompressor"].find(k => this.swOn(k));  // what really heats the water now
     if (!who && relay) who = relay === "T300RelaisHeizstab" ? t.heaterRuns : t.pumpRuns;
-    this.$("w-working").hidden = !who; this.$("w-who").textContent = who; this.$("w-hint").hidden = !!who;
+    // tapped: today's running time and starts of what runs, for a few seconds
+    const [hours, starts] = RELAY_RUNTIME[relay] || [], runs = !!relay && !!this.st(hours);
+    this._wRelay = runs ? relay : null;
+    if (runs && Date.now() < (this._wDetail || 0)) {
+      const n = this.num(starts), h = this.num(hours) || 0;
+      who = fill(t.runToday, { h: h < 1 ? `${this.fmt(Math.round(h * 60), 0)} min` : `${this.fmt(h, 1)} h`, s: n === null ? "" : ` · ${n === 1 ? t.e.start : fill(t.e.starts, { n: this.fmt(n, 0) })}` });
+    }
+    const chip = this.$("w-working");
+    chip.classList.toggle("heater", relay === "T300RelaisHeizstab");  // the costly way: red, not orange
+    chip.classList.toggle("tap", runs); chip.title = runs ? t.runTap : "";
+    chip.hidden = !who; this.$("w-who").textContent = who; this.$("w-hint").hidden = !!who;
   }
   _fnDetail(f, running, planned) {
     const card = this._fnCards.get(f.k); if (!card) return;
