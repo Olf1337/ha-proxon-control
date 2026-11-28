@@ -127,3 +127,31 @@ async def test_tile_wall_options(hass: HomeAssistant, device) -> None:
     assert P.panel_config(hass, entry)["tiles"] == {"layout": "grid", "size": "large", "accent": "blue"}
     await _configure(hass, entry, tiles_layout="row", tiles_size="medium", tiles_accent="amber")
     assert not any(k.startswith("tiles_") for k in entry.options)
+
+
+def test_a_tank_still_charging_has_water_at_the_top() -> None:
+    """1.2.1: middle 41.5 °C, bottom 36.7 °C, target 45 °C, showering at 42 °C - the top is warmer than the middle, so there
+    is some shower supply (before: 0 minutes next to "250 l warm water")."""
+    charging = {"WarmwasserIstTemperatur": 41.5, "WarmwasserUntenTemperatur": 36.7, "SollWassertemperatur": 45.0}
+    assert R.tank_layers(charging) == [(75.0, 45.0), (75.0, 41.5), (150.0, 36.7)]
+    assert R.shower_minutes(charging, 42, 8) == 10.0
+    assert R.hot_liters(charging, 42) == 75.0
+    # the top is never guessed above the target, nor below the middle
+    assert R.tank_layers({**charging, "WarmwasserUntenTemperatur": 20.0})[0][1] == 45.0
+    assert R.tank_layers({**charging, "WarmwasserUntenTemperatur": 50.0})[0][1] == 41.5
+    hot = {"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 44.0, "SollWassertemperatur": 45.0}
+    assert R.tank_layers(hot)[0][1] == 50.0
+    # without a target: no warmer than the middle; without sensors: nothing
+    assert R.tank_layers({"WarmwasserIstTemperatur": 41.5, "WarmwasserUntenTemperatur": 36.7})[0][1] == 41.5
+    assert R.tank_layers({}) is None and R.hot_liters({}) is None and R.shower_minutes({}) is None
+    # a tank at one temperature throughout: the same as before
+    assert R.hot_liters({"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 50.0}) == 300.0
+    assert R.shower_minutes_at(41) == 35.0
+
+
+async def test_shower_supply_says_its_hot_litres(hass: HomeAssistant, device) -> None:
+    await setup(hass)
+    entry = hass.config_entries.async_entries("proxon_control")[0]
+    data = entry.runtime_data.data
+    st = hass.states.get(eid(hass, "sensor", "WarmwasserDuschminuten"))
+    assert st.attributes["hot_liters"] == R.hot_liters(data, entry.runtime_data.shower[0]) is not None

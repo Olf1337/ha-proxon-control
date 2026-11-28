@@ -423,6 +423,7 @@ def read_all(client, names: bool = True) -> dict[str, float | str]:
         out["WarmwasserLadezustand"] = charge
     if (minutes := shower_minutes(out)) is not None:
         out["WarmwasserDuschminuten"] = minutes
+        out["WarmwasserHeissLiter"] = hot_liters(out) or 0.0
     if "LaufzeitFilter" in out:
         out["FilterRestStunden"] = max(0.0, filter_months(out) * HOURS_PER_MONTH - float(out["LaufzeitFilter"]))
     return out
@@ -460,14 +461,35 @@ SHOWER_TEMP = 40.0  # °C at the shower head
 SHOWER_LITERS_PER_MINUTE = 8.0  # an ordinary shower head
 
 
-def shower_minutes(values: dict, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float | None:
-    """For how many minutes of showering (at `shower` °C, `flow` l/min) the hot water lasts, in steps of 5 minutes. The
-    tank's upper half counted at the middle sensor's temperature, its lower half at the bottom sensor's; only water warmer
-    than the shower counts, mixed down with cold water. An estimate - the tank has no sensor at the top."""
+def tank_layers(values: dict) -> list[tuple[float, float]] | None:
+    """The tank as layers of (litres, °C), from its two sensors - an estimate, there is no sensor at the top. Warm water
+    rises, so the top is warmer than the middle: the top quarter is the middle plus the step from bottom to middle (at
+    most the target, never below the middle), the quarter below at the middle sensor, the lower half at the bottom
+    sensor. A tank at the same temperature throughout stays that temperature."""
     mid, bottom = values.get("WarmwasserIstTemperatur"), values.get("WarmwasserUntenTemperatur")
     if not isinstance(mid, (int, float)) or not isinstance(bottom, (int, float)):
         return None
-    liters = sum(TANK_LITERS / 2 * (t - COLD_WATER) / (shower - COLD_WATER) for t in (mid, bottom) if t > shower)
+    target = values.get("SollWassertemperatur")
+    cap = max(float(mid), float(target)) if isinstance(target, (int, float)) else float(mid)
+    top = min(cap, mid + max(0.0, mid - bottom))
+    return [(TANK_LITERS / 4, top), (TANK_LITERS / 4, float(mid)), (TANK_LITERS / 2, float(bottom))]
+
+
+def hot_liters(values: dict, shower: float = SHOWER_TEMP) -> float | None:
+    """How many litres of the tank are warmer than the shower, in steps of 5 litres (an estimate, see tank_layers)."""
+    layers = tank_layers(values)
+    if layers is None:
+        return None
+    return float(int(sum(v for v, t in layers if t > shower)) // 5 * 5)
+
+
+def shower_minutes(values: dict, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float | None:
+    """For how many minutes of showering (at `shower` °C, `flow` l/min) the hot water lasts, in steps of 5 minutes. Each
+    layer of the tank (see tank_layers) that is warmer than the shower counts, mixed down with cold water."""
+    layers = tank_layers(values)
+    if layers is None:
+        return None
+    liters = sum(v * (t - COLD_WATER) / (shower - COLD_WATER) for v, t in layers if t > shower)
     return float(int(liters / flow) // 5 * 5)
 
 

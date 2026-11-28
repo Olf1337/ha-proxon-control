@@ -322,6 +322,18 @@ def check(page, data: dict) -> dict:
             page.wait_for_timeout(150)
             r["relay"].append(js(said))
 
+    # the hot-water card: the litres warmer than the shower (from the shower supply's attribute), else from the charge
+    sm = data["config"]["entities"].get("WarmwasserDuschminuten")
+    if sm:
+        attrs = """([e, a]) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], attributes: { ...h.states[e].attributes, ...a } } }; window.panel.hass = { ...h }; }"""
+        liters = f"() => [{root}.getElementById('w-liters').textContent, {root}.getElementById('w-liters-sub').textContent]"
+        js(attrs, [sm, {"hot_liters": 75}])
+        page.wait_for_timeout(150)
+        r["hot_liters"] = [js(liters)]
+        js(attrs, [sm, {"hot_liters": None}])
+        page.wait_for_timeout(150)
+        r["hot_liters"].append(js(liters))
+
     # the settings: automations in two groups, the shower supply in "Hot water", the cooling section jumps to its automations
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(300)

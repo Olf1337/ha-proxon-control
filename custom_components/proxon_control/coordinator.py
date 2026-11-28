@@ -30,7 +30,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault, shower_minutes
+from .registers import SCHEDULE_KEYS, HeatingTracker, active_faults, allowed_during_fault, hot_liters, shower_minutes
 from .runtime import MAX_GAP_SECONDS, RuntimeTracker
 from .schedule import clock_drift
 
@@ -102,6 +102,7 @@ class ProxonCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # the shower supply as this household showers (the unit's reading assumes 40 °C and 8 l/min)
             if (minutes := shower_minutes(data, *self.shower)) is not None:
                 data["WarmwasserDuschminuten"] = minutes
+                data["WarmwasserHeissLiter"] = hot_liters(data, self.shower[0])
             interval = self.update_interval.total_seconds() if self.update_interval else 0
             data.update(self.runtime.update(data, dt_util.now(), max(MAX_GAP_SECONDS, 3 * interval)))
             self._runtime_store.async_delay_save(self.runtime.dump, 120)

@@ -348,6 +348,8 @@ class ProxonSensor(ProxonEntity, SensorEntity):
         data = self.coordinator.data or {}
         if self._key == "FilterRestStunden":
             return {"filter_lifetime_months": filter_months(data)}
+        if self._key == "WarmwasserDuschminuten":  # the litres warmer than the shower (an estimate)
+            return {"hot_liters": data.get("WarmwasserHeissLiter")}
         if self._key.endswith("Heute"):
             return {"yesterday": data.get(self._key.removesuffix("Heute") + "Gestern")}
         return None

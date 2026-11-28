@@ -5,6 +5,11 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.1:** the hot-water card no longer contradicts itself ("250 l warm water" next to "0 min showering"): the
+tank is estimated in layers (the top warmer than the middle, at most the target), so the shower supply doesn't drop to 0
+as soon as the middle is half a degree below the shower; the litres shown are those warmer than the shower (attribute
+`hot_liters` of the shower supply).
+
 **New in 1.2.0:** contains everything from 1.2.0b1 to 1.2.0b7 (below): cooling on the page (the unit's cooling release by
 hand and an automation "Cooling with solar surplus"), the panels' key lock shown in the room tiles, an automation "No
 electric heating" like the unit's global heating release, sensors for the hot-water heat pump running and the immersion
@@ -191,6 +196,17 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.1
+
+* **Warmwasser-Karte stimmig:** Statt „≈ 250 l warmes Wasser“ neben „0 Min. Duschen“ zeigt die Karte jetzt die Liter,
+  die **wärmer als die Duschtemperatur** sind, z. B. „≈ 75 l wärmer als 42 °C im Speicher“ (der Ladezustand steht wie
+  bisher darunter).
+* **Duschvorrat genauer:** Der Speicher wird in Schichten geschätzt. Oben ist das Wasser wärmer als in der Mitte (aus der
+  Mitte hochgerechnet, höchstens bis zum Soll), darunter gilt die Mitte, in der unteren Hälfte der untere Fühler. So fällt
+  der Duschvorrat nicht mehr auf 0, sobald die Mitte ein halbes Grad unter der Duschtemperatur liegt – im Beispiel
+  (Mitte 41,5 °C, unten 36,7 °C, Soll 45 °C, Duschen bei 42 °C) sind es etwa 10 Minuten. Ein voll geladener Speicher
+  ergibt dieselben Werte wie bisher; der Sensor „Duschvorrat“ hat die Liter als Attribut `hot_liters`.
 
 ### Neu in Version 1.2.0
 
