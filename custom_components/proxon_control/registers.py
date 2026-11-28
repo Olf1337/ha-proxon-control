@@ -475,21 +475,33 @@ def tank_layers(values: dict) -> list[tuple[float, float]] | None:
     return [(TANK_LITERS / 4, top), (TANK_LITERS / 4, float(mid)), (TANK_LITERS / 2, float(bottom))]
 
 
+SHOWER_TOLERANCE = 2.0  # K: water this little below the shower still counts (a shower slightly cooler, not a cold one)
+
+
+def _usable(volume: float, temp: float, shower: float) -> float:
+    """Litres of shower water a layer gives: warmer water mixed down with cold, water just below the shower as it is."""
+    if temp > shower:
+        return volume * (temp - COLD_WATER) / (shower - COLD_WATER)
+    return volume if temp >= shower - SHOWER_TOLERANCE else 0.0
+
+
 def hot_liters(values: dict, shower: float = SHOWER_TEMP) -> float | None:
-    """How many litres of the tank are warmer than the shower, in steps of 5 litres (an estimate, see tank_layers)."""
+    """How many litres of the tank are warm enough to shower with (at most SHOWER_TOLERANCE below the shower), in steps of
+    5 litres (an estimate, see tank_layers)."""
     layers = tank_layers(values)
     if layers is None:
         return None
-    return float(int(sum(v for v, t in layers if t > shower)) // 5 * 5)
+    return float(int(sum(v for v, t in layers if t >= shower - SHOWER_TOLERANCE)) // 5 * 5)
 
 
 def shower_minutes(values: dict, shower: float = SHOWER_TEMP, flow: float = SHOWER_LITERS_PER_MINUTE) -> float | None:
     """For how many minutes of showering (at `shower` °C, `flow` l/min) the hot water lasts, in steps of 5 minutes. Each
-    layer of the tank (see tank_layers) that is warmer than the shower counts, mixed down with cold water."""
+    layer of the tank (see tank_layers) that is warmer than the shower counts, mixed down with cold water; a layer up to
+    SHOWER_TOLERANCE below the shower counts as it is (a tank of 41.7 °C is not empty for a shower at 42 °C)."""
     layers = tank_layers(values)
     if layers is None:
         return None
-    liters = sum(v * (t - COLD_WATER) / (shower - COLD_WATER) for v, t in layers if t > shower)
+    liters = sum(_usable(v, t, shower) for v, t in layers)
     return float(int(liters / flow) // 5 * 5)
 
 

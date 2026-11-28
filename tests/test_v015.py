@@ -22,7 +22,7 @@ T0 = datetime(2026, 11, 10, 12, 0)
 def test_shower_minutes() -> None:
     assert R.shower_minutes({"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 30.0}) == 25.0  # 204 l of 40 °C
     assert R.shower_minutes({"WarmwasserIstTemperatur": 52.0, "WarmwasserUntenTemperatur": 48.0}) == 50.0
-    assert R.shower_minutes({"WarmwasserIstTemperatur": 38.0, "WarmwasserUntenTemperatur": 30.0}) == 0.0  # nothing above 40 °C
+    assert R.shower_minutes({"WarmwasserIstTemperatur": 37.0, "WarmwasserUntenTemperatur": 30.0}) == 0.0  # nothing near 40 °C
     assert R.shower_minutes({"WarmwasserIstTemperatur": 50.0}) is None
 
 

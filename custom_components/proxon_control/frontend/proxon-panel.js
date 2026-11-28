@@ -14,7 +14,7 @@ const TEXT = {
     hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
     compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
     water: "Warmwasser", shower: "Reicht für ca. {m} Min. Duschen", middle: "Mitte", min: "Min.",
-    litersSub: "warmes Wasser im Speicher", litersHot: "wärmer als {t} °C im Speicher", showerSub: "Duschen bei {t} °C", bottom: "Unten", target: "Soll", showerTarget: "Duschvorrat", charge: "Ladezustand",
+    litersSub: "warmes Wasser im Speicher", litersHot: "warm genug zum Duschen", showerSub: "Duschen bei {t} °C", bottom: "Unten", target: "Soll", showerTarget: "Duschvorrat", charge: "Ladezustand",
     floors: { "0": "Erdgeschoss", "1": "Obergeschoss", "-1": "Keller" }, rooms: "Räume", sent: "✓ gesendet", allEl: "Wärmeelemente aller Räume", allOn: "{a} von {b} Räumen an",
     allOff: "Wärmeelemente aller Räume aus", allOnDone: "Wärmeelemente aller Räume an",
     element: { off: "Heizpanel aus", ready: "Heizpanel bereit", heating: "Heizpanel heizt" },
@@ -95,7 +95,7 @@ const TEXT = {
     hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
     compressor: "Compressor", compOff: "off", humidity: "Humidity",
     water: "Hot water", shower: "Enough for about {m} min of showering", middle: "Middle", min: "min",
-    litersSub: "of warm water in the tank", litersHot: "warmer than {t} °C in the tank", showerSub: "of showering at {t} °C", bottom: "Bottom", target: "Target", showerTarget: "Shower supply", charge: "Charge",
+    litersSub: "of warm water in the tank", litersHot: "warm enough to shower", showerSub: "of showering at {t} °C", bottom: "Bottom", target: "Target", showerTarget: "Shower supply", charge: "Charge",
     floors: { "0": "Ground floor", "1": "Upper floor", "-1": "Basement" }, rooms: "Rooms", sent: "✓ sent", allEl: "Heating elements of all rooms", allOn: "{a} of {b} rooms on",
     allOff: "Heating elements of all rooms off", allOnDone: "Heating elements of all rooms on",
     element: { off: "Heating panel off", ready: "Heating panel ready", heating: "Heating panel heating" },
@@ -1069,7 +1069,7 @@ class ProxonPanel extends HTMLElement {
       const hl = ((this.st("WarmwasserDuschminuten") || {}).attributes || {}).hot_liters;  // litres warmer than the shower (older versions: none)
       const liters = typeof hl === "number" ? hl : ch === null ? null : Math.round(TANK_L * ch / 100 / 10) * 10;
       this.$("w-liters-wrap").hidden = liters === null; this.$("w-liters").textContent = `≈ ${this.fmt(liters, 0)} l`;
-      this.$("w-liters-sub").textContent = typeof hl === "number" ? fill(t.litersHot, this._shower()) : t.litersSub;
+      this.$("w-liters-sub").textContent = typeof hl === "number" ? t.litersHot : t.litersSub;
       const level = ch !== null ? ch / 100 : w !== null && wt ? clamp((w - 20) / Math.max(1, wt - 20), 0, 1) : 0;
       if (Math.abs((this._fill.target || 0) - level) > 0.001) this._fill.to(level, { damping: 1, response: 0.8 });
     }

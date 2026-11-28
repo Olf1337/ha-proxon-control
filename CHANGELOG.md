@@ -5,6 +5,10 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.2:** a tank mixed just below the shower temperature (e.g. 41.7 °C for a shower at 42 °C) no longer shows
+"0 l / 0 min": water up to 2 K below the shower counts as it is (a slightly cooler shower); the card says "warm enough to
+shower".
+
 **New in 1.2.1:** the hot-water card no longer contradicts itself ("250 l warm water" next to "0 min showering"): the
 tank is estimated in layers (the top warmer than the middle, at most the target), so the shower supply doesn't drop to 0
 as soon as the middle is half a degree below the shower; the litres shown are those warmer than the shower (attribute
@@ -196,6 +200,13 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.2
+
+* **Kein „0 l / 0 Min.“ mehr bei fast warmem Speicher:** Ist der Speicher gleichmäßig knapp unter der Duschtemperatur
+  (z. B. 41,7 °C bei Duschen mit 42 °C, während die Wärmepumpe lädt), zeigte 1.2.1 „≈ 0 l“ und „0 Min.“. Jetzt zählt
+  Wasser bis 2 Grad unter der Duschtemperatur so, wie es ist – die Dusche ist dann etwas kühler, aber nicht kalt. Im
+  Beispiel sind es „≈ 300 l warm genug zum Duschen“ und 35 Minuten. Erst darunter fällt es weg.
 
 ### Neu in Version 1.2.1
 

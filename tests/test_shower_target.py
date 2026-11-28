@@ -10,7 +10,8 @@ from .test_integration import call, eid, setup
 
 
 def test_shower_minutes_of_a_full_tank() -> None:
-    assert R.shower_minutes_at(40) == 0.0  # nothing warmer than the shower
+    assert R.shower_minutes_at(37) == 0.0  # too cold for the shower
+    assert R.shower_minutes_at(40) == 35.0  # as warm as the shower: 300 l as they are
     assert R.shower_minutes_at(41) == 35.0
     assert R.shower_minutes_at(55) == 55.0
 
@@ -134,8 +135,8 @@ def test_a_tank_still_charging_has_water_at_the_top() -> None:
     is some shower supply (before: 0 minutes next to "250 l warm water")."""
     charging = {"WarmwasserIstTemperatur": 41.5, "WarmwasserUntenTemperatur": 36.7, "SollWassertemperatur": 45.0}
     assert R.tank_layers(charging) == [(75.0, 45.0), (75.0, 41.5), (150.0, 36.7)]
-    assert R.shower_minutes(charging, 42, 8) == 10.0
-    assert R.hot_liters(charging, 42) == 75.0
+    assert R.shower_minutes(charging, 42, 8) == 15.0  # 82.5 l from the top, 75 l of 41.5 °C as they are
+    assert R.hot_liters(charging, 42) == 150.0
     # the top is never guessed above the target, nor below the middle
     assert R.tank_layers({**charging, "WarmwasserUntenTemperatur": 20.0})[0][1] == 45.0
     assert R.tank_layers({**charging, "WarmwasserUntenTemperatur": 50.0})[0][1] == 41.5
@@ -144,6 +145,11 @@ def test_a_tank_still_charging_has_water_at_the_top() -> None:
     # without a target: no warmer than the middle; without sensors: nothing
     assert R.tank_layers({"WarmwasserIstTemperatur": 41.5, "WarmwasserUntenTemperatur": 36.7})[0][1] == 41.5
     assert R.tank_layers({}) is None and R.hot_liters({}) is None and R.shower_minutes({}) is None
+    # 1.2.2: a mixed tank just below the shower is not empty (was 0 l / 0 min); 3 K below it is
+    mixed = {"WarmwasserIstTemperatur": 41.7, "WarmwasserUntenTemperatur": 41.6, "SollWassertemperatur": 45.0}
+    assert R.hot_liters(mixed, 42) == 300.0 and R.shower_minutes(mixed, 42, 8) == 35.0
+    cold = {"WarmwasserIstTemperatur": 39.0, "WarmwasserUntenTemperatur": 38.9, "SollWassertemperatur": 45.0}
+    assert R.hot_liters(cold, 42) == 0.0 and R.shower_minutes(cold, 42, 8) == 0.0
     # a tank at one temperature throughout: the same as before
     assert R.hot_liters({"WarmwasserIstTemperatur": 50.0, "WarmwasserUntenTemperatur": 50.0}) == 300.0
     assert R.shower_minutes_at(41) == 35.0

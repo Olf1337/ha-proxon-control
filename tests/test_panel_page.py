@@ -97,7 +97,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert r["cool_chip"] and "freigegeben" in r["cool_chip"][0], r["cool_chip"]
         assert r["relay"] == ["Wärmepumpe läuft", "Heizstab heizt", None], r["relay"]
         hl = r["hot_liters"]
-        assert hl[0][0] == "≈ 75 l" and hl[0][1].startswith("wärmer als") and hl[1][1] == "warmes Wasser im Speicher", hl
+        assert hl[0][0] == "≈ 75 l" and hl[0][1] == "warm genug zum Duschen" and hl[1][1] == "warmes Wasser im Speicher", hl
         kl = r["key_lock"]
         assert kl["shown"] >= 1 and kl["lit"] == 1 and kl["line"] == "An" and not kl["switch"], kl
         av = r["auto_view"]
