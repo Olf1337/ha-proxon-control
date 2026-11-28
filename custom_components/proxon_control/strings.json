@@ -795,6 +795,12 @@
       "panel_locked": {
         "name": "Control panel locked"
       },
+      "hot_water_pump_running": {
+        "name": "Hot water heat pump running"
+      },
+      "immersion_heater_running": {
+        "name": "Immersion heater heating"
+      },
       "heating_elements": {
         "name": "Heating elements heating"
       },

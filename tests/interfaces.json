@@ -13,6 +13,8 @@
   "binary_sensor.PVSignalHeizstab",
   "binary_sensor.PVSignalWaermepumpe",
   "binary_sensor.Stoerung",
+  "binary_sensor.T300RelaisHeizstab",
+  "binary_sensor.T300RelaisKompressor",
   "binary_sensor.WarmwasserKnapp",
   "button.UrlaubsplanLoeschen",
   "button.ZeitprogrammMoAlle",

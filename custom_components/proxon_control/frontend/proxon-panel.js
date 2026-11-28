@@ -9,7 +9,7 @@ const TEXT = {
     title: "Zuhause", outside: "Außen", op: "Betrieb", ok: "Alles in Ordnung", fault: "Störung", filter: "Filter bald wechseln",
     heroOk: "Alles läuft.", heroFault: "Störung.", heroFilter: "Filter wechseln.", heroLevel: "Stufe {n}", heroOut: "außen {v}",
     unit: "Lüftungsanlage", boost: "Intensivlüftung", left: "noch {m} Min.", leftSoon: "endet gleich", level: "Stufe", levelBoost: "4 (Intensiv)",
-    tapUnit: "antippen zum Einstellen", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
+    tapUnit: "antippen zum Einstellen", pumpRuns: "Wärmepumpe läuft", heaterRuns: "Heizstab heizt", fresh: "Frischluft", supply: "Zuluft", extract: "Abluft", exhaust: "Fortluft",
     out: "Außen", house: "Haus", fanSupply: "Zuluftlüfter", fanExhaust: "Abluftlüfter", recovery: "Wärmerückgewinnung",
     hx: "Wärmetauscher", heatPump: "Wärmepumpe", hpHeats: "Wärmepumpe heizt", hpCools: "Wärmepumpe kühlt", hpIdle: "Wärmepumpe aus",
     compressor: "Kompressor", compOff: "aus", humidity: "Feuchte",
@@ -90,7 +90,7 @@ const TEXT = {
     title: "Home", outside: "Outside", op: "Mode", ok: "All good", fault: "Fault", filter: "Filter change soon",
     heroOk: "All good.", heroFault: "Fault.", heroFilter: "Change the filter.", heroLevel: "level {n}", heroOut: "outside {v}",
     unit: "Ventilation unit", boost: "Boost ventilation", left: "{m} min left", leftSoon: "ending now", level: "Level", levelBoost: "4 (boost)",
-    tapUnit: "tap to adjust", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
+    tapUnit: "tap to adjust", pumpRuns: "Heat pump running", heaterRuns: "Heater heating", fresh: "Fresh air", supply: "Supply", extract: "Extract", exhaust: "Exhaust",
     out: "Outside", house: "House", fanSupply: "Supply fan", fanExhaust: "Extract fan", recovery: "Heat recovery",
     hx: "Heat exchanger", heatPump: "Heat pump", hpHeats: "Heat pump heating", hpCools: "Heat pump cooling", hpIdle: "Heat pump off",
     compressor: "Compressor", compOff: "off", humidity: "Humidity",
@@ -1126,6 +1126,8 @@ class ProxonPanel extends HTMLElement {
       else if (!shown && card && !card.leaving) this._hideFn(f.k);
       if (shown) this._fnDetail(f, running, planned);
     }
+    const relay = ["T300RelaisHeizstab", "T300RelaisKompressor"].find(k => this.swOn(k));  // what really heats the water now
+    if (!who && relay) who = relay === "T300RelaisHeizstab" ? t.heaterRuns : t.pumpRuns;
     this.$("w-working").hidden = !who; this.$("w-who").textContent = who; this.$("w-hint").hidden = !!who;
   }
   _fnDetail(f, running, planned) {

@@ -95,6 +95,7 @@ async def test_page_in_a_browser(hass: HomeAssistant, device, tmp_path: Path) ->
         assert csv[0].endswith(";Summe (kWh);Vorwoche (kWh)") and csv[1].endswith(";10,000;5,000") and csv[2].endswith(";4,000;5,000"), csv
         assert r["water_gap"] < 40, f"{width}: empty strip below the hot-water target ({r['water_gap']} px)"
         assert r["cool_chip"] and "freigegeben" in r["cool_chip"][0], r["cool_chip"]
+        assert r["relay"] == ["Wärmepumpe läuft", "Heizstab heizt", None], r["relay"]
         kl = r["key_lock"]
         assert kl["shown"] >= 1 and kl["lit"] == 1 and kl["line"] == "An" and not kl["switch"], kl
         av = r["auto_view"]

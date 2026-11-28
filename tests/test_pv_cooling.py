@@ -145,3 +145,15 @@ async def test_cooling_with_surplus_needs_the_sensor(hass: HomeAssistant, device
         await call(hass, "switch", "turn_on", entity_id=eid(hass, "switch", "PVKuehlung"))
     assert err.value.translation_key == "pv_cooling_needs_sensor"
     assert hass.states.get(eid(hass, "switch", "PVKuehlung")).state == "off"
+
+
+async def test_hot_water_relays_running(hass: HomeAssistant, device) -> None:
+    """1.2.0b7: whether the hot-water heat pump runs / the immersion heater heats right now (the T300's relays)."""
+    entry = await setup(hass)
+    pump, heater = eid(hass, "binary_sensor", "T300RelaisKompressor"), eid(hass, "binary_sensor", "T300RelaisHeizstab")
+    assert hass.states.get(pump).state == "on" and hass.states.get(heater).state == "off"
+    assert hass.states.get(pump).attributes["device_class"] == "running"
+    set_raw(device, T300RelaisKompressor=0, T300RelaisHeizstab=1)
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(pump).state == "off" and hass.states.get(heater).state == "on"

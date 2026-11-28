@@ -310,6 +310,18 @@ def check(page, data: dict) -> dict:
         js("""(e) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: 'off' } }; window.panel.hass = { ...h }; }""", lid)
         page.wait_for_timeout(200)
 
+    # the hot-water card: what really heats now (the T300 relays) while no automation heats
+    relays = data["config"]["entities"]
+    if "T300RelaisKompressor" in relays and "T300RelaisHeizstab" in relays:
+        set_state = """([e, v]) => { const h = window.hassFake; h.states = { ...h.states, [e]: { ...h.states[e], state: v } }; window.panel.hass = { ...h }; }"""
+        said = f"() => {root}.getElementById('w-working').hidden ? null : {root}.getElementById('w-who').textContent"
+        r["relay"] = []
+        for pump, heater in (("on", "off"), ("off", "on"), ("off", "off")):
+            js(set_state, [relays["T300RelaisKompressor"], pump])
+            js(set_state, [relays["T300RelaisHeizstab"], heater])
+            page.wait_for_timeout(150)
+            r["relay"].append(js(said))
+
     # the settings: automations in two groups, the shower supply in "Hot water", the cooling section jumps to its automations
     js(f"() => {root}.getElementById('tab-settings').click()")
     page.wait_for_timeout(300)

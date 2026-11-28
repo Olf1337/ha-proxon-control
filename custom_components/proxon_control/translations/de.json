@@ -795,6 +795,12 @@
       "panel_locked": {
         "name": "Bedienpanel gesperrt"
       },
+      "hot_water_pump_running": {
+        "name": "Warmwasser-Wärmepumpe läuft"
+      },
+      "immersion_heater_running": {
+        "name": "Heizstab heizt"
+      },
       "heating_elements": {
         "name": "Wärmeelemente heizen"
       },

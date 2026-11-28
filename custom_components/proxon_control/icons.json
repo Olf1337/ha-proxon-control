@@ -19,6 +19,18 @@
       "pv_enabled": {
         "default": "mdi:solar-power"
       },
+      "hot_water_pump_running": {
+        "default": "mdi:heat-pump-outline",
+        "state": {
+          "on": "mdi:heat-pump"
+        }
+      },
+      "immersion_heater_running": {
+        "default": "mdi:water-boiler-off",
+        "state": {
+          "on": "mdi:water-boiler"
+        }
+      },
       "pv_signal_heat_pump": {
         "default": "mdi:solar-power-variant"
       },

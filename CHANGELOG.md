@@ -5,6 +5,9 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0b7 (beta):** two new sensors show whether the hot-water heat pump is running and whether the immersion
+heater is heating right now; the hot-water card of the page says so too.
+
 **New in 1.2.0b6 (beta):** every automation has its own switch and status line (solar / cheap power and legionella with
 solar / planned are separate rows now); cooling with solar surplus can't be switched on without a surplus sensor, like hot
 water with solar surplus; larger group headings.
@@ -181,6 +184,14 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0b7 (Beta)
+
+* **Läuft gerade:** Zwei neue Sensoren zeigen, ob die **Warmwasser-Wärmepumpe läuft** und ob der **Heizstab heizt** – jetzt,
+  nicht nur die Starts und Laufzeit des Tages. Beide gibt es nur mit Warmwasser-Modul (T300) und lassen sich in eigenen
+  Automationen und Dashboards nutzen.
+* **Warmwasser-Karte:** Oben auf der Karte steht „Wärmepumpe läuft“ oder „Heizstab heizt“, solange es so ist (heizt eine
+  Automatik, steht wie bisher deren Name da).
 
 ### Neu in Version 1.2.0b6 (Beta)
 

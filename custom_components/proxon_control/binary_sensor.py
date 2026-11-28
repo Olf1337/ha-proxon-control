@@ -22,9 +22,11 @@ STATES: list[tuple[str, str, BinarySensorDeviceClass | None, bool]] = [
     ("PVSignalHeizstab", "pv_signal_heater", None, False),
     ("PVSignalWaermepumpe", "pv_signal_heat_pump", None, False),
     ("BedienpanelGesperrt", "panel_locked", None, True),
+    ("T300RelaisKompressor", "hot_water_pump_running", BinarySensorDeviceClass.RUNNING, False),
+    ("T300RelaisHeizstab", "immersion_heater_running", BinarySensorDeviceClass.RUNNING, False),
 ]
 # values of the hot-water module: only when it is there
-T300_KEYS = {"PVFreigabe", "PVSignalHeizstab", "PVSignalWaermepumpe"}
+T300_KEYS = {"PVFreigabe", "PVSignalHeizstab", "PVSignalWaermepumpe", "T300RelaisKompressor", "T300RelaisHeizstab"}
 
 
 # values come from the coordinator, nothing is fetched per entity
