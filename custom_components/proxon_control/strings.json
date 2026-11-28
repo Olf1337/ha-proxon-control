@@ -154,8 +154,8 @@
       "valve": {
         "name": "4-way valve",
         "state": {
-          "heating": "Heating mode",
-          "cooling": "Cooling mode"
+          "heating": "Heating",
+          "cooling": "Cooling"
         }
       },
       "schedule_monday": {
@@ -286,9 +286,9 @@
       "operation": {
         "name": "Current operation",
         "state": {
-          "ventilation": "Ventilating",
-          "heating": "Heating",
-          "cooling": "Cooling"
+          "ventilation": "Ventilation mode",
+          "heating": "Heating mode",
+          "cooling": "Cooling mode"
         }
       },
       "power_total": {

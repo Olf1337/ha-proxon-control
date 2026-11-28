@@ -154,8 +154,8 @@
       "valve": {
         "name": "4-Wegeventil",
         "state": {
-          "heating": "Heizbetrieb",
-          "cooling": "Kühlbetrieb"
+          "heating": "Heizen",
+          "cooling": "Kühlen"
         }
       },
       "schedule_monday": {
@@ -286,9 +286,9 @@
       "operation": {
         "name": "Aktueller Betrieb",
         "state": {
-          "ventilation": "Lüften",
-          "heating": "Heizen",
-          "cooling": "Kühlen"
+          "ventilation": "Lüftungsbetrieb",
+          "heating": "Heizbetrieb",
+          "cooling": "Kühlbetrieb"
         }
       },
       "power_total": {

@@ -5,6 +5,13 @@ Was sich in jeder Version geändert hat, die neueste zuerst. Die Release-Hinweis
 
 ## English summary
 
+**New in 1.2.0:** contains everything from 1.2.0b1 to 1.2.0b7 (below): cooling on the page (the unit's cooling release by
+hand and an automation "Cooling with solar surplus"), the panels' key lock shown in the room tiles, an automation "No
+electric heating" like the unit's global heating release, sensors for the hot-water heat pump running and the immersion
+heater heating, the automations tidied up in two groups each with its own switch, and a larger raw scan in the
+diagnostics. New since 1.2.0b7: the current operation reads "Ventilation mode" / "Heating mode" / "Cooling mode" and the
+4-way valve plain "Heating" / "Cooling" (swapped, so each name fits what it shows).
+
 **New in 1.2.0b7 (beta):** two new sensors show whether the hot-water heat pump is running and whether the immersion
 heater is heating right now; the hot-water card of the page says so too.
 
@@ -184,6 +191,19 @@ nobody home).
 **Upgrading from 0.1.x:** rooms are now thermostats (`climate` entities). The old room numbers and switches are removed on start; update automations and dashboards that used them.
 
 ## Änderungen im Detail (deutsch)
+
+### Neu in Version 1.2.0
+
+Die volle Version mit allem aus 1.2.0b1 bis 1.2.0b7 (Abschnitte darunter) – Kühlen auf der Seite (die Kühlfreigabe der
+Anlage von Hand und die Automatik „Kühlen mit PV-Überschuss“), die Tastensperre der Bedienteile als Schloss in den
+Raumkacheln, die Automatik „Elektrisches Heizen sperren“ wie die globale Heizfreigabe der Anlage, Sensoren für „Warmwasser-
+Wärmepumpe läuft“ und „Heizstab heizt“, die Automatiken aufgeräumt in zwei Gruppen mit je eigenem Schalter und ein
+größerer Rohwert-Scan in der Diagnose. Neu seit 1.2.0b7:
+
+* **Betrieb und Ventil passend benannt:** „Aktueller Betrieb“ zeigt jetzt **„Lüftungsbetrieb“ / „Heizbetrieb“ /
+  „Kühlbetrieb“**, das 4-Wege-Ventil schlicht **„Heizen“ / „Kühlen“** (getauscht, denn das Ventil steht auf Heizen oder
+  Kühlen, der Betrieb ist der Heiz- oder Kühlbetrieb). Die Zustandswerte für Automationen bleiben gleich (`heating`,
+  `cooling`, `ventilation`).
 
 ### Neu in Version 1.2.0b7 (Beta)
 
